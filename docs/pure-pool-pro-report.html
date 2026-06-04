@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pure Pool Pro — Community Intelligence Report</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a24;
+    --surface2: #22222e;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text-muted: #8888a0;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --green: #00b894;
+    --yellow: #fdcb6e;
+    --red: #e17055;
+    --orange: #e67e22;
+    --pink: #fd79a8;
+    --blue: #74b9ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+  .header {
+    text-align: center;
+    padding: 60px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+  .header h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .subtitle { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 16px; }
+  .header .date { font-size: 0.85rem; color: var(--text-muted); opacity: 0.6; }
+
+  .section { margin-bottom: 48px; }
+  .section-title {
+    font-size: 1.4rem; font-weight: 600; margin-bottom: 24px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block;
+  }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; text-align: center; transition: transform 0.2s, border-color 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .stat-value { font-size: 2.2rem; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-card.accent .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.yellow .stat-value { color: var(--yellow); }
+  .stat-card.blue .stat-value { color: var(--blue); }
+  .stat-card.pink .stat-value { color: var(--pink); }
+  .stat-card.orange .stat-value { color: var(--orange); }
+  .stat-card.red .stat-value { color: var(--red); }
+
+  .bar-chart { margin: 24px 0; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 10px; gap: 12px; }
+  .bar-label { width: 120px; font-size: 0.85rem; color: var(--text-muted); text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 26px; background: var(--surface); border-radius: 6px; overflow: hidden; }
+  .bar-fill {
+    height: 100%; border-radius: 6px; display: flex; align-items: center;
+    padding-left: 10px; font-size: 0.75rem; font-weight: 600; color: white; transition: width 1s ease;
+  }
+  .bar-fill.accent { background: linear-gradient(90deg, var(--accent), #8b7cf7); }
+  .bar-fill.green { background: linear-gradient(90deg, var(--green), #55efc4); }
+  .bar-fill.yellow { background: linear-gradient(90deg, var(--yellow), #ffeaa7); color: #333; }
+  .bar-fill.blue { background: linear-gradient(90deg, var(--blue), #a29bfe); }
+  .bar-fill.red { background: linear-gradient(90deg, var(--red), #e74c3c); }
+  .bar-fill.orange { background: linear-gradient(90deg, var(--orange), #f39c12); }
+  .bar-value { margin-left: auto; padding-right: 10px; font-size: 0.75rem; font-weight: 600; }
+
+  .user-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .user-table th {
+    text-align: left; padding: 10px 14px; background: var(--surface2);
+    border-bottom: 2px solid var(--border); font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+  }
+  .user-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .user-table tr:hover td { background: var(--surface); }
+  .role-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+  .role-badge.riipstone { background: rgba(108,92,231,0.2); color: var(--accent); }
+  .role-badge.mod { background: rgba(0,206,201,0.2); color: var(--accent2); }
+  .role-badge.power { background: rgba(0,184,148,0.2); color: var(--green); }
+  .role-badge.active { background: rgba(116,185,255,0.2); color: var(--blue); }
+
+  .pain-list { list-style: none; }
+  .pain-item {
+    display: flex; align-items: flex-start; gap: 14px; padding: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 10px; transition: border-color 0.2s;
+  }
+  .pain-item:hover { border-color: var(--red); }
+  .pain-rank {
+    width: 32px; height: 32px; background: var(--red); color: white;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .pain-content { flex: 1; }
+  .pain-title { font-weight: 600; margin-bottom: 4px; font-size: 0.95rem; }
+  .pain-meta { font-size: 0.8rem; color: var(--text-muted); }
+
+  .opp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .opp-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; transition: border-color 0.2s, transform 0.2s;
+  }
+  .opp-card:hover { border-color: var(--green); transform: translateY(-2px); }
+  .opp-card .opp-title { font-weight: 600; font-size: 1rem; margin-bottom: 6px; }
+  .opp-card .opp-evidence { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; }
+  .opp-impact { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+  .impact-high { background: rgba(0,184,148,0.2); color: var(--green); }
+  .impact-medium { background: rgba(253,203,110,0.2); color: var(--yellow); }
+  .impact-low { background: rgba(136,136,160,0.2); color: var(--text-muted); }
+
+  .quote-card {
+    background: var(--surface); border-left: 4px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 18px 22px; margin-bottom: 14px;
+  }
+  .quote-text { font-style: italic; font-size: 0.95rem; margin-bottom: 6px; line-height: 1.7; }
+  .quote-author { font-size: 0.8rem; color: var(--text-muted); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr; }
+    .header h1 { font-size: 1.8rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .mini-stat { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border-radius: 8px; margin-bottom: 8px; }
+  .mini-stat .ms-value { font-size: 1.4rem; font-weight: 700; color: var(--accent); min-width: 50px; }
+  .mini-stat .ms-label { font-size: 0.85rem; color: var(--text-muted); }
+
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; margin-right: 6px; margin-bottom: 6px; }
+  .tag-purple { background: rgba(108,92,231,0.15); color: var(--accent); }
+  .tag-teal { background: rgba(0,206,201,0.15); color: var(--accent2); }
+  .tag-green { background: rgba(0,184,148,0.15); color: var(--green); }
+  .tag-yellow { background: rgba(253,203,110,0.15); color: var(--yellow); }
+  .tag-red { background: rgba(225,112,85,0.15); color: var(--red); }
+
+  .footer { text-align: center; padding: 40px 0; border-top: 1px solid var(--border); margin-top: 48px; color: var(--text-muted); font-size: 0.8rem; }
+
+  .crossref-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .crossref-table th { text-align: left; padding: 10px 14px; background: var(--surface2); border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); }
+  .crossref-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .crossref-table tr:hover td { background: var(--surface); }
+  .match-yes { color: var(--green); font-weight: 600; }
+  .match-no { color: var(--red); }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(108,92,231,0.1), rgba(0,206,201,0.1));
+    border: 1px solid var(--accent); border-radius: 12px; padding: 24px; margin-bottom: 24px;
+  }
+  .highlight-box .hb-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; }
+  .highlight-box .hb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .highlight-box .hb-item { text-align: center; }
+  .highlight-box .hb-value { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .highlight-box .hb-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeUp 0.6s ease forwards; opacity: 0; }
+
+  .topic-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+    background: var(--surface2); border: 1px solid var(--border); margin: 3px;
+  }
+  .topic-tag .count { background: var(--accent); color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>🎱 Pure Pool Pro</h1>
+    <div class="subtitle">Community Intelligence Report — Ripstone Outreach</div>
+    <div class="date">June 4, 2026 · 5,220 Discord messages · 105 user profiles · 19 Reddit posts · 2 channels</div>
+  </div>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <div class="highlight-box">
+    <div class="hb-title">📌 Executive Summary</div>
+    <div class="hb-grid">
+      <div class="hb-item">
+        <div class="hb-value">1</div>
+        <div class="hb-label">Person handles ALL bug reports</div>
+      </div>
+      <div class="hb-item">
+        <div class="hb-value">0</div>
+        <div class="hb-label">Community automation tools</div>
+      </div>
+      <div class="hb-item">
+        <div class="hb-value">33%</div>
+        <div class="hb-label">Reddit-Discord overlap</div>
+      </div>
+    </div>
+    <p style="margin-top: 16px; font-size: 0.9rem; color: var(--text-muted);">
+      Ripstone runs Pure Pool Pro with <strong>zero community automation</strong>. ONE person collects ALL bug reports. ONE person reproduces issues. The Discord community (105 profiled users, 40% reply rate) is engaged but underserved. Reddit is a separate, mostly non-overlapping audience — only 1 of 3 Reddit users is also on Discord. <strong>The pitch: a Discord bot suite that solves their biggest bottlenecks.</strong>
+    </p>
+  </div>
+
+  <!-- KEY METRICS -->
+  <div class="section">
+    <div class="section-title">Key Metrics</div>
+    <div class="stats-grid">
+      <div class="stat-card accent animate-in">
+        <div class="stat-value">5,220</div>
+        <div class="stat-label">Discord Messages</div>
+      </div>
+      <div class="stat-card green animate-in" style="animation-delay: 0.05s">
+        <div class="stat-value">105</div>
+        <div class="stat-label">Users Profiled</div>
+      </div>
+      <div class="stat-card yellow animate-in" style="animation-delay: 0.1s">
+        <div class="stat-value">40.2%</div>
+        <div class="stat-label">Reply Rate</div>
+      </div>
+      <div class="stat-card blue animate-in" style="animation-delay: 0.15s">
+        <div class="stat-value">33.9%</div>
+        <div class="stat-label">Reaction Rate</div>
+      </div>
+      <div class="stat-card pink animate-in" style="animation-delay: 0.2s">
+        <div class="stat-value">19</div>
+        <div class="stat-label">Reddit Posts</div>
+      </div>
+      <div class="stat-card orange animate-in" style="animation-delay: 0.25s">
+        <div class="stat-value">2</div>
+        <div class="stat-label">Discord Channels</div>
+      </div>
+      <div class="stat-card red animate-in" style="animation-delay: 0.3s">
+        <div class="stat-value">1</div>
+        <div class="stat-label">Bug Report Person</div>
+      </div>
+      <div class="stat-card accent animate-in" style="animation-delay: 0.35s">
+        <div class="stat-value">7</div>
+        <div class="stat-label">Months of Data</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TWO COLUMN: TEAM + COMMUNITY -->
+  <div class="two-col">
+    <div class="section">
+      <div class="section-title">Ripstone Team</div>
+      <div class="mini-stat">
+        <div class="ms-value">30</div>
+        <div class="ms-label">Staff at Rockwater Games (in-house dev studio)</div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-value">124</div>
+        <div class="ms-label">Discord messages (2.4% of all chat)</div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-value">~2/day</div>
+        <div class="ms-label">Average team messages per day</div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-value">0</div>
+        <div class="ms-label">Community automation tools</div>
+      </div>
+      <div style="margin-top: 16px;">
+        <div class="tag tag-purple">Liverpool, UK</div>
+        <div class="tag tag-teal">Private Company</div>
+        <div class="tag tag-green">Est. 2014</div>
+        <div class="tag tag-red">Understaffed</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Community Health</div>
+      <div class="mini-stat">
+        <div class="ms-value">105</div>
+        <div class="ms-label">Unique users profiled (Discord)</div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-value">11</div>
+        <div class="ms-label">Power users (30+ messages)</div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-value">640</div>
+        <div class="ms-label">Peak month messages (May 2026)</div>
+      </div>
+      <div class="mini-stat">
+        <div class="ms-value">33%</div>
+        <div class="ms-label">Reddit users also on Discord</div>
+      </div>
+      <div style="margin-top: 16px;">
+        <div class="tag tag-purple">Growing</div>
+        <div class="tag tag-teal">Engaged</div>
+        <div class="tag tag-yellow">Indie</div>
+        <div class="tag tag-green">Active</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTHLY ACTIVITY -->
+  <div class="section">
+    <div class="section-title">Monthly Activity (Discord)</div>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">Nov 2025</div>
+        <div class="bar-track"><div class="bar-fill blue" style="width: 7.7%"><span class="bar-value">49</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Dec 2025</div>
+        <div class="bar-track"><div class="bar-fill blue" style="width: 3.3%"><span class="bar-value">21</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Jan 2026</div>
+        <div class="bar-track"><div class="bar-fill blue" style="width: 1.7%"><span class="bar-value">11</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Feb 2026</div>
+        <div class="bar-track"><div class="bar-fill accent" style="width: 84.8%"><span class="bar-value">543 🚀 LAUNCH</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Mar 2026</div>
+        <div class="bar-track"><div class="bar-fill green" style="width: 56.9%"><span class="bar-value">364</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Apr 2026</div>
+        <div class="bar-track"><div class="bar-fill green" style="width: 72%"><span class="bar-value">461</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">May 2026</div>
+        <div class="bar-track"><div class="bar-fill accent" style="width: 100%"><span class="bar-value">640 ⭐ PATCH 3</span></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Jun 2026</div>
+        <div class="bar-track"><div class="bar-fill yellow" style="width: 13.4%"><span class="bar-value">86+</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP USERS -->
+  <div class="section">
+    <div class="section-title">Top Community Members (Discord)</div>
+    <table class="user-table">
+      <thead>
+        <tr><th>User</th><th>Messages</th><th>Reactions</th><th>Role</th><th>Focus</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Ripstone</strong></td><td>208</td><td>197</td><td><span class="role-badge riipstone">Publisher</span></td><td>All topics, community manager</td></tr>
+        <tr><td><strong>DarthThug</strong></td><td>181</td><td>54</td><td><span class="role-badge power">Power</span></td><td>Bank shots, slow play, daily clearance</td></tr>
+        <tr><td><strong>Aurakite</strong></td><td>177</td><td>133</td><td><span class="role-badge mod">Moderator</span></td><td>POTM runner, community defense</td></tr>
+        <tr><td><strong>Rob Bro</strong></td><td>156</td><td>64</td><td><span class="role-badge power">Power</span></td><td>Community joker, "Apples" caller</td></tr>
+        <tr><td><strong>eeriearcade</strong></td><td>147</td><td>78</td><td><span class="role-badge power">Power</span></td><td>POTM submitter, quality voice, 80+ hrs</td></tr>
+        <tr><td><strong>JAMBO--C</strong></td><td>140</td><td>114</td><td><span class="role-badge power">Power</span></td><td>Snooker enthusiast, ranked, POTM</td></tr>
+        <tr><td><strong>Queenie Lucy II</strong></td><td>96</td><td>53</td><td><span class="role-badge power">Power</span></td><td>Timezone nerd, joker, leaderboard</td></tr>
+        <tr><td><strong>IAmLucifee</strong></td><td>94</td><td>35</td><td><span class="role-badge power">Power</span></td><td>Leaderboard critic, frustrated but engaged</td></tr>
+        <tr><td><strong>Ripstone Em</strong></td><td>27</td><td>38</td><td><span class="role-badge riipstone">Developer</span></td><td>Bugs, ranked mechanics, technical</td></tr>
+        <tr><td><strong>OvercookedOctopusFeet</strong></td><td>87</td><td>54</td><td><span class="role-badge power">Power</span></td><td>Block function, matchmaking, defense</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- REDDIT CROSS-REFERENCE -->
+  <div class="section">
+    <div class="section-title">Reddit ↔ Discord Cross-Reference</div>
+    <div class="stats-grid" style="margin-bottom: 20px;">
+      <div class="stat-card green">
+        <div class="stat-value">1</div>
+        <div class="stat-label">Matched Users</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-value">2</div>
+        <div class="stat-label">Reddit-Only Users</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-value">104</div>
+        <div class="stat-label">Discord-Only Users</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-value">33%</div>
+        <div class="stat-label">Overlap Rate</div>
+      </div>
+    </div>
+    <table class="crossref-table">
+      <thead>
+        <tr><th>Reddit User</th><th>On Discord?</th><th>Discord Name</th><th>Discord Msgs</th><th>Role</th><th>Reddit Score</th><th>Content</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>RipstoneGames</strong></td>
+          <td><span class="match-yes">✅ Yes</span></td>
+          <td>Ripstone</td>
+          <td>208</td>
+          <td><span class="role-badge riipstone">Publisher</span></td>
+          <td>26</td>
+          <td>POTM announcements (4 posts)</td>
+        </tr>
+        <tr>
+          <td><strong>Moonmonkeys</strong></td>
+          <td><span class="match-no">❌ No</span></td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td>1</td>
+          <td>"Why do you lose when opponent takes too long?"</td>
+        </tr>
+        <tr>
+          <td><strong>Monkeyswift100</strong></td>
+          <td><span class="match-no">❌ No</span></td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td>0</td>
+          <td>Black screen online bug reports (3 posts)</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 12px;">
+      <strong>Key insight:</strong> Reddit and Discord are almost entirely separate audiences. Only RipstoneGames appears on both. Reddit is Ripstone's broadcast channel (POTM only). Discord is where the real community lives. A cross-posting bot would amplify Reddit content to the engaged Discord audience.
+    </p>
+  </div>
+
+  <!-- REDDIT POSTS -->
+  <div class="section">
+    <div class="section-title">Reddit Posts (r/PurePoolPro)</div>
+    <table class="user-table">
+      <thead>
+        <tr><th>Post</th><th>Score</th><th>Comments</th><th>Author</th><th>Category</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>April POTM Results</td><td>8</td><td>20</td><td>RipstoneGames</td><td><span class="tag tag-purple">POTM</span></td></tr>
+        <tr><td>3rd Place May POTM (DarthThug)</td><td>7</td><td>1</td><td>RipstoneGames</td><td><span class="tag tag-purple">POTM</span></td></tr>
+        <tr><td>May POTM Compilation</td><td>7</td><td>2</td><td>RipstoneGames</td><td><span class="tag tag-purple">POTM</span></td></tr>
+        <tr><td>Golf (clip)</td><td>7</td><td>2</td><td>Community</td><td><span class="tag tag-teal">Gameplay</span></td></tr>
+        <tr><td>Rules Reminder</td><td>7</td><td>6</td><td>RipstoneGames</td><td><span class="tag tag-yellow">Official</span></td></tr>
+        <tr><td>May POTM Launch</td><td>6</td><td>4</td><td>RipstoneGames</td><td><span class="tag tag-purple">POTM</span></td></tr>
+        <tr><td>Friend Code Mega Thread</td><td>5</td><td>4</td><td>Community</td><td><span class="tag tag-red">Matchmaking</span></td></tr>
+        <tr><td>Great Update</td><td>5</td><td>5</td><td>Community</td><td><span class="tag tag-green">Feedback</span></td></tr>
+        <tr><td>Steam Reviews plea</td><td>4</td><td>13</td><td>Community</td><td><span class="tag tag-red">Pain point</span></td></tr>
+        <tr><td>FOV Request</td><td>4</td><td>3</td><td>Community</td><td><span class="tag tag-yellow">Feature</span></td></tr>
+        <tr><td>Matchmaking PS5</td><td>2</td><td>6</td><td>Community</td><td><span class="tag tag-red">Pain point</span></td></tr>
+        <tr><td>Why do you lose when opponent takes too long?</td><td>1</td><td>0</td><td>Moonmonkeys</td><td><span class="tag tag-red">Pain point</span></td></tr>
+        <tr><td>Black screen online</td><td>0</td><td>0</td><td>Monkeyswift100</td><td><span class="tag tag-red">Bug</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TOPIC HEATMAP -->
+  <div class="section">
+    <div class="section-title">Topic Heatmap (Discord #questions-and-suggestions)</div>
+    <div style="margin-bottom: 16px;">
+      <span class="topic-tag">Table/Cue Customization <span class="count">138</span></span>
+      <span class="topic-tag">Online/Lag <span class="count">71</span></span>
+      <span class="topic-tag">Snooker DLC <span class="count">60</span></span>
+      <span class="topic-tag">Ranked/Leaderboard <span class="count">59</span></span>
+      <span class="topic-tag">POTM <span class="count">59</span></span>
+      <span class="topic-tag">Music/Audio DLC <span class="count">37</span></span>
+      <span class="topic-tag">Xbox Version <span class="count">32</span></span>
+      <span class="topic-tag">Cross-Progression <span class="count">21</span></span>
+      <span class="topic-tag">Cheating Reports <span class="count">18</span></span>
+      <span class="topic-tag">Slow Play <span class="count">16</span></span>
+      <span class="topic-tag">Shot Timer <span class="count">12</span></span>
+      <span class="topic-tag">Daily Clearance Bug <span class="count">8</span></span>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted);">
+      Data from 1,119 messages in #questions-and-suggestions-pure-pool-pro (Nov 2025 – Jun 2026). Table/Cue Customization is the #1 requested feature. Online/Lag and Snooker DLC are the next biggest topics.
+    </p>
+  </div>
+
+  <!-- PAIN POINTS -->
+  <div class="section">
+    <div class="section-title">Top Pain Points</div>
+    <ul class="pain-list">
+      <li class="pain-item">
+        <div class="pain-rank">1</div>
+        <div class="pain-content">
+          <div class="pain-title">Bug Reporting is Understaffed</div>
+          <div class="pain-meta">71 mentions · ONE person collects ALL reports · ONE person reproduces · Live vs dev build mismatch</div>
+        </div>
+      </li>
+      <li class="pain-item">
+        <div class="pain-rank">2</div>
+        <div class="pain-content">
+          <div class="pain-title">Table/Cue Customization Demand</div>
+          <div class="pain-meta">138 mentions · HIGHEST topic in suggestions · Players want more options</div>
+        </div>
+      </li>
+      <li class="pain-item">
+        <div class="pain-rank">3</div>
+        <div class="pain-content">
+          <div class="pain-title">Online/Lag Issues</div>
+          <div class="pain-meta">71 mentions · Cross-play bug (Steam ↔ PS5) · Disconnection affects ranked · Also on Reddit</div>
+        </div>
+      </li>
+      <li class="pain-item">
+        <div class="pain-rank">4</div>
+        <div class="pain-content">
+          <div class="pain-title">Ranked/Leaderboard Confusion</div>
+          <div class="pain-meta">59 mentions · "I'm 15th with 33% win ratio" vs "I'm 19th with 90%" · System opacity</div>
+        </div>
+      </li>
+      <li class="pain-item">
+        <div class="pain-rank">5</div>
+        <div class="pain-content">
+          <div class="pain-title">POTM Submission is Broken</div>
+          <div class="pain-meta">59 mentions · Discord 5MB limit · PS 3min limit · Mod helping individually via personal Google Drive</div>
+        </div>
+      </li>
+      <li class="pain-item">
+        <div class="pain-rank">6</div>
+        <div class="pain-content">
+          <div class="pain-title">Xbox Version Delayed</div>
+          <div class="pain-meta">32 mentions · Series S RAM struggles · "Unfair to us Xbox users" · Targeting Spring 2026</div>
+        </div>
+      </li>
+      <li class="pain-item">
+        <div class="pain-rank">7</div>
+        <div class="pain-content">
+          <div class="pain-title">Slow Play / Deliberate Stalling</div>
+          <div class="pain-meta">16 mentions · DarthThug 60s/shot · "Apples" 40-45s · Block function workaround · Also on Reddit</div>
+        </div>
+      </li>
+      <li class="pain-item">
+        <div class="pain-rank">8</div>
+        <div class="pain-content">
+          <div class="pain-title">Cheating Reports</div>
+          <div class="pain-meta">18 mentions · No anti-cheat · Public accusations · Manual reports only</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- OPPORTUNITIES -->
+  <div class="section">
+    <div class="section-title">Opportunities</div>
+    <div class="opp-grid">
+      <div class="opp-card">
+        <div class="opp-title">🐛 Bug Report Tracker</div>
+        <div class="opp-evidence">ONE person handles all reports. Reproduction is #1 bottleneck. Structured steps = gold for dev. Live vs dev build mismatch.</div>
+        <span class="opp-impact impact-high">HIGH IMPACT</span>
+      </div>
+      <div class="opp-card">
+        <div class="opp-title">🏆 POTM Submission Bot</div>
+        <div class="opp-evidence">Manual process, quality loss from compression. Mod helping individually. Expanding to more platforms.</div>
+        <span class="opp-impact impact-high">HIGH IMPACT</span>
+      </div>
+      <div class="opp-card">
+        <div class="opp-title">📊 Leaderboard Dashboard</div>
+        <div class="opp-evidence">59 msgs confusion. Players don't understand ranking. Transparent ELO breakdown needed.</div>
+        <span class="opp-impact impact-high">HIGH IMPACT</span>
+      </div>
+      <div class="opp-card">
+        <div class="opp-title">🔄 Reddit → Discord Cross-Post</div>
+        <div class="opp-evidence">Ripstone posts POTM on Reddit only. 33% overlap means 67% of Discord users never see it.</div>
+        <span class="opp-impact impact-medium">MEDIUM IMPACT</span>
+      </div>
+      <div class="opp-card">
+        <div class="opp-title">🎯 Matchmaking Queue</div>
+        <div class="opp-evidence">17 msgs — players want to queue while playing career/training. Background queue system.</div>
+        <span class="opp-impact impact-medium">MEDIUM IMPACT</span>
+      </div>
+      <div class="opp-card">
+        <div class="opp-title">⏱️ Slow Play Monitor</div>
+        <div class="opp-evidence">DarthThug (60s/shot), "Apples" (40-45s). Players using block to avoid stallers. Confirmed on Reddit too.</div>
+        <span class="opp-impact impact-medium">MEDIUM IMPACT</span>
+      </div>
+      <div class="opp-card">
+        <div class="opp-title">🛡️ Cheat Report System</div>
+        <div class="opp-evidence">Public accusations happening. No anti-cheat. Anonymous report channel needed.</div>
+        <span class="opp-impact impact-medium">MEDIUM IMPACT</span>
+      </div>
+      <div class="opp-card">
+        <div class="opp-title">📝 Steam Review Campaign</div>
+        <div class="opp-evidence">"Steam Reviews plea" got 13 comments on Reddit. Community actively pleading for reviews.</div>
+        <span class="opp-impact impact-low">LOW IMPACT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY QUOTES -->
+  <div class="section">
+    <div class="section-title">Key Ripstone Quotes</div>
+    <div class="quote-card">
+      <div class="quote-text">"We don't have a dedicated support team — it's one person collecting reports, and one person reproducing issues and feeding them straight to the devs."</div>
+      <div class="quote-author">— Ripstone (community manager)</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"Issues seen on the live build have to be reproduced in the developer environment (which is actually a slightly different build)... sometimes issues can be live-build only."</div>
+      <div class="quote-author">— Ripstone Em (developer)</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"We've got a fair bit of experience with Elo-style systems from our previous chess games... but it falls apart a bit if the playerbase isn't yet big enough."</div>
+      <div class="quote-author">— Ripstone (on ranked matchmaking)</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"Need to shift more units so we can afford Discord Nitro and raise that upload cap."</div>
+      <div class="quote-author">— Ripstone (on video submission limits)</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"The team that worked on Hustle Kings back then was actually substantially bigger than what we've got now."</div>
+      <div class="quote-author">— Ripstone (on team size)</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"VooFoo is now defunct — but a lot of our team are the very same guys [who made Pure Pool]."</div>
+      <div class="quote-author">— Ripstone (on Pure Pool Pro development)</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"Cross-progression is one of those features we'd love to see in every game... But for a team of our size it's not feasible right now."</div>
+      <div class="quote-author">— Ripstone (on cross-platform saves)</div>
+    </div>
+  </div>
+
+  <!-- THE PITCH -->
+  <div class="section">
+    <div class="section-title">The Pitch</div>
+    <div style="background: var(--surface); border: 2px solid var(--accent); border-radius: 12px; padding: 32px;">
+      <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 16px;">Pure Pool Pro Community Discord Bot Suite</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <div>
+          <div style="font-weight: 600; margin-bottom: 8px; color: var(--green);">What You Get</div>
+          <ul style="list-style: none; font-size: 0.9rem;">
+            <li style="margin-bottom: 6px;">✓ Bug Report Tracker (structured → categorize → status)</li>
+            <li style="margin-bottom: 6px;">✓ POTM Submission Bot (automate collection)</li>
+            <li style="margin-bottom: 6px;">✓ Leaderboard Dashboard (transparent ELO)</li>
+            <li style="margin-bottom: 6px;">✓ Matchmaking Queue (background queue)</li>
+            <li style="margin-bottom: 6px;">✓ Match Analytics (shot time, slow play, cheat patterns)</li>
+            <li style="margin-bottom: 6px;">✓ Reddit → Discord Cross-Posting</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 8px; color: var(--accent);">Why It Works</div>
+          <ul style="list-style: none; font-size: 0.9rem;">
+            <li style="margin-bottom: 6px;">→ ONE person handles ALL bug reports</li>
+            <li style="margin-bottom: 6px;">→ Bug reproduction is #1 bottleneck</li>
+            <li style="margin-bottom: 6px;">→ ZERO community automation tools exist</li>
+            <li style="margin-bottom: 6px;">→ POTM is best engagement driver</li>
+            <li style="margin-bottom: 6px;">→ Xbox launch + Snooker DLC coming</li>
+            <li style="margin-bottom: 6px;">→ 33% Reddit-Discord gap = cross-post opportunity</li>
+          </ul>
+        </div>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 16px;">
+        <strong>Contact:</strong> Jamie Brayshaw (Head of Partnerships) · Phil Gaskell (Creative Director) · Leo Cubbin (Managing Director)
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA SOURCES -->
+  <div class="section">
+    <div class="section-title">Data Sources & Tools</div>
+    <div class="two-col">
+      <div>
+        <div style="font-weight: 600; margin-bottom: 8px;">Sources</div>
+        <ul style="font-size: 0.85rem; color: var(--text-muted); list-style: none;">
+          <li>• Discord #chat-pure-pool-pro: 4,101 messages (DCE export)</li>
+          <li>• Discord #questions-and-suggestions: 1,119 messages (DCE export)</li>
+          <li>• Reddit r/PurePoolPro: 19 posts (reddit-skills)</li>
+          <li>• Reddit RSS: 25 posts (titles only)</li>
+          <li>• Company research: Ripstone + Rockwater Games</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight: 600; margin-bottom: 8px;">Tools Used</div>
+        <ul style="font-size: 0.85rem; color: var(--text-muted); list-style: none;">
+          <li>• DiscordChatExporter (DCE) — full channel exports</li>
+          <li>• reddit-skills — Chrome extension bridge</li>
+          <li>• Apify — initial 1000-message datasets</li>
+          <li>• Custom Python — user profiling + cross-reference</li>
+          <li>• BWS — secure token storage</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>5,220 Discord messages · 105 user profiles · 19 Reddit posts · 2 channels · 7 months of data</div>
+    <div style="margin-top: 4px;">June 4, 2026 · Pure Pool Pro Community Intelligence · Generated by OWL</div>
+  </div>
+
+</div>
+</body>
+</html>

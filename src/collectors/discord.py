@@ -10,7 +10,7 @@ from datetime import datetime
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
-DCE_BIN = os.path.expanduser("~/tools/discordchatexporter/cli/DiscordChatExporter.Cli")
+DCE_BIN = "/Users/mathias/.hermes/profiles/glenn/home/tools/discordchatexporter/cli/DiscordChatExporter.Cli"
 BWS_SECRET_ID = "70909217-9e02-452b-b933-b45f00c17fee"  # DISCORD_USER_TOKEN_M3
 
 

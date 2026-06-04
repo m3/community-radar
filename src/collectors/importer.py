@@ -1,26 +1,33 @@
 """Import existing research data from cuebot project into CommunityRadar DB"""
 
 import json
-import os
 from pathlib import Path
-from datetime import datetime
-
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
-CUEBOT_RESEARCH = Path(os.path.expanduser("~/Development/DiscordBot/cuebot/docs/research"))
+CUEBOT_RESEARCH = Path("/Users/mathias/Development/DiscordBot/cuebot/docs/research")
+
+
+def find_dce_dir():
+    """Find DCE exports directory -- check CommunityRadar data dir first, then cuebot"""
+    data_dir = Path(__file__).parent.parent.parent / "data" / "dce-exports"
+    if data_dir.exists():
+        return data_dir
+    cuebot_dir = CUEBOT_RESEARCH / "dce-exports"
+    if cuebot_dir.exists():
+        return cuebot_dir
+    return None
 
 
 def import_dce_exports():
     """Import from DCE-exported JSON files"""
     db = get_db()
 
-    dce_dir = CUEBOT_RESEARCH / "dce-exports"
-    if not dce_dir.exists():
+    dce_dir = find_dce_dir()
+    if not dce_dir:
         print("No DCE exports directory found")
         return
 
     total_msgs = 0
-    total_new_users = 0
 
     for f in sorted(dce_dir.glob("*.json")):
         print(f"  Importing {f.name}...")
@@ -35,21 +42,20 @@ def import_dce_exports():
             print(f"  ✗ Unknown format: {f.name}")
             continue
 
-        # Extract channel name from filename
+        # Parse channel name from filename
+        # e.g. "Ripstone - chat-pure-pool-pro [1362333099089727488].json"
         fname = f.stem
-        # Parse out server and channel info
         channel_id = None
         server_id = None
         channel_name = fname
 
         if "[" in fname and "]" in fname:
             channel_id = fname.split("[")[-1].rstrip("]")
-            # Try to get channel name from before [id]
-            raw_name = fname.split("[")[0].strip().rstrip("- ").strip()
-            # Extract the actual channel name (last part after space)
-            parts = raw_name.split(" - ")
-            if len(parts) >= 2:
-                channel_name = parts[1].strip()
+
+        if channel_id:
+            base = fname.split(f"[{channel_id}]")[0].strip().rstrip(" -").strip()
+            parts = base.split(" - ")
+            channel_name = parts[-1].strip() if len(parts) > 1 else base
 
         # Determine server
         if "Ripstone" in fname:
@@ -65,8 +71,9 @@ def import_dce_exports():
         upsert_server(db, server_id, server_name)
         upsert_channel(db, channel_id, server_id, channel_name)
 
-        # Find the last timestamp
+        # Find the last timestamp and process users
         last_ts = None
+        new_users = 0
         for msg in msg_list:
             author = msg.get("author", {})
             if isinstance(author, dict):
@@ -90,27 +97,25 @@ def import_dce_exports():
                                 username=username,
                                 first_seen=ts[:10] if ts else None,
                                 last_seen=ts[:10] if ts else None)
+                    new_users += 1
 
         # Update channel
-        chan_row = db.execute("SELECT message_count FROM channels WHERE id = ?", (channel_id,)).fetchone()
         msg_count = len(msg_list)
-        if chan_row and chan_row["message_count"] < msg_count:
-            db.execute("UPDATE channels SET last_message_ts=?, message_count=?, updated_at=datetime('now') WHERE id=?",
-                       (last_ts, msg_count, channel_id))
+        db.execute("UPDATE channels SET last_message_ts=?, message_count=?, updated_at=datetime('now') WHERE id=?",
+                   (last_ts, msg_count, channel_id))
 
-        db.execute("UPDATE servers SET last_scan=datetime('now'), total_messages=total_messages+? WHERE id=?",
-                   (msg_count, server_id))
-        db.execute("UPDATE servers SET total_users=(SELECT COUNT(*) FROM users) WHERE id=?", (server_id,))
+        # Update server totals
+        total = db.execute("SELECT COALESCE(SUM(message_count),0) as t FROM channels WHERE server_id=?",
+                          (server_id,)).fetchone()["t"]
+        db.execute("UPDATE servers SET last_scan=datetime('now'), total_messages=?, total_users=(SELECT COUNT(*) FROM users) WHERE id=?",
+                   (total, server_id))
 
-        log_export(db, server_id, channel_id, msg_count, 0, 0, "imported")
+        log_export(db, server_id, channel_id, msg_count, new_users, 0, "imported")
         total_msgs += msg_count
 
-        # Print summary
-        server_total = db.execute("SELECT total_messages, total_users FROM servers WHERE id=?", (server_id,)).fetchone()
-        print(f"    📥 {msg_count} msgs imported")
-        print(f"    Server: {server_total['total_messages']} msgs, {server_total['total_users']} users")
+        print(f"    📥 {msg_count} msgs, {new_users} new users")
 
-    print(f"\n  Total: {total_msgs} messages imported across {len(list(dce_dir.glob('*.json')))} files")
+    print(f"\n  Total: {total_msgs} messages imported")
     db.close()
 
 

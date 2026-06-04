@@ -1,0 +1,6 @@
+Collecting websockets
+  Downloading websockets-13.1-cp38-cp38-macosx_10_9_x86_64.whl (155 kB)
+ERROR: Could not find a version that satisfies the requirement mcp[cli] (from versions: none)
+ERROR: No matching distribution found for mcp[cli]
+WARNING: You are using pip version 20.2.1; however, version 25.0.1 is available.
+You should consider upgrading via the '/private/tmp/reddit-skills/.venv/bin/python3 -m pip install --upgrade pip' command.

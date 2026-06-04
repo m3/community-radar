@@ -39,6 +39,12 @@ def export():
     export_all_channels()
 
 
+def export_reddit():
+    """Export Reddit data from tracked subreddits"""
+    from src.collectors.reddit import export_all
+    export_all()
+
+
 def report():
     """Generate HTML report from current data"""
     from src.dashboard.report import generate_report
@@ -63,6 +69,7 @@ def help_cmd():
 Commands:
   status     Show scan status and summary
   export     Run Discord export for tracked channels
+  reddit     Export Reddit data from tracked subreddits
   report     Generate HTML report
   dashboard  Launch web dashboard
   import     Import existing data from cuebot research files
@@ -78,6 +85,7 @@ def cli():
     commands = {
         "status": status,
         "export": export,
+        "reddit": export_reddit,
         "report": report,
         "dashboard": dashboard,
         "import": import_data,

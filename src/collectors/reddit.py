@@ -7,7 +7,7 @@ from pathlib import Path
 
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
-REDDIT_SKILLS_DIR = Path(__file__).parent.parent.parent / "scripts" / "reddit-skills"
+REDDIT_SKILLS_DIR = Path(__file__).parent.parent.parent / "scripts"
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 SUBREDDITS = {

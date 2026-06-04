@@ -169,6 +169,7 @@ def export_channel(server_id, server_name, channel_id, channel_name):
     if result.returncode != 0:
         print(f"  ✗ Export failed: {result.stderr[:200]}")
         log_export(db, server_id, channel_id, 0, 0, duration, "failed", result.stderr[:200])
+        db.commit()
         db.close()
         return
 
@@ -178,6 +179,7 @@ def export_channel(server_id, server_name, channel_id, channel_name):
 
     status = "✅" if msg_count > 0 else "⏭"
     print(f"  {status} {msg_count} msgs, {new_users} new users, {duration:.1f}s")
+    db.commit()
     db.close()
 
 

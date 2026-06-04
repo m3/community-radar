@@ -29,8 +29,59 @@ def status():
         for c in chans:
             print(f"    📺 #{c['name']}: {c['message_count']} msgs (last scan: {c['last_scan'] or 'never'})")
     print()
+
+    # Messages in DB
+    msgs = db.execute("SELECT COUNT(*) as c FROM messages").fetchone()
+    print(f"Messages stored: {msgs['c']}")
+
+    # Cross-refs
+    xrefs = db.execute("SELECT COUNT(*) as c FROM cross_references").fetchone()
+    matched = db.execute("SELECT COUNT(*) as c FROM cross_references WHERE match_type != 'unmatched'").fetchone()
+    print(f"Cross-references: {xrefs['c']} ({matched['c']} matched)")
+
+    # Topics
+    topics = db.execute("SELECT COUNT(*) as c FROM topics").fetchone()
+    print(f"Topics extracted: {topics['c']}")
+
+    # Users
     users = db.execute("SELECT COUNT(*) as c FROM users").fetchone()
     print(f"Total unique users profiled: {users['c']}")
+    db.close()
+
+
+def topics():
+    """Show top topics from message analysis"""
+    from src.db.models import get_db
+    db = get_db()
+    rows = db.execute("""
+        SELECT name, category, mention_count, first_seen, last_seen
+        FROM topics ORDER BY mention_count DESC LIMIT 30
+    """).fetchall()
+    if not rows:
+        print("No topics extracted yet. Run 'python src/main.py import' first.")
+        return
+    print(f"Top {len(rows)} topics:\n")
+    for r in rows:
+        print(f"  {r['name']:20s} ({r['category']:15s}) {r['mention_count']:4d} mentions  [{r['first_seen'][:10] if r['first_seen'] else '?'} → {r['last_seen'][:10] if r['last_seen'] else '?'}]")
+    db.close()
+
+
+def xref():
+    """Show cross-platform user matches"""
+    from src.db.models import get_db
+    db = get_db()
+    rows = db.execute("""
+        SELECT platform1, username1, platform2, username2, match_type, confidence
+        FROM cross_references ORDER BY confidence DESC
+    """).fetchall()
+    if not rows:
+        print("No cross-references yet. Run 'python src/main.py import' first.")
+        return
+    print(f"Cross-platform matches ({len(rows)}):\n")
+    for r in rows:
+        u2 = r['username2'] or '(unmatched)'
+        print(f"  {r['username1']:25s} ↔ {u2:25s}  [{r['match_type']}] (conf: {r['confidence']:.1f})")
+    db.close()
 
 
 def export():
@@ -96,10 +147,12 @@ Commands:
   status     Show scan status and summary
   export     Run Discord export for tracked channels
   reddit     Export Reddit data from tracked subreddits
+  import     Import existing data from cuebot research files
   search     Search message content (usage: search <term>)
+  topics     Show top topics from message analysis
+  xref       Show cross-platform user matches
   report     Generate HTML report
   dashboard  Launch web dashboard
-  import     Import existing data from cuebot research files
   help       Show this message
 """)
 
@@ -113,10 +166,12 @@ def cli():
         "status": status,
         "export": export,
         "reddit": export_reddit,
+        "import": import_data,
         "search": search,
+        "topics": topics,
+        "xref": xref,
         "report": report,
         "dashboard": dashboard,
-        "import": import_data,
         "help": help_cmd,
     }
 

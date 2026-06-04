@@ -1,0 +1,14 @@
+[project]
+name = "community-radar"
+version = "0.1.0"
+description = "Cross-platform community intelligence tool"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0",
+]
+
+[project.scripts]
+community-radar = "src.main:cli"
+
+[tool.uv]
+dev-dependencies = []

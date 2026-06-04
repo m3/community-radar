@@ -45,6 +45,32 @@ def export_reddit():
     export_all()
 
 
+def search():
+    """Search message content"""
+    import sys
+    term = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else None
+    if not term:
+        print("Usage: python src/main.py search <term>")
+        return
+    from src.db.models import get_db
+    db = get_db()
+    rows = db.execute("""
+        SELECT m.timestamp, m.content, u.display_name, c.name as channel
+        FROM messages m
+        JOIN users u ON m.user_id = u.id
+        JOIN channels c ON m.channel_id = c.id
+        WHERE m.content LIKE ? ESCAPE '\\'
+        ORDER BY m.timestamp DESC
+        LIMIT 30
+    """, (f"%{term}%",)).fetchall()
+    print(f"Found {len(rows)} messages containing '{term}':\n")
+    for r in rows:
+        print(f"  [{r['timestamp'][:19]}] {r['display_name'] or '?'} in #{r['channel']}")
+        print(f"  {r['content'][:200]}")
+        print()
+    db.close()
+
+
 def report():
     """Generate HTML report from current data"""
     from src.dashboard.report import generate_report
@@ -70,6 +96,7 @@ Commands:
   status     Show scan status and summary
   export     Run Discord export for tracked channels
   reddit     Export Reddit data from tracked subreddits
+  search     Search message content (usage: search <term>)
   report     Generate HTML report
   dashboard  Launch web dashboard
   import     Import existing data from cuebot research files
@@ -86,6 +113,7 @@ def cli():
         "status": status,
         "export": export,
         "reddit": export_reddit,
+        "search": search,
         "report": report,
         "dashboard": dashboard,
         "import": import_data,

@@ -74,7 +74,14 @@ def import_dce_exports():
         # Find the last timestamp and process users
         last_ts = None
         new_users = 0
+        message_rows = []
+        seen_msg_ids = set()
         for msg in msg_list:
+            msg_id = str(msg.get("id", ""))
+            if msg_id in seen_msg_ids:
+                continue
+            seen_msg_ids.add(msg_id)
+
             author = msg.get("author", {})
             if isinstance(author, dict):
                 user_id = str(author.get("id", ""))
@@ -99,8 +106,26 @@ def import_dce_exports():
                                 last_seen=ts[:10] if ts else None)
                     new_users += 1
 
+            # Collect message row for batch insert
+            content = msg.get("content", "")
+            reply_to = str(msg.get("referencedMessageId", ""))
+            reactions = len(msg.get("reactions", []))
+            message_rows.append((msg_id, channel_id, user_id, content, ts, reply_to, reactions))
+
+        # Batch insert messages
+        batch_size = 500
+        inserted_msgs = 0
+        for i in range(0, len(message_rows), batch_size):
+            batch = message_rows[i:i+batch_size]
+            db.executemany("""
+                INSERT OR IGNORE INTO messages
+                    (message_id, channel_id, user_id, content, timestamp, reply_to, reactions)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, batch)
+            inserted_msgs += len(batch)
+
         # Update channel
-        msg_count = len(msg_list)
+        msg_count = inserted_msgs
         db.execute("UPDATE channels SET last_message_ts=?, message_count=?, updated_at=datetime('now') WHERE id=?",
                    (last_ts, msg_count, channel_id))
 

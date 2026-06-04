@@ -87,6 +87,7 @@ def process_export_file(channel_id, channel_name, db, server_id):
 
     new_last_ts = None
     new_users = 0
+    message_rows = []
     for msg in messages:
         ts = msg["timestamp"]
         if ts and (not new_last_ts or ts > new_last_ts):
@@ -100,8 +101,25 @@ def process_export_file(channel_id, channel_name, db, server_id):
                         display_name=msg["display_name"],
                         username=msg["username"])
 
+        message_rows.append((
+            msg["message_id"], channel_id, msg["user_id"],
+            msg["content"], msg["timestamp"], msg["reply_to"], msg["reactions"]
+        ))
+
+    # Batch insert messages
+    batch_size = 500
+    inserted_msgs = 0
+    for i in range(0, len(message_rows), batch_size):
+        batch = message_rows[i:i+batch_size]
+        db.executemany("""
+            INSERT OR IGNORE INTO messages
+                (message_id, channel_id, user_id, content, timestamp, reply_to, reactions)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, batch)
+        inserted_msgs += len(batch)
+
     # Update channel state
-    msg_count = len(messages)
+    msg_count = inserted_msgs
     if new_last_ts:
         db.execute("UPDATE channels SET last_message_ts=?, message_count=message_count+?, updated_at=datetime('now') WHERE id=?",
                    (new_last_ts, msg_count, channel_id))

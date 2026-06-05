@@ -27,6 +27,14 @@ _EXTRACT_POST_DETAIL_JS = """
         result.score = parseInt(sp.getAttribute('score') || '0', 10) || 0;
         result.commentCount = parseInt(sp.getAttribute('comment-count') || '0', 10) || 0;
         result.postType = sp.getAttribute('post-type') || '';
+        // Extract timestamp
+        let createdUtc = 0;
+        const timeEl = sp.querySelector('time[datetime]');
+        if (timeEl) {
+            const dt = timeEl.getAttribute('datetime');
+            if (dt) createdUtc = new Date(dt).getTime() / 1000;
+        }
+        result.createdUtc = createdUtc;
     } else {
         result.title = '';
         result.permalink = window.location.pathname;
@@ -57,6 +65,14 @@ _EXTRACT_COMMENTS_JS = """
             const bodyEl = el.querySelector('p, div[id*="richtext"], [slot="comment"]');
             const body = bodyEl ? bodyEl.innerText.trim() : '';
 
+            // Extract timestamp
+            let createdUtc = 0;
+            const timeEl = el.querySelector('time[datetime]');
+            if (timeEl) {
+                const dt = timeEl.getAttribute('datetime');
+                if (dt) createdUtc = new Date(dt).getTime() / 1000;
+            }
+
             if (body) {
                 comments.push({
                     id: commentId,
@@ -64,6 +80,7 @@ _EXTRACT_COMMENTS_JS = """
                     body: body,
                     score: score,
                     depth: depth,
+                    createdUtc: createdUtc,
                 });
             }
         } catch (e) {}
@@ -99,6 +116,7 @@ def get_post_detail(
         subreddit=data.get("subreddit", ""),
         permalink=data.get("permalink", ""),
         author=Author(name=data.get("authorName", "")),
+        created_utc=data.get("createdUtc", 0.0),
     )
 
     if load_all_comments:

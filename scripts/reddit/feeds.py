@@ -24,6 +24,15 @@ _EXTRACT_POSTS_JS = """
             if (!title) return;
             const bodyEl = el.querySelector('[slot="text-body"]');
             const selftext = bodyEl ? bodyEl.innerText.trim() : '';
+            // Extract timestamp from <time> element
+            let createdUtc = 0;
+            const timeEl = el.querySelector('time[datetime]');
+            if (timeEl) {
+                const dt = timeEl.getAttribute('datetime');
+                if (dt) {
+                    createdUtc = new Date(dt).getTime() / 1000;
+                }
+            }
             posts.push({
                 id: el.id || '',
                 title: title,
@@ -32,6 +41,7 @@ _EXTRACT_POSTS_JS = """
                 permalink: el.getAttribute('permalink') || '',
                 postType: el.getAttribute('post-type') || '',
                 selftext: selftext,
+                createdUtc: createdUtc,
                 stats: {
                     score: parseInt(el.getAttribute('score') || '0', 10) || 0,
                     numComments: parseInt(el.getAttribute('comment-count') || '0', 10) || 0,

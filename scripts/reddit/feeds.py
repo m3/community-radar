@@ -68,19 +68,21 @@ def subreddit_feed(
     page: BridgePage,
     subreddit: str,
     sort: str = "hot",
+    max_posts: int = 100,
+    max_scrolls: int = 30,
 ) -> list[Post]:
-    """Get posts from a specific subreddit."""
+    """Get posts from a specific subreddit, scrolling to load more."""
     url = make_subreddit_url(subreddit, sort)
     page.navigate(url)
     page.wait_for_load()
     page.wait_dom_stable()
     sleep_random(500, 1000)
 
-    return _extract_posts(page)
+    return _extract_posts_scroll(page, max_posts=max_posts, max_scrolls=max_scrolls)
 
 
 def _extract_posts(page: BridgePage) -> list[Post]:
-    """Extract post data from the current page."""
+    """Extract post data from the current page (no scroll)."""
     _wait_for_posts(page)
 
     result = page.evaluate(_EXTRACT_POSTS_JS)
@@ -92,6 +94,68 @@ def _extract_posts(page: BridgePage) -> list[Post]:
         raise NoPostsError()
 
     return [Post.from_dict(p) for p in posts_data]
+
+
+def _extract_posts_scroll(
+    page: BridgePage,
+    max_posts: int = 100,
+    max_scrolls: int = 30,
+) -> list[Post]:
+    """Extract posts by scrolling the page to load more.
+
+    Reddit uses infinite scroll — only ~3-5 posts are in the DOM at a time.
+    This scrolls down, waits for new posts to render, and accumulates unique posts.
+    """
+    _wait_for_posts(page)
+
+    seen_ids: set[str] = set()
+    all_posts: list[Post] = []
+
+    for scroll_num in range(max_scrolls):
+        result = page.evaluate(_EXTRACT_POSTS_JS)
+        if result:
+            posts_data = json.loads(result)
+            new_count = 0
+            for p in posts_data:
+                pid = p.get("id", "")
+                if pid and pid not in seen_ids:
+                    seen_ids.add(pid)
+                    all_posts.append(Post.from_dict(p))
+                    new_count += 1
+
+            if len(all_posts) >= max_posts:
+                logger.info("Reached max_posts (%d), stopping scroll", max_posts)
+                break
+
+            if new_count == 0:
+                # No new posts this scroll — try once more after a longer wait
+                logger.info("No new posts at scroll %d (total: %d), waiting...", scroll_num + 1, len(all_posts))
+                sleep_random(1500, 2500)
+                result2 = page.evaluate(_EXTRACT_POSTS_JS)
+                if result2:
+                    posts_data2 = json.loads(result2)
+                    new2 = 0
+                    for p in posts_data2:
+                        pid = p.get("id", "")
+                        if pid and pid not in seen_ids:
+                            seen_ids.add(pid)
+                            all_posts.append(Post.from_dict(p))
+                            new2 += 1
+                    if new2 == 0:
+                        logger.info("Still no new posts after wait, stopping (total: %d)", len(all_posts))
+                        break
+
+        # Scroll down — use a human-like amount
+        page.scroll_by(0, 600 + (scroll_num % 3) * 200)
+        sleep_random(800, 1500)
+
+    if not all_posts:
+        raise NoPostsError()
+
+    logger.info("Scrolled %d times, collected %d unique posts", scroll_num + 1, len(all_posts))
+    return all_posts
+
+_WAIT_TIMEOUT = 15.0
 
 
 def _wait_for_posts(page: BridgePage, timeout: float = 15.0) -> None:

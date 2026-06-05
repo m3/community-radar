@@ -30,9 +30,11 @@ reddit:
     PurePoolPro:
       name: "PurePoolPro"
       sorts:
-        - top
         - new
         - hot
+        - top?t=month
+        - top?t=year
+        - top?t=all
 
 # Output directories
 data_dir: "data"

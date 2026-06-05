@@ -174,6 +174,74 @@ def cmd_subreddit_feed(args: argparse.Namespace) -> None:
         browser.close()
 
 
+def cmd_json_feed(args: argparse.Namespace) -> None:
+    """Fetch Reddit's .json API for bulk post extraction with timestamps."""
+    from reddit.bridge import BridgePage
+    from reddit.human import sleep_random
+
+    browser, page = _connect(args)
+    try:
+        all_posts = []
+        after = args.after or None
+
+        for page_num in range(args.max_pages):
+            # 'top' sort requires a time filter (t=all|year|month|week|day)
+            # If sort contains '?t=' it's already a top+time combo
+            base_sort = args.sort.split("?")[0]
+            url = f"https://www.reddit.com/r/{args.subreddit}/{base_sort}.json?limit={args.limit}"
+            if "?" in args.sort:
+                url += "&" + args.sort.split("?", 1)[1]
+            if after:
+                url += f"&after={after}"
+
+            page.navigate(url)
+            page.wait_for_load()
+            sleep_random(500, 1000)
+
+            text = page.evaluate("document.body.innerText")
+            if not text:
+                break
+
+            import json as _json
+            data = _json.loads(text)
+            children = data.get("data", {}).get("children", [])
+
+            if not children:
+                break
+
+            for c in children:
+                d = c.get("data", {})
+                post = {
+                    "id": d.get("id", ""),
+                    "title": d.get("title", ""),
+                    "subreddit": d.get("subreddit", ""),
+                    "author": {"name": d.get("author", "[deleted]")},
+                    "permalink": d.get("permalink", ""),
+                    "postType": "text" if d.get("is_self") else "link",
+                    "selftext": d.get("selftext", ""),
+                    "createdUtc": d.get("created_utc", 0),
+                    "stats": {
+                        "score": d.get("score", 0),
+                        "numComments": d.get("num_comments", 0),
+                        "upvoteRatio": d.get("upvote_ratio", 0),
+                    },
+                    "flair": d.get("link_flair_text", ""),
+                    "domain": d.get("domain", ""),
+                    "url": d.get("url", ""),
+                }
+                all_posts.append(post)
+
+            after = data.get("data", {}).get("after")
+            if not after:
+                break
+
+            sleep_random(1000, 2000)
+
+        _output({"posts": all_posts, "count": len(all_posts), "after": after})
+    finally:
+        browser.close()
+
+
 def cmd_search(args: argparse.Namespace) -> None:
     from reddit.search import search_posts
     from reddit.types import SearchFilter
@@ -432,6 +500,15 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("--subreddit", required=True, help="Subreddit name (without r/)")
     sub.add_argument("--sort", default="hot", help="Sort: hot|new|top|rising (default: hot)")
     sub.set_defaults(func=cmd_subreddit_feed)
+
+    # json-feed — fetch Reddit's .json API for bulk post extraction
+    sub = subparsers.add_parser("json-feed", help="Fetch subreddit .json API (bulk posts with timestamps)")
+    sub.add_argument("--subreddit", required=True, help="Subreddit name (without r/)")
+    sub.add_argument("--sort", default="new", help="Sort: hot|new|top|rising (default: new)")
+    sub.add_argument("--limit", type=int, default=100, help="Posts per page (max 100, default 100)")
+    sub.add_argument("--after", default="", help="Pagination token (from previous response)")
+    sub.add_argument("--max-pages", type=int, default=5, help="Max pages to fetch (default 5)")
+    sub.set_defaults(func=cmd_json_feed)
 
     # search
     sub = subparsers.add_parser("search", help="Search Reddit")

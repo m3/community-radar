@@ -42,28 +42,41 @@ def import_dce_exports():
             print(f"  ✗ Unknown format: {f.name}")
             continue
 
-        # Parse channel name from filename
-        # e.g. "Ripstone - chat-pure-pool-pro [1362333099089727488].json"
+        # Parse channel info from filename AND from export metadata
         fname = f.stem
         channel_id = None
         server_id = None
         channel_name = fname
+        server_name = "Unknown Server"
 
-        if "[" in fname and "]" in fname:
+        # DCE exports contain channel/guild metadata at the top level
+        if isinstance(data, dict):
+            ch_meta = data.get("channel", {})
+            g_meta = data.get("guild", {})
+            if ch_meta.get("id"):
+                channel_id = str(ch_meta["id"])
+                channel_name = ch_meta.get("name", fname)
+            if g_meta.get("id"):
+                server_id = str(g_meta["id"])
+                server_name = g_meta.get("name", "Unknown Server")
+
+        # Fallback: parse from filename if metadata didn't have it
+        if not channel_id and "[" in fname and "]" in fname:
             channel_id = fname.split("[")[-1].rstrip("]")
 
-        if channel_id:
+        if channel_id and not channel_name:
             base = fname.split(f"[{channel_id}]")[0].strip().rstrip(" -").strip()
             parts = base.split(" - ")
             channel_name = parts[-1].strip() if len(parts) > 1 else base
 
-        # Determine server
-        if "Ripstone" in fname:
-            server_id = "203428322082816001"
-            server_name = "Ripstone - Pure Pool Pro"
-        else:
-            server_id = "unknown"
-            server_name = "Unknown Server"
+        # Determine server from filename if not in metadata
+        if not server_id:
+            if "Ripstone" in fname:
+                server_id = "203428322082816001"
+                server_name = "Ripstone - Pure Pool Pro"
+            else:
+                server_id = "unknown"
+                server_name = "Unknown Server"
 
         if not channel_id:
             channel_id = "unknown"

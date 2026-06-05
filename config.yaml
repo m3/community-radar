@@ -16,6 +16,9 @@ discord:
       channels:
         "1362333099089727488": "chat-pure-pool-pro"
         "1427915258147766303": "questions-and-suggestions-pure-pool-pro"
+        "1470447996670971989": "find-a-game-pure-pool-pro"
+        "1504754355985846363": "play-of-the-month-submissions"
+        "1362333634622787584": "pool-and-snooker-talk"
 
 reddit:
   # Path to reddit-skills directory (Chrome extension bridge)

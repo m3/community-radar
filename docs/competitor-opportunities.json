@@ -1,11 +1,11 @@
 {
   "meta": {
-    "total_messages_scanned": 9832,
-    "pure_pool_mentions": 2,
-    "competitor_mentions": 174,
+    "total_messages_scanned": 13815,
+    "pure_pool_mentions": 1,
+    "competitor_mentions": 126,
     "unique_competitors": 7,
-    "feature_requests": 14,
-    "pain_points_flagged": 119
+    "feature_requests": 0,
+    "pain_points_flagged": 21
   },
   "pure_pool_mentions": [
     {
@@ -13,13 +13,6 @@
       "channel": "reddit-billiards-new",
       "timestamp": "2026-06-05",
       "score": 2,
-      "quote": "...it felt like being back in the poolhall!\n\n(Not affiliate with the game or devs, just loves to play pool and family have made a lazy stay at home fat dad :D - so I take the chances I get to play )\n\n\\#purepoolpro"
-    },
-    {
-      "keyword": "purepoolpro",
-      "channel": "reddit-billiards-hot",
-      "timestamp": "2026-06-05",
-      "score": 1,
       "quote": "...it felt like being back in the poolhall!\n\n(Not affiliate with the game or devs, just loves to play pool and family have made a lazy stay at home fat dad :D - so I take the chances I get to play )\n\n\\#purepoolpro"
     }
   ],
@@ -51,9 +44,9 @@
       },
       {
         "channel": "reddit-snooker-hot",
-        "timestamp": "2026-05-20",
-        "score": 54,
-        "quote": "Why do snooker clubs block out natural light?\n\nSnooker clubs tend to close the curtains yet turn on the lights. Is there a reason behind this? Surely having some natural light coming in from the windows would brighten u..."
+        "timestamp": "2026-06-05",
+        "score": 42,
+        "quote": "If You Could Do One Small Thing to Help Save Community Snooker in the UK Would You?\n\nSt Matthias Snooker Club has been a community hub in Brighton for nearly 100 years, offering affordable, accessible snooker for players of all ages, especially pensioners who rely on it for social connection and wellbeing. D..."
       }
     ],
     "side pocket": [
@@ -88,7 +81,7 @@
         "quote": "I’m not super familiar with English pool - Why bank the last ball? Looks like an easy side pocket with only a very minor scratch risk, any draw would have made it a breeze"
       }
     ],
-    "foos": [
+    "foosball": [
       {
         "channel": "reddit-billiards-hot",
         "timestamp": "2026-06-05",
@@ -102,22 +95,22 @@
         "quote": "Darts, shuffleboard, foosball, golf, bowling. My dad always said his putting helped his pool/snooker game, and vice versa."
       },
       {
-        "channel": "reddit-billiards-top?t=month",
-        "timestamp": "2026-05-08",
-        "score": 5,
-        "quote": "...on eDart kicks ass, but every time I'm at my friends house with a real board I start thinking about how I can swap mine out.\n    \n      And I'm thoroughly jealous that you can fit a pool table and a foos.  I could spend hours in there.\n    \n      You need a pool table light."
+        "channel": "reddit-billiards-top?t=year",
+        "timestamp": "2025-08-05",
+        "score": 2,
+        "quote": "A lot of people who aren't doing this for a living take it way too seriously and forget it's just a bar game. If I see a foosball table, I'm not looking up the international tournament rules, I'm just playing the way we did in school."
       },
       {
         "channel": "reddit-billiards-hot",
         "timestamp": "2026-06-03",
         "score": 1,
-        "quote": "...had a basement table, the basement was big enough for a sectional and \"movie theater\" with a pull down screen, projector and surround sound, beside an office on the back half of the garage, a bar and foosball table on either end of the pool table.\n    \n      Couldn't think of any better use for the space, so kept the bar and table games.\n    \n      If you are serious about selling, call a professional..."
+        "quote": "...had a basement table, the basement was big enough for a sectional and \"movie theater\" with a pull down screen, projector and surround sound, beside an office on the back half of the garage, a bar and foosball table on either end of the pool table.\n    \n      Couldn't think of any better use for the space, so kept the bar and table games.\n    \n      If you are serious about selling, call a professional mov..."
       },
       {
         "channel": "reddit-billiards-new",
         "timestamp": "2026-06-03",
         "score": 1,
-        "quote": "...had a basement table, the basement was big enough for a sectional and \"movie theater\" with a pull down screen, projector and surround sound, beside an office on the back half of the garage, a bar and foosball table on either end of the pool table.\n    \n      Couldn't think of any better use for the space, so kept the bar and table games.\n    \n      If you are serious about selling, call a professional..."
+        "quote": "...had a basement table, the basement was big enough for a sectional and \"movie theater\" with a pull down screen, projector and surround sound, beside an office on the back half of the garage, a bar and foosball table on either end of the pool table.\n    \n      Couldn't think of any better use for the space, so kept the bar and table games.\n    \n      If you are serious about selling, call a professional mov..."
       }
     ],
     "8 ball pool": [
@@ -152,32 +145,6 @@
         "quote": "37 in practice, 16 in a match. Only switched to snooker from english 8 ball pool this year but i’m already hooked and keen to get the numbers higher!"
       }
     ],
-    "foosball": [
-      {
-        "channel": "reddit-billiards-hot",
-        "timestamp": "2026-06-05",
-        "score": 7,
-        "quote": "Darts, shuffleboard, foosball, golf, bowling. My dad always said his putting helped his pool/snooker game, and vice versa."
-      },
-      {
-        "channel": "reddit-billiards-new",
-        "timestamp": "2026-06-05",
-        "score": 7,
-        "quote": "Darts, shuffleboard, foosball, golf, bowling. My dad always said his putting helped his pool/snooker game, and vice versa."
-      },
-      {
-        "channel": "reddit-billiards-hot",
-        "timestamp": "2026-06-03",
-        "score": 1,
-        "quote": "...had a basement table, the basement was big enough for a sectional and \"movie theater\" with a pull down screen, projector and surround sound, beside an office on the back half of the garage, a bar and foosball table on either end of the pool table.\n    \n      Couldn't think of any better use for the space, so kept the bar and table games.\n    \n      If you are serious about selling, call a professional mov..."
-      },
-      {
-        "channel": "reddit-billiards-new",
-        "timestamp": "2026-06-03",
-        "score": 1,
-        "quote": "...had a basement table, the basement was big enough for a sectional and \"movie theater\" with a pull down screen, projector and surround sound, beside an office on the back half of the garage, a bar and foosball table on either end of the pool table.\n    \n      Couldn't think of any better use for the space, so kept the bar and table games.\n    \n      If you are serious about selling, call a professional mov..."
-      }
-    ],
     "snooker 19": [
       {
         "channel": "reddit-snooker-top?t=month",
@@ -196,205 +163,33 @@
         "timestamp": "2026-05-17",
         "score": 3,
         "quote": "Something like 50 on Snooker 19 lol 😂"
-      },
-      {
-        "channel": "reddit-snooker-new",
-        "timestamp": "2026-05-06",
-        "score": 3,
-        "quote": "Ah yes, World Snooker 1993 for the Mega Drive"
       }
     ],
-    "snooker 20": [
+    "foos": [
       {
-        "channel": "reddit-snooker-top?t=month",
+        "channel": "reddit-billiards-top?t=year",
         "timestamp": "2026-05-08",
-        "score": 11,
-        "quote": "Went to see the Goffs exhibition in JVs honour and brought my copy of World Championship Snooker 2003 for the players to sign as they were all on the front cover. Dennis and John do the commentary for the game too. Didn’t get any players to sign but got Dennis to sign it. I asked if he knew the gam..."
+        "score": 5,
+        "quote": "...on eDart kicks ass, but every time I'm at my friends house with a real board I start thinking about how I can swap mine out.\n    \n      And I'm thoroughly jealous that you can fit a pool table and a foos.  I could spend hours in there.\n    \n      You need a pool table light."
       },
       {
-        "channel": "reddit-snooker-new",
+        "channel": "reddit-billiards-top?t=month",
         "timestamp": "2026-05-08",
-        "score": 11,
-        "quote": "Went to see the Goffs exhibition in JVs honour and brought my copy of World Championship Snooker 2003 for the players to sign as they were all on the front cover. Dennis and John do the commentary for the game too. Didn’t get any players to sign but got Dennis to sign it. I asked if he knew the gam..."
-      },
+        "score": 5,
+        "quote": "...on eDart kicks ass, but every time I'm at my friends house with a real board I start thinking about how I can swap mine out.\n    \n      And I'm thoroughly jealous that you can fit a pool table and a foos.  I could spend hours in there.\n    \n      You need a pool table light."
+      }
+    ],
+    "miniclip": [
       {
-        "channel": "reddit-snooker-new",
-        "timestamp": "2026-05-06",
-        "score": 10,
-        "quote": "r/snooker 2026 World Championship Prediction Tournament [Results]\n\nWe've witnessed perhaps the most dramatic World Championship in recent years, and after 17 days of action, 22-year-old Wu Yize emerged as China's..."
+        "channel": "reddit-billiards-top?t=year",
+        "timestamp": "2025-08-05",
+        "score": 1,
+        "quote": "These guys have been playing too might miniclip pool"
       }
     ]
   },
-  "feature_requests": [
-    {
-      "features": [
-        "tournament"
-      ],
-      "channel": "reddit-snooker-hot",
-      "timestamp": "2026-06-05",
-      "quote": "Yeah its been that way for way too long even before the pandemic now with the cost of living crisis its killing the grassroots.\n\nI used to play seriously lots of solo hours entered national tournaments etc when I was younger. Now I cant even justify going up to the club as I woun't be able to put in"
-    },
-    {
-      "features": [
-        "training"
-      ],
-      "channel": "reddit-billiards-hot",
-      "timestamp": "2026-06-05",
-      "quote": "...track pool matches, opponents and performance statistics.\n\nThe idea came from wanting a lightweight way to record games without constantly interacting with my phone during a match. Over time I added features such as:\n\n• Opponent tracking  \n• Match history  \n• Performance statistics  \n• Multiple game types  \n• Session notes and training logs\n\nI’ve recently put together a short demo video and was curious..."
-    },
-    {
-      "features": [
-        "training"
-      ],
-      "channel": "reddit-billiards-new",
-      "timestamp": "2026-06-05",
-      "quote": "...track pool matches, opponents and performance statistics.\n\nThe idea came from wanting a lightweight way to record games without constantly interacting with my phone during a match. Over time I added features such as:\n\n• Opponent tracking  \n• Match history  \n• Performance statistics  \n• Multiple game types  \n• Session notes and training logs\n\nI’ve recently put together a short demo video and was curious..."
-    },
-    {
-      "features": [
-        "tournament"
-      ],
-      "channel": "reddit-billiards-new",
-      "timestamp": "2026-05-30",
-      "quote": "...y. ([Let’s Chat Langford](https://www.letschatlangford.ca/ecdev?tool=brainstormer&amp;utm_source=chatgpt.com))  \nI recently saw a discussion asking what Langford needs, and “pool hall” was one of the suggestions. Someone even mentioned wanting professional tables and something other than a pub atmosphere. ([Reddit](https://www.reddit.com/r/LangfordBC/comments/1t0eesp/whats_something_langford_needs_desperate..."
-    },
-    {
-      "features": [
-        "stats"
-      ],
-      "channel": "reddit-billiards-new",
-      "timestamp": "2026-05-29",
-      "quote": "Railbird now does matchplay\n\nHey fam, just letting you know that railbird now does competition. New models detect which player is which (one of the most requested features). Record matches/league play and get your stats/video highlights split by player (all with just a phone). Thx for the community input - keeps us motivated and building.\n\nCheers,  \nRB Team"
-    },
-    {
-      "features": [
-        "simulation"
-      ],
-      "channel": "reddit-snooker-hot",
-      "timestamp": "2026-05-28",
-      "quote": "...been helping the creators of snookersim.com to collate feedback (and we very much appreciate the amazing and detailed feedback already sent through on previous posts). They have recently been adding features to allow the creation of complex scenarios including placing cues, rests and triangles on the table to assist in the creation of a trick-shot such as those demonstrated by Dennis Taylor and the late..."
-    },
-    {
-      "features": [
-        "simulation"
-      ],
-      "channel": "reddit-snooker-new",
-      "timestamp": "2026-05-28",
-      "quote": "...been helping the creators of snookersim.com to collate feedback (and we very much appreciate the amazing and detailed feedback already sent through on previous posts). They have recently been adding features to allow the creation of complex scenarios including placing cues, rests and triangles on the table to assist in the creation of a trick-shot such as those demonstrated by Dennis Taylor and the late..."
-    },
-    {
-      "features": [
-        "replay",
-        "stats"
-      ],
-      "channel": "reddit-billiards-top?t=month",
-      "timestamp": "2026-05-23",
-      "quote": "...e for free in exchange for working with me to get it setup and tested. Just DM me here.\n\nIt will have the following:  \n\\- 3D Drill Editor for creating unique and dynamic drills types.  \n\\- \"Snapshot\" feature where it captures all ball locations on the table so you can easily respot  \n\\- Target Pool (demo'd in the video above)  \n\\- Instant Recall game - Break a rack of balls (or throw them out), and it ta..."
-    },
-    {
-      "features": [
-        "stats"
-      ],
-      "channel": "reddit-snooker-hot",
-      "timestamp": "2026-05-19",
-      "quote": "That’s great to hear. There was a final few years ago that had some horrific stats and the story was a feature on the bbc.\n    \n      Great to see the standard improving."
-    },
-    {
-      "features": [
-        "tournament"
-      ],
-      "channel": "reddit-snooker-top?t=month",
-      "timestamp": "2026-05-15",
-      "quote": "....\n\n  \n\\- 2018 was the only final since then where both finalists were in their 40s.\n\n  \nWith 58 editions of the world's taking place since then, when putting it all together, 21 out of 58 finals have featured at least one finalist over the age of 40 - around 36 percent of the time.\n\nWhat's very interesting though, is that of these 21 finalists, 13 of them were the same four people: the class of 92, and R..."
-    },
-    {
-      "features": [
-        "tournament"
-      ],
-      "channel": "reddit-snooker-hot",
-      "timestamp": "2026-05-15",
-      "quote": "....\n\n  \n\\- 2018 was the only final since then where both finalists were in their 40s.\n\n  \nWith 58 editions of the world's taking place since then, when putting it all together, 21 out of 58 finals have featured at least one finalist over the age of 40 - around 36 percent of the time.\n\nWhat's very interesting though, is that of these 21 finalists, 13 of them were the same four people: the class of 92, and R..."
-    },
-    {
-      "features": [
-        "tournament"
-      ],
-      "channel": "reddit-snooker-new",
-      "timestamp": "2026-05-15",
-      "quote": "....\n\n  \n\\- 2018 was the only final since then where both finalists were in their 40s.\n\n  \nWith 58 editions of the world's taking place since then, when putting it all together, 21 out of 58 finals have featured at least one finalist over the age of 40 - around 36 percent of the time.\n\nWhat's very interesting though, is that of these 21 finalists, 13 of them were the same four people: the class of 92, and R..."
-    },
-    {
-      "features": [
-        "tournament"
-      ],
-      "channel": "reddit-billiards-top?t=month",
-      "timestamp": "2026-05-09",
-      "quote": "Signed Efren Reyes Cue\n\nAny suggestions on how to preserve signatures on a pool cue?\n\nWent to Vegas for the 2026 APA Tournaments, and got my first cue signed by the GOAT, Efren Reyes! I also was able to play a match against him so I feel..."
-    },
-    {
-      "features": [
-        "tournament"
-      ],
-      "channel": "reddit-snooker-new",
-      "timestamp": "2026-05-07",
-      "quote": "Google A.I. Gave this answer:\n\nAI Overview\n\nThe Riley Aristocrat snooker table at the 2026 World Seniors Championship features white cushions as an homage to the vintage 1970s–80s era, designed to evoke nostalgia for the classic, retro look of that period. The [Riley Aristocrat table] is making its return to the Crucible af..."
-    }
-  ],
+  "feature_requests": [],
   "pain_points": [
-    {
-      "pains": [
-        "ads"
-      ],
-      "channel": "reddit-snooker-top?t=month",
-      "timestamp": "2026-05-07",
-      "quote": "...for being defending champion.\n\nIf Ronnie were to win an 8th I still think Hendry would have an argument but obviously 8 is more than 7. I guess it all boils down o who your favourite is or head to heads, Hendry at his greatest vs Ronnie at his greatest.",
-      "score": 111
-    },
-    {
-      "pains": [
-        "ads"
-      ],
-      "channel": "reddit-snooker-new",
-      "timestamp": "2026-05-07",
-      "quote": "...for being defending champion.\n\nIf Ronnie were to win an 8th I still think Hendry would have an argument but obviously 8 is more than 7. I guess it all boils down o who your favourite is or head to heads, Hendry at his greatest vs Ronnie at his greatest.",
-      "score": 111
-    },
-    {
-      "pains": [
-        "ads"
-      ],
-      "channel": "reddit-snooker-hot",
-      "timestamp": "2026-05-17",
-      "quote": "...sniff / wipe incase you have polo nose as you can feel it sort of seeping abit and want to make sure it aint obvious etc.\n\nI play pool more than snooker and in our pool league a swear so many of the lads are in the bogs snorting and the blokes at the higher levels are deff up to it. Even to the point of blatently doing a big snort up one nostril with finger over the other at the bar etc middle of a l...",
-      "score": 95
-    },
-    {
-      "pains": [
-        "ads"
-      ],
-      "channel": "reddit-snooker-top?t=month",
-      "timestamp": "2026-05-17",
-      "quote": "...sniff / wipe incase you have polo nose as you can feel it sort of seeping abit and want to make sure it aint obvious etc.\n\nI play pool more than snooker and in our pool league a swear so many of the lads are in the bogs snorting and the blokes at the higher levels are deff up to it. Even to the point of blatently doing a big snort up one nostril with finger over the other at the bar etc middle of a l...",
-      "score": 93
-    },
-    {
-      "pains": [
-        "ads"
-      ],
-      "channel": "reddit-snooker-new",
-      "timestamp": "2026-05-17",
-      "quote": "...sniff / wipe incase you have polo nose as you can feel it sort of seeping abit and want to make sure it aint obvious etc.\n\nI play pool more than snooker and in our pool league a swear so many of the lads are in the bogs snorting and the blokes at the higher levels are deff up to it. Even to the point of blatently doing a big snort up one nostril with finger over the other at the bar etc middle of a l...",
-      "score": 89
-    },
-    {
-      "pains": [
-        "ads"
-      ],
-      "channel": "reddit-billiards-top?t=month",
-      "timestamp": "2026-05-11",
-      "quote": "...lbow is straighter. What's missing there?\n\nI understand I don't hit the cue ball straight in the middle, get some deflection etc, but could anyone help me identify what in my setup that potentially leads to this and give tips on adjustments I could make to get a straighter shot?\n\nEDIT 2: THANKS A TON FOR ALL THE TIPS!\nHere is a summary of what I think I need to change:\n1. Setup the shot better - u/fr...",
-      "score": 80
-    },
     {
       "pains": [
         "ads"
@@ -424,12 +219,21 @@
     },
     {
       "pains": [
+        "abandoned"
+      ],
+      "channel": "reddit-snooker-top?t=year",
+      "timestamp": "2025-12-08",
+      "quote": "Mentally tough, never gives up, great all round game, a player you have to beat, he is the T-800 of the snooker world, remorseless. The guy has been though a lot, his Mum abandoned him when he was 8 and his Dad died when Selby was 16. The guy is a legend and a good shout for 5th greatest player of all time.",
+      "score": 21
+    },
+    {
+      "pains": [
         "ads"
       ],
       "channel": "reddit-snooker-top?t=month",
       "timestamp": "2026-05-10",
-      "quote": "...but the Seniors tour won't benefit Ronnie\n\nHere he is winning against a guy the same age (nearish?) who won 2 rankjng titles in a 33-year career. Well done, Ronnie!\n\n  \nEDIT: Participated in many threads on here, but never publicly criticised Ronnie before. Wowsers 😄",
-      "score": 43
+      "quote": "Get used to it. In-game ads are the future. It’s the Americanisation of all sport.",
+      "score": 10
     },
     {
       "pains": [
@@ -437,49 +241,94 @@
       ],
       "channel": "reddit-snooker-new",
       "timestamp": "2026-05-10",
-      "quote": "...but the Seniors tour won't benefit Ronnie\n\nHere he is winning against a guy the same age (nearish?) who won 2 rankjng titles in a 33-year career. Well done, Ronnie!\n\n  \nEDIT: Participated in many threads on here, but never publicly criticised Ronnie before. Wowsers 😄",
-      "score": 41
+      "quote": "Get used to it. In-game ads are the future. It’s the Americanisation of all sport.",
+      "score": 10
     },
     {
       "pains": [
         "ads"
       ],
-      "channel": "reddit-snooker-top?t=month",
-      "timestamp": "2026-05-17",
-      "quote": "...e why but this hasn't been widely publicised: if you didn't know about it, the final of the Global 900 is being played today, between Ronnie O'Sullivan and Luca Brecel.\n\n**It's a best of 19, Ronnie leads 6-3 after the first session, I understand coverage will recommence at 18:00 BST on Pluto TV.**\n\nPluto TV has patchy and inconsistent coverage but is available in much of the Americas, parts of Europe...",
-      "score": 34
+      "channel": "reddit-snooker-top?t=year",
+      "timestamp": "2026-01-23",
+      "quote": "It's 20 years since gambling ads were made legal and I still find it weird when I see them. Imo gambling ads should be banned across the board.",
+      "score": 10
     },
     {
       "pains": [
         "ads"
       ],
-      "channel": "reddit-snooker-new",
-      "timestamp": "2026-05-17",
-      "quote": "...e why but this hasn't been widely publicised: if you didn't know about it, the final of the Global 900 is being played today, between Ronnie O'Sullivan and Luca Brecel.\n\n**It's a best of 19, Ronnie leads 6-3 after the first session, I understand coverage will recommence at 18:00 BST on Pluto TV.**\n\nPluto TV has patchy and inconsistent coverage but is available in much of the Americas, parts of Europe...",
-      "score": 33
+      "channel": "reddit-snooker-top?t=year",
+      "timestamp": "2026-01-23",
+      "quote": "Was about to say that. Not just snooker but gambling ads and sports go hand in hand. Just like the ban on tobacco previously it would make sense to remove that link, though not sure if that actually reduced the number of smokers, I'm sure someone will post...",
+      "score": 4
     },
     {
       "pains": [
-        "ads"
+        "laggy"
+      ],
+      "channel": "reddit-billiards-hot",
+      "timestamp": "2026-06-02",
+      "quote": "The FargoRate guys have directly said that the rating is laggy for both of them and that they have been performing 30 pts above their official rating",
+      "score": 2
+    },
+    {
+      "pains": [
+        "no support"
       ],
       "channel": "reddit-snooker-hot",
-      "timestamp": "2026-05-17",
-      "quote": "...e why but this hasn't been widely publicised: if you didn't know about it, the final of the Global 900 is being played today, between Ronnie O'Sullivan and Luca Brecel.\n\n**It's a best of 19, Ronnie leads 6-3 after the first session, I understand coverage will recommence at 18:00 BST on Pluto TV.**\n\nPluto TV has patchy and inconsistent coverage but is available in much of the Americas, parts of Europe...",
-      "score": 32
+      "timestamp": "2026-05-21",
+      "quote": "IOC recognition of cue sports and Olympic status are separate things. Funding also differs greatly from country to country, with some countries providing little or no support outside Olympic sports, while others provide support for IOC-recognized non-Olympic sports as well.\n    \n      In Canada, we barely provide meaningful support for most sports outside the major Olympi...",
+      "score": 2
     },
     {
       "pains": [
         "ads"
       ],
-      "channel": "reddit-billiards-new",
-      "timestamp": "2026-05-27",
-      "quote": "It's not that they tried, they succeeded. Then the messages were leaked and they were exposed so they tried to do an \"apology\" tour. But knowing the pool word and how fast word spreads I'm guessing their action is dead now.",
-      "score": 25
+      "channel": "reddit-snooker-top?t=month",
+      "timestamp": "2026-05-14",
+      "quote": "I'm not so bothered about those, as they don't interrupt the frames, and I just mute the ads.",
+      "score": 2
+    },
+    {
+      "pains": [
+        "ads"
+      ],
+      "channel": "reddit-snooker-new",
+      "timestamp": "2026-05-14",
+      "quote": "I'm not so bothered about those, as they don't interrupt the frames, and I just mute the ads.",
+      "score": 2
+    },
+    {
+      "pains": [
+        "ads"
+      ],
+      "channel": "reddit-snooker-top?t=year",
+      "timestamp": "2026-01-24",
+      "quote": "If they can ban advertising for fatty or sugary foods. It’s terrible the amount of constant gambling ads on tv, and radio. I’m constantly having to explain to my kids it’s not a fun game ap that’s been advertised it’s trying to take your money and you won’t win against them in the long run.",
+      "score": 2
+    },
+    {
+      "pains": [
+        "ads"
+      ],
+      "channel": "reddit-snooker-top?t=year",
+      "timestamp": "2026-01-23",
+      "quote": "...ages gone in 2 minutes. Sitting on your phone in bed, watching tv etc, and gone in a moment. Really should be banned from advertising in sport. A few sports podcasts I listen to don't do any gambling ads and have cut out anyone talking about betting. While only small, at least it doesn't normalise it any more.",
+      "score": 2
+    },
+    {
+      "pains": [
+        "ads"
+      ],
+      "channel": "reddit-snooker-top?t=month",
+      "timestamp": "2026-05-14",
+      "quote": "Channel 5 has ruined snooker for me...it's all about the ads.",
+      "score": 1
     }
   ],
   "sentiment_indicators": {
-    "positive": 1259,
-    "negative": 209,
-    "neutral": 8364
+    "positive": 1804,
+    "negative": 288,
+    "neutral": 11723
   }
 }

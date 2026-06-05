@@ -1,47 +1,46 @@
 # Community Sentiment & Classification Analysis
 
-*Generated from 33697 Discord messages + 14146 Reddit messages (DB) + 1997 Reddit posts (JSON)*
-*Deduplicated: 26785 unique messages (6912 cross-post duplicates removed)*
-*Date range: 2025-04-17 → 2026-05-07*
+*Generated from 37680 Discord messages + 18129 Reddit messages (DB) + 2197 Reddit posts (JSON)*
+*Deduplicated: 30079 unique messages (7601 cross-post duplicates removed)*
+*Date range: 2025-04-17 → 2026-05-04*
 
 
 ## Platform Overview
 | Platform | Messages |
 |----------|----------|
-| Discord | 33697 |
-| Reddit | 16143 |
-| **Total (raw)** | **49840** |
-| **Total (deduped)** | **26785** |
+| Discord | 37680 |
+| Reddit | 20326 |
+| **Total (raw)** | **58006** |
+| **Total (deduped)** | **30079** |
 
 
 ## Weekly Sentiment Trends (Last 8 Weeks)
 
 | Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% |
 |------|-------|------|------|------|--------------|--------------|-------------|-------------|
-| 2026-W15 | 807 | 13.9% | 8.4% | 77.7% | 13.6% | 8.4% | 23.8% | 9.5% |
-| 2026-W16 | 1075 | 9.5% | 3.9% | 86.6% | 9.4% | 3.9% | 13.3% | 6.7% |
-| 2026-W17 | 1022 | 9.9% | 1.5% | 88.6% | 9.7% | 1.4% | 23.5% | 5.9% |
-| 2026-W18 | 1550 | 17.0% | 3.2% | 79.8% | 10.7% | 3.5% | 20.7% | 3.0% |
-| 2026-W19 | 2132 | 12.9% | 3.9% | 83.2% | 9.5% | 6.0% | 14.9% | 2.7% |
-| 2026-W20 | 1802 | 15.4% | 3.7% | 81.0% | 11.5% | 4.7% | 18.3% | 2.9% |
-| 2026-W21 | 2003 | 12.3% | 2.5% | 85.1% | 13.3% | 3.0% | 11.8% | 2.3% |
-| 2026-W22 | 2285 | 16.9% | 5.0% | 78.1% | 9.0% | 7.7% | 20.3% | 3.9% |
+| 2026-W15 | 906 | 13.4% | 7.8% | 78.8% | 13.6% | 8.4% | 11.7% | 4.2% |
+| 2026-W16 | 1090 | 9.6% | 3.9% | 86.5% | 9.4% | 3.9% | 16.7% | 3.3% |
+| 2026-W17 | 1217 | 11.2% | 1.7% | 87.1% | 9.7% | 1.4% | 18.4% | 3.3% |
+| 2026-W18 | 2008 | 15.9% | 2.9% | 81.1% | 10.7% | 3.5% | 18.0% | 2.7% |
+| 2026-W19 | 2132 | 12.9% | 3.9% | 83.1% | 9.5% | 6.0% | 14.9% | 2.7% |
+| 2026-W20 | 1799 | 15.4% | 3.7% | 80.9% | 11.5% | 4.7% | 18.3% | 2.9% |
+| 2026-W21 | 2004 | 12.3% | 2.5% | 85.1% | 13.3% | 3.0% | 11.8% | 2.3% |
+| 2026-W22 | 2281 | 16.9% | 5.0% | 78.1% | 9.0% | 7.7% | 20.3% | 3.9% |
 
 
 ## 🚨 Anomaly Alerts (2σ Detection)
 
 | Week | Platform | Metric | Value | Expected | Z-Score | Severity |
 |------|----------|--------|-------|----------|---------|----------|
-| 2026-W18 | Overall | Overall Pos Pct | 17.0% | 11.1% | 2.42 | 🟡 MEDIUM ↑ spike |
-| 2026-W18 | Reddit | Reddit Neg Pct | 3.0% | 7.4% | 2.31 | 🟡 MEDIUM ↓ drop |
+| 2026-W18 | Overall | Overall Pos Pct | 15.9% | 11.4% | 2.36 | 🟡 MEDIUM ↑ spike |
 
 
 ## Executive Summary
 
-**Overall Sentiment Ratio: 3.16** (positive:negative)
-- 15.8% positive (5308 messages)
-- 5.0% negative (1681 messages)
-- 79.3% neutral (26708 messages)
+**Overall Sentiment Ratio: 3.37** (positive:negative)
+- 15.7% positive (5920 messages)
+- 4.7% negative (1757 messages)
+- 79.6% neutral (30003 messages)
 
 **Community feel: strongly positive — members are enthusiastic and supportive**
 
@@ -50,7 +49,7 @@
 
 | Priority | Issue | Evidence | Recommended Action | Owner |
 |----------|-------|----------|-------------------|-------|
-| 🔴 HIGH | 'fix' pain point | 42.1% negative sentiment, net -30% | Dedicate dev resources; communicate fix timeline | Dev Lead |
+| 🔴 HIGH | 'fix' pain point | 41.9% negative sentiment, net -29% | Dedicate dev resources; communicate fix timeline | Dev Lead |
 
 
 ## Sentiment by Channel
@@ -82,14 +81,16 @@
 | reddit-snooker-hot | 1440 | 220 | 41 | 1179 | 15.3% | 2.8% |
 | reddit-billiards-top?t=month | 2002 | 325 | 47 | 1630 | 16.2% | 2.3% |
 | reddit-snooker-top?t=month | 1786 | 300 | 55 | 1431 | 16.8% | 3.1% |
+| reddit-billiards-top?t=year | 2009 | 353 | 31 | 1625 | 17.6% | 1.5% |
+| reddit-snooker-top?t=year | 1974 | 259 | 45 | 1670 | 13.1% | 2.3% |
 
 
 ## Cross-Platform Comparison: Discord vs Reddit
 
 | Platform | Positive | Negative | Neutral |
 |----------|----------|----------|---------|
-| Discord | 15.8% | 5.0% | 79.3% |
-| Reddit | 20.6% | 5.4% | 74.0% |
+| Discord | 15.7% | 4.7% | 79.6% |
+| Reddit | 19.5% | 4.7% | 75.8% |
 
 > Sentiment is broadly similar across platforms.
 
@@ -100,13 +101,13 @@ Message purpose classification:
 
 | Purpose | Count | % |
 |---------|-------|---|
-| general | 18235 | 54.1% |
-| feedback | 4187 | 12.4% |
-| competition | 3412 | 10.1% |
-| showcase | 2883 | 8.6% |
-| support | 2744 | 8.1% |
-| social | 2099 | 6.2% |
-| off_topic | 137 | 0.4% |
+| general | 20694 | 54.9% |
+| feedback | 4504 | 12.0% |
+| competition | 3883 | 10.3% |
+| showcase | 3274 | 8.7% |
+| support | 2961 | 7.9% |
+| social | 2209 | 5.9% |
+| off_topic | 155 | 0.4% |
 
 ### Purpose by Channel
 - **chat-pure-pool-pro**: general (6903), feedback (1395), showcase (1095)
@@ -134,6 +135,8 @@ Message purpose classification:
 - **reddit-snooker-hot**: general (855), competition (189), showcase (141)
 - **reddit-billiards-top?t=month**: general (1092), competition (229), showcase (221)
 - **reddit-snooker-top?t=month**: general (971), competition (329), showcase (164)
+- **reddit-billiards-top?t=year**: general (1316), showcase (227), feedback (143)
+- **reddit-snooker-top?t=year**: general (1143), competition (333), feedback (174)
 
 
 ## Community Identity: Power Words
@@ -142,36 +145,36 @@ Most frequently used community-specific terms:
 
 | Word/Phrase | Mentions |
 |-------------|----------|
-| pool | 4143 |
-| table | 2442 |
-| cue | 2003 |
-| snooker | 1845 |
+| pool | 4393 |
+| table | 2800 |
+| cue | 2214 |
+| snooker | 2154 |
 | pure pool | 1566 |
 | ripstone | 1067 |
-| rest | 805 |
-| pocket | 699 |
-| control | 656 |
-| tip | 626 |
-| cue ball | 603 |
-| focus | 528 |
-| rail | 488 |
-| power | 479 |
-| improve | 465 |
-| 8 ball | 455 |
-| skill | 405 |
-| 9 ball | 376 |
-| position | 375 |
-| practice | 353 |
-| follow | 314 |
-| angle | 307 |
-| jump | 300 |
-| spin | 290 |
-| english | 280 |
-| speed | 269 |
-| bank | 259 |
-| felt | 245 |
-| pockets | 241 |
-| trick | 236 |
+| rest | 896 |
+| pocket | 879 |
+| cue ball | 684 |
+| control | 682 |
+| tip | 679 |
+| rail | 559 |
+| focus | 545 |
+| power | 488 |
+| 8 ball | 487 |
+| improve | 478 |
+| skill | 432 |
+| position | 418 |
+| 9 ball | 399 |
+| practice | 391 |
+| follow | 345 |
+| english | 336 |
+| angle | 333 |
+| spin | 332 |
+| jump | 324 |
+| pockets | 309 |
+| felt | 306 |
+| speed | 289 |
+| bank | 286 |
+| trick | 269 |
 
 
 ## Topic-Level Sentiment
@@ -180,26 +183,26 @@ What drives positivity vs negativity:
 
 | Topic | Mentions | Pos% | Neg% | Net Sentiment |
 |-------|----------|------|------|---------------|
-| shot | 2633 | 28.6% | 8.6% | 🟢 +20 |
-| add | 1453 | 24.4% | 18.3% | 🟡 +6 |
-| dev | 1102 | 33.3% | 14.2% | 🟢 +19 |
-| online | 991 | 25.1% | 11.5% | 🟢 +14 |
-| issue | 964 | 13.9% | 39.7% | 🔴 -26 |
+| shot | 2907 | 28.1% | 8.0% | 🟢 +20 |
+| add | 1531 | 23.8% | 18.0% | 🟡 +6 |
+| dev | 1130 | 33.0% | 14.1% | 🟢 +19 |
+| online | 999 | 25.1% | 11.4% | 🟢 +14 |
+| issue | 992 | 14.1% | 39.2% | 🔴 -25 |
 | ps5 | 950 | 18.2% | 11.4% | 🟡 +7 |
-| patch | 784 | 18.2% | 33.9% | 🔴 -16 |
-| bug | 673 | 9.8% | 36.4% | 🔴 -27 |
-| fix | 667 | 12.4% | 42.1% | 🔴 -30 |
-| steam | 659 | 20.5% | 18.7% | 🟡 +2 |
-| update | 654 | 20.2% | 41.3% | 🔴 -21 |
+| patch | 786 | 18.3% | 33.8% | 🔴 -16 |
+| fix | 675 | 12.7% | 41.9% | 🔴 -29 |
+| bug | 674 | 9.8% | 36.4% | 🔴 -27 |
+| steam | 662 | 20.5% | 18.6% | 🟡 +2 |
+| update | 662 | 20.2% | 40.9% | 🔴 -21 |
 | launch | 649 | 27.7% | 13.9% | 🟢 +14 |
-| release | 643 | 19.4% | 8.7% | 🟢 +11 |
-| tournament | 515 | 31.1% | 2.1% | 🟢 +29 |
-| problem | 494 | 13.8% | 35.4% | 🔴 -22 |
+| release | 645 | 19.7% | 8.7% | 🟢 +11 |
+| tournament | 625 | 31.0% | 2.2% | 🟢 +29 |
+| problem | 525 | 14.1% | 34.9% | 🔴 -21 |
 | xbox | 492 | 20.7% | 10.4% | 🟢 +10 |
-| suggestion | 490 | 39.4% | 5.5% | 🟢 +34 |
-| wish | 417 | 29.5% | 9.8% | 🟢 +20 |
-| feature | 387 | 23.5% | 27.6% | 🟡 -4 |
-| version | 354 | 35.6% | 11.9% | 🟢 +24 |
+| suggestion | 492 | 39.4% | 5.7% | 🟢 +34 |
+| wish | 436 | 29.8% | 9.6% | 🟢 +20 |
+| feature | 388 | 23.5% | 27.6% | 🟡 -4 |
+| version | 360 | 35.6% | 11.9% | 🟢 +24 |
 
 
 ## Top Negative Messages
@@ -279,6 +282,11 @@ i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original an
 > **Popular_Speed5838** (reddit-billiards-new, 2026-06-03) [+14]
 > Agreed, OP achieved their goal of having a Dojo look that functions perfectly as pool room. Everything is to theme, even the Rolex panda on the wall fits for some reason, although I’d have probably go
 
+> **CreeDorofl** (reddit-billiards-top?t=year, 2025-11-17) [+14]
+> Yup. Efren's got so many ingredients that make it easy for people to accept him as GOAT over other players they might like more. I don't mind calling him that even though I am more of an SVB fan.
+
+• H
+
 > **JAMBO--C** (chat-pure-pool-pro, 2026-02-17) [+13]
 > @Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. 
 
@@ -290,9 +298,9 @@ The reasons for that are….
 
 
 ## Engagement Metrics
-- Total reactions: 96201
-- Avg reactions/message: 2.85
-- Reply rate: 94.0% (31675 replies)
+- Total reactions: 196028
+- Avg reactions/message: 5.2
+- Reply rate: 94.1% (35458 replies)
 - Active users (5+ msgs): 20
 
 ### Top Contributors
@@ -320,11 +328,11 @@ The reasons for that are….
 
 ### What the community wants: general
 ### What's working: physics (net sentiment: +63%)
-### What's broken: fix (net sentiment: -30%)
+### What's broken: fix (net sentiment: -29%)
 
 ### Identified Gaps
-- **Competition interest (10.1%)**: Tournament/league demand exists. Formal competition structure needed.
-- **'fix' is a pain point**: 42.1% negative sentiment. Needs immediate attention.
+- **Competition interest (10.3%)**: Tournament/league demand exists. Formal competition structure needed.
+- **'fix' is a pain point**: 41.9% negative sentiment. Needs immediate attention.
 - **Bug frustration high**: Bug-related messages are 36.4% negative. Communication about fixes needed.
 
 ### Recommendations

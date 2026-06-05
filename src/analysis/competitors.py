@@ -16,7 +16,7 @@ from collections import Counter, defaultdict
 DB_PATH = Path("/Users/mathias/Development/community-radar/data/community_radar.db")
 OUTPUT_PATH = Path("/Users/mathias/Development/community-radar/docs/competitor-opportunities.md")
 
-# Brand & product names to track
+# Brand & product names to track (multi-word phrases first to avoid false matches)
 BRAND_KEYWORDS = {
     "pure_pool": ["pure pool", "purepoolpro", "ripstone"],
     "competitor_games": [
@@ -25,26 +25,28 @@ BRAND_KEYWORDS = {
         "carom 3d", "vr pool", "pool vr", "killer pool", "archona", "snooker club",
     ],
     "cue_sports_general": [
-        "billiards", "pool", "snooker", "8 ball", "9 ball", "10 ball", "carom",
+        "billiards", "snooker", "8 ball", "9 ball", "10 ball", "carom",
         "straight pool", "one pocket", "bank pool", "trick shot", "trickshot",
     ],
     "game_features": [
-        "physics", "realistic", "simulation", "tutorial", "training", "practice mode",
-        "online multiplayer", "tournament", "ranked", "matchmaking", "replay", "stats",
+        "physics", "realistic", "simulation", "tutorial", "training mode", "practice mode",
+        "online multiplayer", "ranked", "matchmaking", "replay system", "match replay",
     ],
     "pain_points": [
-        "pay to win", "microtransactions", "ads", "laggy", "dead game", "abandoned",
-        "no updates", "no support", "cheaters", "hackers", "toxic", "sweaty",
+        "pay to win", "microtransactions", "ads", "laggy", "abandoned",
+        "no updates", "no support", "cheaters", "hackers", "toxic community",
     ],
 }
 
 
 def search_keywords(text, keywords):
-    """Return list of keywords found in text"""
+    """Return list of keywords found in text (with word boundary check)"""
     text_lower = text.lower()
     found = []
     for kw in keywords:
-        if kw.lower() in text_lower:
+        # Use word boundaries to avoid false positives (e.g., "ads" in "pads")
+        pattern = r'\b' + re.escape(kw.lower()) + r'\b'
+        if re.search(pattern, text_lower):
             found.append(kw)
     return found
 
@@ -118,7 +120,6 @@ def run_analysis():
                     "score": msg["reactions"] or 0,
                     "quote": extract_quote(content, hit),
                 })
-
         # Track competitor mentions
         elif classification == "competitor_mention":
             for hit in hits:
@@ -165,6 +166,17 @@ def run_analysis():
     db.close()
 
     # Generate report
+    # Deduplicate Pure Pool mentions by quote hash
+    seen_quotes = set()
+    deduped_pp_mentions = []
+    for m in sorted(pure_pool_mentions, key=lambda x: -x["score"]):
+        quote_hash = hash(m["quote"][:100])
+        if quote_hash in seen_quotes:
+            continue
+        seen_quotes.add(quote_hash)
+        deduped_pp_mentions.append(m)
+    pure_pool_mentions = deduped_pp_mentions[:25]
+
     report = {
         "meta": {
             "total_messages_scanned": len(messages),
@@ -174,7 +186,7 @@ def run_analysis():
             "feature_requests": len(feature_requests),
             "pain_points_flagged": len(pain_points),
         },
-        "pure_pool_mentions": sorted(pure_pool_mentions, key=lambda x: -x["score"])[:25],
+        "pure_pool_mentions": pure_pool_mentions,
         "competitor_mentions": {
             comp: sorted(items, key=lambda x: -x["score"])[:5]
             for comp, items in sorted(competitor_mentions.items(), key=lambda x: -len(x[1]))[:10]
@@ -306,10 +318,9 @@ def generate_markdown(r):
     lines.append(f"\n### Immediate (this week)")
     if a["pure_pool_mentions"]:
         lines.append(f"- **Engage with {len(a['pure_pool_mentions'])} Pure Pool mentions** — these are warm leads. Drop a helpful comment, link to relevant content.")
-    if m["competitor_mentions"] > 0:
-        top_competitor = max(a["competitor_mentions"].items(), key=lambda x: len(x[1]))[0] if a["competitor_mentions"] else None
-        if top_competitor:
-            lines.append(f"- **Monitor r/{top_competitor[0].replace('_', ' ')} mentions** — most-mentioned competitor. Consider what they're doing right/wrong.")
+    if a["competitor_mentions"]:
+        top_competitor_name, top_competitor_items = max(a["competitor_mentions"].items(), key=lambda x: len(x[1]))
+        lines.append(f"- **Monitor '{top_competitor_name.title()}' mentions** ({len(top_competitor_items)} posts) — most-mentioned competitor. Consider what they're doing right/wrong.")
 
     lines.append(f"\n### Short-term (this month)")
     if a["feature_requests"]:

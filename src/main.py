@@ -149,6 +149,18 @@ def config():
     print(yaml.dump(cfg, default_flow_style=False, sort_keys=False))
 
 
+def analyze():
+    """Run sentiment + community analysis"""
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "src" / "analysis" / "sentiment.py")],
+        cwd=str(ROOT)
+    )
+    if result.returncode == 0:
+        print("\nReport saved to docs/community-sentiment-report.md")
+        print("JSON data saved to docs/community-sentiment-analysis.json")
+
+
 def help_cmd():
     print("""CommunityRadar — Community Intelligence Tool
 
@@ -160,6 +172,7 @@ Commands:
   search     Search message content (usage: search <term>)
   topics     Show top topics from message analysis
   xref       Show cross-platform user matches
+  analyze    Run sentiment + community analysis
   config     Show current configuration
   report     Generate HTML report
   dashboard  Launch web dashboard
@@ -181,6 +194,7 @@ def cli():
         "topics": topics,
         "xref": xref,
         "config": config,
+        "analyze": analyze,
         "report": report,
         "dashboard": dashboard,
         "help": help_cmd,

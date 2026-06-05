@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CommunityRadar Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { border-bottom: 1px solid #30363d; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { font-size: 1.8rem; font-weight: 600; }
+        .subtitle { color: #8b949e; margin-top: 4px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+        .stat-label { font-size: 0.85rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 2rem; font-weight: 600; margin-top: 4px; }
+        .stat-positive { color: #3fb950; }
+        .stat-negative { color: #f85149; }
+        .stat-neutral { color: #8b949e; }
+
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 24px; margin-bottom: 30px; }
+        .chart-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+        .chart-title { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #e6edf3; }
+        .chart-wrapper { position: relative; height: 300px; }
+
+        .tables-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; }
+        .table-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+        .table-header { padding: 16px 20px; border-bottom: 1px solid #30363d; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 20px; text-align: left; border-bottom: 1px solid #21262d; font-size: 0.85rem; }
+        th { color: #8b949e; font-weight: 500; }
+        tr:hover { background: #1f2428; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+        .badge-positive { background: #1f3d25; color: #3fb950; }
+        .badge-negative { background: #4d1a1a; color: #f85149; }
+        .badge-neutral { background: #2d2d2d; color: #8b949e; }
+
+        .loading { text-align: center; padding: 40px; color: #8b949e; }
+        .platform-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin-right: 8px; }
+        .platform-discord { background: #5865f2; color: white; }
+        .platform-reddit { background: #ff4500; color: white; }
+
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .tables-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CommunityRadar Dashboard</h1>
+            <p class="subtitle">Cross-platform community intelligence: Discord + Reddit sentiment & engagement</p>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-label">Total Messages</div>
+                <div class="stat-value" id="statTotal">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Discord</div>
+                <div class="stat-value" id="statDiscord">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Reddit</div>
+                <div class="stat-value" id="statReddit">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Channels</div>
+                <div class="stat-value" id="statChannels">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Users</div>
+                <div class="stat-value" id="statUsers">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sentiment Ratio</div>
+                <div class="stat-value" id="statRatio">—</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">Sentiment Over Time (Daily)</div>
+                <div class="chart-wrapper">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Message Volume by Platform</div>
+                <div class="chart-wrapper">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables -->
+        <div class="tables-section">
+            <div class="table-card">
+                <div class="table-header">Top Topics by Sentiment</div>
+                <table id="topicsTable">
+                    <thead><tr><th>Topic</th><th>Mentions</th><th>Pos%</th><th>Neg%</th><th>Net</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Channel Sentiment Breakdown</div>
+                <table id="channelsTable">
+                    <thead><tr><th>Channel</th><th>Platform</th><th>Messages</th><th>Pos%</th><th>Neg%</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Power Words (Community Identity)</div>
+                <table id="powerWordsTable">
+                    <thead><tr><th>Term</th><th>Mentions</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="table-card">
+                <div class="table-header">Top Contributors</div>
+                <table id="contributorsTable">
+                    <thead><tr><th>User</th><th>Messages</th><th>Reactions</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sentimentChart = null, volumeChart = null;
+
+        async function loadOverview() {
+            const res = await fetch('/api/overview');
+            const data = await res.json();
+
+            document.getElementById('statTotal').textContent =
+                (data.platforms.discord || 0) + (data.platforms.reddit || 0);
+            document.getElementById('statDiscord').textContent = data.platforms.discord || 0;
+            document.getElementById('statReddit').textContent = data.platforms.reddit || 0;
+            document.getElementById('statChannels').textContent = data.channels || 0;
+            document.getElementById('statUsers').textContent = data.users || 0;
+
+            const ratio = data.report_meta?.sentiment_ratio || 0;
+            document.getElementById('statRatio').textContent = ratio.toFixed(2);
+        }
+
+        async function loadSentimentTimeseries() {
+            const res = await fetch('/api/sentiment/timeseries');
+            const data = await res.json();
+
+            // Build datasets for Chart.js
+            const platforms = Object.keys(data.series);
+            const allDays = new Set();
+            platforms.forEach(p => Object.keys(data.series[p]).forEach(d => allDays.add(d)));
+            const sortedDays = Array.from(allDays).sort();
+
+            const datasets = platforms.map((platform, i) => {
+                const colors = platform === 'discord' ?
+                    { pos: 'rgba(88, 101, 242, 0.8)', neg: 'rgba(248, 81, 73, 0.8)', neu: 'rgba(139, 148, 158, 0.4)' } :
+                    { pos: 'rgba(255, 69, 0, 0.8)', neg: 'rgba(248, 81, 73, 0.8)', neu: 'rgba(139, 148, 158, 0.4)' };
+
+                return [
+                    { label: `${platform} Positive`, data: sortedDays.map(d => data.series[platform][d]?.positive || 0), borderColor: colors.pos, backgroundColor: colors.pos, fill: false, tension: 0.2 },
+                    { label: `${platform} Negative`, data: sortedDays.map(d => data.series[platform][d]?.negative || 0), borderColor: colors.neg, backgroundColor: colors.neg, fill: false, tension: 0.2 },
+                    { label: `${platform} Neutral`, data: sortedDays.map(d => data.series[platform][d]?.neutral || 0), borderColor: colors.neu, backgroundColor: colors.neu, fill: false, tension: 0.2 }
+                ];
+            }).flat();
+
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            if (sentimentChart) sentimentChart.destroy();
+            sentimentChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: sortedDays, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#c9d1d9', font: { size: 10 } } } },
+                    scales: {
+                        x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e', maxTicksLimit: 10 } },
+                        y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        async function loadVolumeChart() {
+            const res = await fetch('/api/sentiment/timeseries');
+            const data = await res.json();
+
+            const platforms = Object.keys(data.series);
+            const allDays = new Set();
+            platforms.forEach(p => Object.keys(data.series[p]).forEach(d => allDays.add(d)));
+            const sortedDays = Array.from(allDays).sort();
+
+            const datasets = platforms.map(platform => {
+                const color = platform === 'discord' ? 'rgba(88, 101, 242, 0.8)' : 'rgba(255, 69, 0, 0.8)';
+                return {
+                    label: platform.charAt(0).toUpperCase() + platform.slice(1),
+                    data: sortedDays.map(d => data.series[platform][d]?.total || 0),
+                    backgroundColor: color, borderColor: color, fill: false, tension: 0.2
+                };
+            });
+
+            const ctx = document.getElementById('volumeChart').getContext('2d');
+            if (volumeChart) volumeChart.destroy();
+            volumeChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: sortedDays, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#c9d1d9' } } },
+                    scales: {
+                        x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e', maxTicksLimit: 10 } },
+                        y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        async function loadTopics() {
+            const res = await fetch('/api/topics');
+            const data = await res.json();
+            const tbody = document.querySelector('#topicsTable tbody');
+            tbody.innerHTML = Object.entries(data)
+                .slice(0, 20)
+                .map(([topic, d]) => {
+                    const net = d.net_sentiment;
+                    const cls = net > 10 ? 'badge-positive' : (net < -10 ? 'badge-negative' : 'badge-neutral');
+                    return `<tr>
+                        <td>${topic}</td>
+                        <td>${d.total}</td>
+                        <td>${d.pos_pct}%</td>
+                        <td>${d.neg_pct}%</td>
+                        <td><span class="badge ${cls}">${net > 0 ? '+' : ''}${net}</span></td>
+                    </tr>`;
+                }).join('');
+        }
+
+        async function loadChannels() {
+            const res = await fetch('/api/sentiment/by_channel');
+            const data = await res.json();
+            const tbody = document.querySelector('#channelsTable tbody');
+            tbody.innerHTML = Object.entries(data)
+                .sort((a, b) => b[1].total - a[1].total)
+                .map(([ch, d]) => {
+                    const platform = ch.startsWith('reddit') ? 'reddit' : 'discord';
+                    return `<tr>
+                        <td>${ch}</td>
+                        <td><span class="platform-badge platform-${platform}">${platform}</span></td>
+                        <td>${d.total}</td>
+                        <td>${d.pos_pct}%</td>
+                        <td>${d.neg_pct}%</td>
+                    </tr>`;
+                }).join('');
+        }
+
+        async function loadPowerWords() {
+            const res = await fetch('/api/power_words');
+            const data = await res.json();
+            const tbody = document.querySelector('#powerWordsTable tbody');
+            tbody.innerHTML = Object.entries(data)
+                .slice(0, 20)
+                .map(([word, count]) => `<tr><td>${word}</td><td>${count}</td></tr>`).join('');
+        }
+
+        async function loadContributors() {
+            const res = await fetch('/api/contributors');
+            const data = await res.json();
+            const tbody = document.querySelector('#contributorsTable tbody');
+            tbody.innerHTML = data.map(u => `<tr><td>${u.name}</td><td>${u.messages}</td><td>${u.reactions_received}</td></tr>`).join('');
+        }
+
+        async function init() {
+            await Promise.all([
+                loadOverview(),
+                loadSentimentTimeseries(),
+                loadVolumeChart(),
+                loadTopics(),
+                loadChannels(),
+                loadPowerWords(),
+                loadContributors()
+            ]);
+        }
+
+        init();
+    </script>
+</body>
+</html>

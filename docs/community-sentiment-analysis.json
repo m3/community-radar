@@ -1,10 +1,10 @@
 {
   "meta": {
-    "total_messages_analyzed": 15842,
-    "channels": 11,
+    "total_messages_analyzed": 23865,
+    "channels": 19,
     "date_range": {
       "from": "2025-04-17",
-      "to": "2026-02-23"
+      "to": "2026-06-05"
     },
     "reddit_posts_analyzed": 5511,
     "reddit_messages_in_db": 4314,
@@ -13,65 +13,65 @@
   "sentiment": {
     "overall": {
       "positive": {
-        "count": 2670,
-        "pct": 16.9
+        "count": 3618,
+        "pct": 15.2
       },
       "negative": {
-        "count": 1046,
-        "pct": 6.6
+        "count": 1403,
+        "pct": 5.9
       },
       "neutral": {
-        "count": 12126,
-        "pct": 76.5
+        "count": 18844,
+        "pct": 79.0
       },
-      "sentiment_ratio": 2.55
+      "sentiment_ratio": 2.58
     },
     "by_channel": {
       "chat-pure-pool-pro": {
-        "positive": 998,
-        "negative": 444,
-        "neutral": 6646,
-        "total": 8088,
+        "positive": 1497,
+        "negative": 666,
+        "neutral": 9969,
+        "total": 12132,
         "pos_pct": 12.3,
         "neg_pct": 5.5
       },
       "questions-and-suggestions-pure-pool-pro": {
-        "positive": 394,
-        "negative": 160,
-        "neutral": 1678,
-        "total": 2232,
+        "positive": 591,
+        "negative": 240,
+        "neutral": 2517,
+        "total": 3348,
         "pos_pct": 17.7,
         "neg_pct": 7.2
       },
       "find-a-game-pure-pool-pro": {
-        "positive": 98,
-        "negative": 30,
-        "neutral": 568,
-        "total": 696,
+        "positive": 147,
+        "negative": 45,
+        "neutral": 852,
+        "total": 1044,
         "pos_pct": 14.1,
         "neg_pct": 4.3
       },
       "play-of-the-month-submissions": {
-        "positive": 4,
+        "positive": 6,
         "negative": 0,
-        "neutral": 42,
-        "total": 46,
+        "neutral": 63,
+        "total": 69,
         "pos_pct": 8.7,
         "neg_pct": 0.0
       },
       "pool-and-snooker-talk": {
-        "positive": 40,
-        "negative": 2,
-        "neutral": 372,
-        "total": 414,
+        "positive": 60,
+        "negative": 3,
+        "neutral": 558,
+        "total": 621,
         "pos_pct": 9.7,
         "neg_pct": 0.5
       },
       "announcements-ripstone": {
-        "positive": 9,
-        "negative": 2,
-        "neutral": 41,
-        "total": 52,
+        "positive": 18,
+        "negative": 4,
+        "neutral": 82,
+        "total": 104,
         "pos_pct": 17.3,
         "neg_pct": 3.8
       },
@@ -114,6 +114,70 @@
         "total": 285,
         "pos_pct": 21.8,
         "neg_pct": 13.3
+      },
+      "💬・pro-talk-general": {
+        "positive": 30,
+        "negative": 16,
+        "neutral": 681,
+        "total": 727,
+        "pos_pct": 4.1,
+        "neg_pct": 2.2
+      },
+      "💬・general": {
+        "positive": 9,
+        "negative": 4,
+        "neutral": 187,
+        "total": 200,
+        "pos_pct": 4.5,
+        "neg_pct": 2.0
+      },
+      "🎱・pool-talk": {
+        "positive": 6,
+        "negative": 0,
+        "neutral": 29,
+        "total": 35,
+        "pos_pct": 17.1,
+        "neg_pct": 0.0
+      },
+      "👀・looking-for-a-game": {
+        "positive": 4,
+        "negative": 0,
+        "neutral": 90,
+        "total": 94,
+        "pos_pct": 4.3,
+        "neg_pct": 0.0
+      },
+      "tetradome-season-2-⚔️": {
+        "positive": 62,
+        "negative": 5,
+        "neutral": 509,
+        "total": 576,
+        "pos_pct": 10.8,
+        "neg_pct": 0.9
+      },
+      "rackhaus-season-2🛡️": {
+        "positive": 11,
+        "negative": 2,
+        "neutral": 130,
+        "total": 143,
+        "pos_pct": 7.7,
+        "neg_pct": 1.4
+      },
+      "🎱8ball-focused-s2": {
+        "positive": 50,
+        "negative": 10,
+        "neutral": 367,
+        "total": 427,
+        "pos_pct": 11.7,
+        "neg_pct": 2.3
+      },
+      "💚pro-killer-tournament": {
+        "positive": 0,
+        "negative": 0,
+        "neutral": 31,
+        "total": 31,
+        "pos_pct": 0.0,
+        "neg_pct": 0.0
       }
     },
     "reddit_comparison": {
@@ -154,64 +218,64 @@
   "purpose": {
     "distribution": {
       "general": {
-        "count": 7991,
-        "pct": 50.4
+        "count": 12952,
+        "pct": 54.3
       },
       "feedback": {
-        "count": 2485,
-        "pct": 15.7
+        "count": 3309,
+        "pct": 13.9
       },
       "showcase": {
-        "count": 1427,
-        "pct": 9.0
-      },
-      "support": {
-        "count": 1364,
-        "pct": 8.6
+        "count": 1972,
+        "pct": 8.3
       },
       "competition": {
-        "count": 1263,
+        "count": 1934,
+        "pct": 8.1
+      },
+      "support": {
+        "count": 1918,
         "pct": 8.0
       },
       "social": {
-        "count": 1228,
-        "pct": 7.8
+        "count": 1668,
+        "pct": 7.0
       },
       "off_topic": {
-        "count": 84,
+        "count": 112,
         "pct": 0.5
       }
     },
     "by_channel": {
       "chat-pure-pool-pro": {
-        "general": 4602,
-        "feedback": 930,
-        "showcase": 730
+        "general": 6903,
+        "feedback": 1395,
+        "showcase": 1095
       },
       "questions-and-suggestions-pure-pool-pro": {
-        "general": 1018,
-        "feedback": 424,
-        "competition": 234
+        "general": 1527,
+        "feedback": 636,
+        "competition": 351
       },
       "find-a-game-pure-pool-pro": {
-        "general": 490,
-        "social": 80,
-        "competition": 58
+        "general": 735,
+        "social": 120,
+        "competition": 87
       },
       "play-of-the-month-submissions": {
-        "showcase": 32,
-        "general": 12,
-        "support": 2
+        "showcase": 48,
+        "general": 18,
+        "support": 3
       },
       "pool-and-snooker-talk": {
-        "general": 320,
-        "competition": 50,
-        "showcase": 18
+        "general": 480,
+        "competition": 75,
+        "showcase": 27
       },
       "announcements-ripstone": {
-        "feedback": 31,
-        "general": 6,
-        "showcase": 4
+        "feedback": 62,
+        "general": 12,
+        "showcase": 8
       },
       "reddit-PurePoolPro-new": {
         "general": 718,
@@ -237,231 +301,271 @@
         "feedback": 75,
         "general": 57,
         "showcase": 46
+      },
+      "💬・pro-talk-general": {
+        "general": 537,
+        "competition": 84,
+        "support": 39
+      },
+      "💬・general": {
+        "general": 154,
+        "competition": 18,
+        "showcase": 14
+      },
+      "🎱・pool-talk": {
+        "general": 29,
+        "competition": 3,
+        "showcase": 2
+      },
+      "👀・looking-for-a-game": {
+        "general": 76,
+        "competition": 8,
+        "feedback": 4
+      },
+      "tetradome-season-2-⚔️": {
+        "general": 442,
+        "competition": 78,
+        "feedback": 30
+      },
+      "rackhaus-season-2🛡️": {
+        "general": 107,
+        "competition": 13,
+        "feedback": 11
+      },
+      "🎱8ball-focused-s2": {
+        "general": 363,
+        "competition": 32,
+        "feedback": 11
+      },
+      "💚pro-killer-tournament": {
+        "general": 26,
+        "competition": 2,
+        "feedback": 2
       }
     }
   },
   "power_words": {
-    "pool": 2461,
-    "pure pool": 1274,
-    "table": 944,
-    "cue": 808,
-    "ripstone": 772,
-    "snooker": 721,
-    "control": 418,
-    "rest": 367,
-    "power": 320,
-    "improve": 305,
-    "tip": 295,
-    "focus": 294,
-    "pocket": 267,
-    "rail": 262,
-    "8 ball": 237,
-    "cue ball": 220,
-    "improvement": 164,
-    "9 ball": 163,
-    "position": 163,
-    "jump": 161,
-    "skill": 153,
-    "bank": 145,
-    "speed": 137,
-    "trick": 137,
-    "angle": 137,
-    "9-ball": 132,
-    "spin": 125,
-    "english": 125,
-    "felt": 117,
-    "follow": 108,
-    "kick": 106,
-    "practice": 106,
-    "pockets": 104,
-    "8-ball": 81,
-    "angles": 66,
-    "rails": 59,
-    "cueball": 58,
-    "trick shot": 56,
-    "bank shot": 49,
-    "consistent": 47
+    "pool": 3357,
+    "pure pool": 1566,
+    "table": 1228,
+    "cue": 1085,
+    "ripstone": 1067,
+    "snooker": 953,
+    "control": 522,
+    "rest": 507,
+    "focus": 445,
+    "power": 399,
+    "improve": 369,
+    "tip": 368,
+    "pocket": 340,
+    "8 ball": 339,
+    "rail": 331,
+    "cue ball": 290,
+    "9 ball": 228,
+    "position": 212,
+    "skill": 212,
+    "jump": 209,
+    "improvement": 191,
+    "trick": 181,
+    "speed": 179,
+    "angle": 176,
+    "bank": 172,
+    "spin": 170,
+    "english": 154,
+    "felt": 153,
+    "9-ball": 153,
+    "follow": 143,
+    "pockets": 139,
+    "kick": 139,
+    "practice": 139,
+    "8-ball": 100,
+    "cueball": 82,
+    "angles": 82,
+    "rails": 73,
+    "trick shot": 69,
+    "draw": 63,
+    "consistent": 61
   },
   "topic_sentiment": {
     "shot": {
-      "total": 1440,
-      "pos_pct": 30.2,
-      "neg_pct": 10.5,
-      "net_sentiment": 19.7
+      "total": 1856,
+      "pos_pct": 28.2,
+      "neg_pct": 9.8,
+      "net_sentiment": 18.4
     },
     "add": {
-      "total": 952,
-      "pos_pct": 26.6,
-      "neg_pct": 19.7,
-      "net_sentiment": 6.8
+      "total": 1245,
+      "pos_pct": 24.3,
+      "neg_pct": 19.5,
+      "net_sentiment": 4.7
     },
     "dev": {
-      "total": 795,
-      "pos_pct": 32.6,
-      "neg_pct": 15.1,
-      "net_sentiment": 17.5
-    },
-    "ps5": {
-      "total": 758,
-      "pos_pct": 19.1,
-      "neg_pct": 11.9,
-      "net_sentiment": 7.3
+      "total": 1015,
+      "pos_pct": 31.9,
+      "neg_pct": 15.2,
+      "net_sentiment": 16.7
     },
     "online": {
-      "total": 729,
-      "pos_pct": 27.0,
-      "neg_pct": 12.1,
-      "net_sentiment": 15.0
+      "total": 956,
+      "pos_pct": 25.2,
+      "neg_pct": 11.6,
+      "net_sentiment": 13.6
     },
-    "patch": {
-      "total": 636,
-      "pos_pct": 19.5,
-      "neg_pct": 34.9,
-      "net_sentiment": -15.4
-    },
-    "issue": {
-      "total": 613,
-      "pos_pct": 12.7,
-      "neg_pct": 42.3,
-      "net_sentiment": -29.5
-    },
-    "steam": {
-      "total": 514,
-      "pos_pct": 19.3,
-      "neg_pct": 21.4,
-      "net_sentiment": -2.1
-    },
-    "launch": {
-      "total": 509,
-      "pos_pct": 29.1,
-      "neg_pct": 14.9,
-      "net_sentiment": 14.1
-    },
-    "update": {
-      "total": 506,
-      "pos_pct": 21.5,
-      "neg_pct": 44.1,
-      "net_sentiment": -22.5
-    },
-    "bug": {
-      "total": 478,
-      "pos_pct": 10.5,
-      "neg_pct": 37.4,
-      "net_sentiment": -27.0
-    },
-    "release": {
-      "total": 436,
-      "pos_pct": 21.1,
-      "neg_pct": 8.5,
-      "net_sentiment": 12.6
-    },
-    "fix": {
-      "total": 414,
-      "pos_pct": 13.8,
-      "neg_pct": 48.1,
-      "net_sentiment": -34.3
-    },
-    "xbox": {
-      "total": 372,
-      "pos_pct": 20.7,
-      "neg_pct": 10.2,
-      "net_sentiment": 10.5
-    },
-    "suggestion": {
-      "total": 325,
-      "pos_pct": 40.0,
-      "neg_pct": 5.8,
-      "net_sentiment": 34.2
-    },
-    "wish": {
-      "total": 314,
-      "pos_pct": 29.3,
-      "neg_pct": 9.2,
-      "net_sentiment": 20.1
-    },
-    "feature": {
-      "total": 285,
-      "pos_pct": 23.9,
-      "neg_pct": 28.4,
-      "net_sentiment": -4.6
-    },
-    "problem": {
-      "total": 255,
-      "pos_pct": 13.3,
-      "neg_pct": 40.8,
-      "net_sentiment": -27.5
-    },
-    "version": {
-      "total": 248,
-      "pos_pct": 35.5,
-      "neg_pct": 12.5,
-      "net_sentiment": 23.0
-    },
-    "playstation": {
-      "total": 212,
-      "pos_pct": 18.4,
-      "neg_pct": 11.8,
+    "ps5": {
+      "total": 948,
+      "pos_pct": 18.0,
+      "neg_pct": 11.4,
       "net_sentiment": 6.6
     },
+    "issue": {
+      "total": 838,
+      "pos_pct": 12.3,
+      "neg_pct": 41.6,
+      "net_sentiment": -29.4
+    },
+    "patch": {
+      "total": 777,
+      "pos_pct": 18.0,
+      "neg_pct": 34.1,
+      "net_sentiment": -16.1
+    },
+    "bug": {
+      "total": 668,
+      "pos_pct": 9.7,
+      "neg_pct": 36.7,
+      "net_sentiment": -26.9
+    },
+    "steam": {
+      "total": 652,
+      "pos_pct": 20.2,
+      "neg_pct": 18.9,
+      "net_sentiment": 1.4
+    },
+    "launch": {
+      "total": 645,
+      "pos_pct": 27.9,
+      "neg_pct": 14.0,
+      "net_sentiment": 14.0
+    },
+    "update": {
+      "total": 630,
+      "pos_pct": 20.5,
+      "neg_pct": 42.2,
+      "net_sentiment": -21.7
+    },
+    "release": {
+      "total": 600,
+      "pos_pct": 19.2,
+      "neg_pct": 8.5,
+      "net_sentiment": 10.7
+    },
+    "fix": {
+      "total": 572,
+      "pos_pct": 12.1,
+      "neg_pct": 45.5,
+      "net_sentiment": -33.4
+    },
+    "xbox": {
+      "total": 490,
+      "pos_pct": 20.4,
+      "neg_pct": 10.4,
+      "net_sentiment": 10.0
+    },
+    "suggestion": {
+      "total": 451,
+      "pos_pct": 38.4,
+      "neg_pct": 5.5,
+      "net_sentiment": 32.8
+    },
+    "wish": {
+      "total": 374,
+      "pos_pct": 27.8,
+      "neg_pct": 9.4,
+      "net_sentiment": 18.4
+    },
+    "feature": {
+      "total": 357,
+      "pos_pct": 21.8,
+      "neg_pct": 28.6,
+      "net_sentiment": -6.7
+    },
+    "problem": {
+      "total": 354,
+      "pos_pct": 11.0,
+      "neg_pct": 39.8,
+      "net_sentiment": -28.8
+    },
+    "version": {
+      "total": 319,
+      "pos_pct": 34.2,
+      "neg_pct": 13.2,
+      "net_sentiment": 21.0
+    },
+    "playstation": {
+      "total": 284,
+      "pos_pct": 16.9,
+      "neg_pct": 10.2,
+      "net_sentiment": 6.7
+    },
     "gameplay": {
-      "total": 203,
-      "pos_pct": 36.0,
-      "neg_pct": 14.8,
-      "net_sentiment": 21.2
+      "total": 253,
+      "pos_pct": 35.2,
+      "neg_pct": 13.8,
+      "net_sentiment": 21.3
     },
     "ranked": {
-      "total": 192,
-      "pos_pct": 21.9,
-      "neg_pct": 23.4,
-      "net_sentiment": -1.6
+      "total": 246,
+      "pos_pct": 21.1,
+      "neg_pct": 21.1,
+      "net_sentiment": 0.0
     },
     "physics": {
-      "total": 190,
-      "pos_pct": 63.7,
+      "total": 230,
+      "pos_pct": 63.0,
       "neg_pct": 0.0,
-      "net_sentiment": 63.7
+      "net_sentiment": 63.0
     },
     "request": {
-      "total": 156,
-      "pos_pct": 24.4,
-      "neg_pct": 19.9,
-      "net_sentiment": 4.5
+      "total": 211,
+      "pos_pct": 21.3,
+      "neg_pct": 20.4,
+      "net_sentiment": 0.9
     },
     "buy": {
-      "total": 153,
-      "pos_pct": 30.1,
-      "neg_pct": 21.6,
-      "net_sentiment": 8.5
+      "total": 187,
+      "pos_pct": 26.7,
+      "neg_pct": 20.9,
+      "net_sentiment": 5.9
     },
     "aiming": {
-      "total": 129,
-      "pos_pct": 44.2,
-      "neg_pct": 6.2,
-      "net_sentiment": 38.0
+      "total": 163,
+      "pos_pct": 41.1,
+      "neg_pct": 7.4,
+      "net_sentiment": 33.7
     },
-    "switch": {
-      "total": 119,
-      "pos_pct": 29.4,
-      "neg_pct": 5.0,
-      "net_sentiment": 24.4
-    },
-    "multiplayer": {
-      "total": 118,
-      "pos_pct": 23.7,
-      "neg_pct": 8.5,
-      "net_sentiment": 15.3
+    "tournament": {
+      "total": 154,
+      "pos_pct": 26.0,
+      "neg_pct": 4.5,
+      "net_sentiment": 21.4
     },
     "developer": {
-      "total": 115,
-      "pos_pct": 45.2,
-      "neg_pct": 17.4,
-      "net_sentiment": 27.8
+      "total": 148,
+      "pos_pct": 45.9,
+      "neg_pct": 18.9,
+      "net_sentiment": 27.0
+    },
+    "switch": {
+      "total": 145,
+      "pos_pct": 30.3,
+      "neg_pct": 4.1,
+      "net_sentiment": 26.2
     },
     "worth": {
-      "total": 106,
-      "pos_pct": 31.1,
-      "neg_pct": 8.5,
-      "net_sentiment": 22.6
+      "total": 134,
+      "pos_pct": 29.9,
+      "neg_pct": 9.0,
+      "net_sentiment": 20.9
     }
   },
   "top_negative": [
@@ -565,24 +669,24 @@
     },
     {
       "channel": "chat-pure-pool-pro",
-      "author": "JAMBO--C",
-      "content": "I’ve had this since patch 1 and 2, but it seems to be getting worse. It’s horrible. Unplayable. Not in the sense that you can’t play, but in the sense of it’s just terrible and makes you not really wa",
-      "score": -7,
-      "timestamp": "2026-03-24"
+      "author": "Queenie Lucy II",
+      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
+      "score": -9,
+      "timestamp": "2026-05-26"
     },
     {
-      "channel": "chat-pure-pool-pro",
+      "channel": "questions-and-suggestions-pure-pool-pro",
       "author": "Ripstone",
-      "content": "🎱  A couple of heads up for the community! \n\n- We've got another Hotfix update coming up later today; this one fixes a few known crash bugs and an issue with the \"Clearance Streak\" Crest not counting ",
-      "score": -7,
-      "timestamp": "2026-03-31"
+      "content": "Yeah, what OvercookedOctopusFeet said! \n\nHey @ImStrappedIn  - let’s reset this a bit.\n\nIt’s completely fair to be frustrated if something isn’t working the way you expected. That doesn’t make you wron",
+      "score": -9,
+      "timestamp": "2026-02-16"
     },
     {
-      "channel": "chat-pure-pool-pro",
-      "author": "Ripstone",
-      "content": "Hey Jambo!\n\nFor Patch 3, in terms of features the main focus is on the things we’ve already talked about in passing; \n\n-  Ranked Game mode\n-  Push outs in 9‑ball\n-  Lag to break \n\nIn terms of optimisa",
-      "score": -7,
-      "timestamp": "2026-04-16"
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "itsJake",
+      "content": "Heyooooo. @JAMBO--C - I'm fully aware of the Halo effect, don't worry. Unfortunately, it won't be in the week 1 patch that solves the popping. \nI'm looking at getting this in as part of the larger mon",
+      "score": -9,
+      "timestamp": "2026-02-18"
     },
     {
       "channel": "chat-pure-pool-pro",
@@ -650,6 +754,13 @@
       "timestamp": "2026-02-17"
     },
     {
+      "channel": "chat-pure-pool-pro",
+      "author": "JAMBO--C",
+      "content": "@Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. \n\nBUT…. Yes, I do think pure pool is better. \n\nThe reasons for that are….\n\n",
+      "score": 13,
+      "timestamp": "2026-02-17"
+    },
+    {
       "channel": "reddit-PurePoolPro-new",
       "author": "JudCasper68",
       "content": "Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go",
@@ -722,9 +833,16 @@
     {
       "channel": "chat-pure-pool-pro",
       "author": "Ripstone",
-      "content": "Hey @xCyb3rneticx! Aww thanks for checking in - we're doing great thank you - very busy and stressful launch week but we're looking forward to it! \n\nHow're you? Looking forward to Thursday?",
-      "score": 9,
-      "timestamp": "2026-02-09"
+      "content": "Hey @JAMBO--C  and @eeriearcade \n\nThanks for sharing your thoughts! Just to put your FPS comparison into perspective - while the credits for the most recent Battlefield aren’t publicly available, Batt",
+      "score": 11,
+      "timestamp": "2025-10-10"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "Ripstone",
+      "content": "**20 Min Question Blitz to Catch up from the Bank Holiday! **\n\n1. @eeriearcade asks : Will the ranks get reset at any point?\n\nAnswer: we're discussing how to handle this internally. With Xbox, Epic an",
+      "score": 11,
+      "timestamp": "2026-05-26"
     },
     {
       "channel": "chat-pure-pool-pro",
@@ -732,27 +850,13 @@
       "content": "Hey @xCyb3rneticx! Aww thanks for checking in - we're doing great thank you - very busy and stressful launch week but we're looking forward to it! \n\nHow're you? Looking forward to Thursday?",
       "score": 9,
       "timestamp": "2026-02-09"
-    },
-    {
-      "channel": "reddit-PurePoolPro-new",
-      "author": "Pure-Celebration-574",
-      "content": "Ok so first off… absolutely love the new game!!! I love and respect how all of the unlockables are done so without havin to pay for bundles and passes and all that stuff. I like how it’s kinda plain a",
-      "score": 9,
-      "timestamp": "2026-02-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-hot",
-      "author": "Pure-Celebration-574",
-      "content": "Ok so first off… absolutely love the new game!!! I love and respect how all of the unlockables are done so without havin to pay for bundles and passes and all that stuff. I like how it’s kinda plain a",
-      "score": 9,
-      "timestamp": "2026-02-21"
     }
   ],
   "engagement": {
-    "total_reactions": 20777,
-    "avg_reactions_per_message": 1.31,
-    "reply_count": 14425,
-    "reply_rate": 91.1,
+    "total_reactions": 24196,
+    "avg_reactions_per_message": 1.01,
+    "reply_count": 22643,
+    "reply_rate": 94.9,
     "active_users_5plus": 20
   },
   "top_contributors": [

@@ -20,6 +20,17 @@ discord:
         "1504754355985846363": "play-of-the-month-submissions"
         "1362333634622787584": "pool-and-snooker-talk"
         "1336304493629014047": "announcements-ripstone"
+    "1494750941369335990":
+      name: "Pure Pool Pro Unofficial Community"
+      channels:
+        "1494957370047070309": "general"
+        "1495014540897812490": "looking-for-a-game"
+        "1494957533662806047": "pool-talk"
+        "1497451589437358170": "tetradome-season-2"
+        "1497452004228862112": "rackhaus-season-2"
+        "1498172120897683541": "8ball-focused-s2"
+        "1511841089466667210": "pro-killer-tournament"
+        "1494750942049079480": "pro-talk-general"
 
 reddit:
   # Path to reddit-skills directory (Chrome extension bridge)

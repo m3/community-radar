@@ -1,175 +1,238 @@
-"""Flask dashboard for CommunityRadar"""
+"""
+CommunityRadar Flask Dashboard
+Real-time community intelligence with time-series sentiment charts.
+"""
 
-import os
-from src.db.models import get_db
-
-try:
-    from flask import Flask, render_template_string, jsonify
-except ImportError:
-    print("Flask not installed. Run: pip install flask")
-    raise
-
-TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CommunityRadar Dashboard</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, system-ui, sans-serif; background: #0f0f13; color: #e8e8f0; line-height: 1.6; }
-  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-
-  .header { padding: 32px 0 24px; border-bottom: 1px solid #2a2a3a; margin-bottom: 32px; }
-  .header h1 { font-size: 2rem; background: linear-gradient(135deg, #6c5ce7, #00cec9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
-  .stat { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 10px; padding: 20px; text-align: center; }
-  .stat .value { font-size: 2rem; font-weight: 700; color: #6c5ce7; }
-  .stat .label { font-size: 0.8rem; color: #8888a0; text-transform: uppercase; margin-top: 4px; }
-
-  .section { margin-bottom: 32px; }
-  .section h2 { font-size: 1.2rem; margin-bottom: 16px; border-bottom: 2px solid #6c5ce7; padding-bottom: 8px; display: inline-block; }
-
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; padding: 10px 14px; background: #22222e; border-bottom: 2px solid #2a2a3a; font-size: 0.75rem; text-transform: uppercase; color: #8888a0; }
-  td { padding: 10px 14px; border-bottom: 1px solid #2a2a3a; font-size: 0.85rem; }
-  tr:hover td { background: rgba(108,92,231,0.05); }
-
-  .nav { display: flex; gap: 12px; margin-bottom: 24px; }
-  .nav a { color: #6c5ce7; text-decoration: none; padding: 8px 16px; border-radius: 6px; background: #1a1a24; border: 1px solid #2a2a3a; font-size: 0.85rem; }
-  .nav a:hover { border-color: #6c5ce7; }
-  .nav a.active { background: #6c5ce7; color: white; border-color: #6c5ce7; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="header">
-    <h1>🎯 CommunityRadar</h1>
-    <div style="color: #8888a0; margin-top: 4px;">Community Intelligence Dashboard</div>
-  </div>
-
-  <div class="nav">
-    <a href="/" class="active">Overview</a>
-    <a href="/users">Users</a>
-    <a href="/servers">Servers</a>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><div class="value">{{ stats.total_users }}</div><div class="label">Users</div></div>
-    <div class="stat"><div class="value">{{ stats.total_messages }}</div><div class="label">Messages</div></div>
-    <div class="stat"><div class="value">{{ stats.total_channels }}</div><div class="label">Channels</div></div>
-    <div class="stat"><div class="value">{{ stats.total_servers }}</div><div class="label">Servers</div></div>
-  </div>
-
-  <div class="section">
-    <h2>Top Users</h2>
-    <table>
-      <thead><tr><th>User</th><th>Role</th><th>Messages</th><th>Reactions</th><th>Last Seen</th></tr></thead>
-      <tbody>
-      {% for u in top_users %}
-      <tr>
-        <td><strong>{{ u.display_name or u.username or 'Unknown' }}</strong></td>
-        <td><span style="color:#6c5ce7">{{ u.role }}</span></td>
-        <td>{{ u.messages }}</td><td>{{ u.reactions_received }}</td>
-        <td>{{ u.last_seen or '' }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-</body>
-</html>"""
+from flask import Flask, render_template, jsonify, request
+import sqlite3
+from pathlib import Path
+import json
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 app = Flask(__name__)
 
+DB_PATH = Path("/Users/mathias/Development/community-radar/data/community_radar.db")
+REPORT_PATH = Path("/Users/mathias/Development/community-radar/docs/community-sentiment-analysis.json")
+
+
+def get_db():
+    """Get database connection with row factory."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def load_report():
+    """Load latest sentiment analysis report."""
+    if REPORT_PATH.exists():
+        with open(REPORT_PATH) as f:
+            return json.load(f)
+    return {}
+
 
 @app.route("/")
-def overview():
+def index():
+    """Main dashboard page."""
+    report = load_report()
+    return render_template("index.html", report=report)
+
+
+@app.route("/api/overview")
+def api_overview():
+    """High-level stats for dashboard cards."""
     db = get_db()
-    stats = {
-        "total_users": db.execute("SELECT COUNT(*) as c FROM users").fetchone()["c"],
-        "total_messages": db.execute("SELECT COALESCE(SUM(message_count),0) as c FROM channels").fetchone()["c"],
-        "total_channels": db.execute("SELECT COUNT(*) as c FROM channels").fetchone()["c"],
-        "total_servers": db.execute("SELECT COUNT(*) as c FROM servers").fetchone()["c"],
-    }
-    top_users = db.execute(
-        "SELECT display_name, username, role, messages, reactions_received, last_seen "
-        "FROM users ORDER BY COALESCE(messages,0) DESC LIMIT 20"
-    ).fetchall()
+
+    # Total messages by platform
+    platform_stats = db.execute("""
+        SELECT platform, COUNT(*) as count
+        FROM messages
+        GROUP BY platform
+    """).fetchall()
+
+    # Date range
+    date_range = db.execute("""
+        SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts
+        FROM messages
+        WHERE timestamp IS NOT NULL
+    """).fetchone()
+
+    # Channels
+    channels = db.execute("SELECT COUNT(*) as c FROM channels").fetchone()["c"]
+    users = db.execute("SELECT COUNT(*) as c FROM users").fetchone()["c"]
+
     db.close()
-    return render_template_string(TEMPLATE, stats=stats, top_users=top_users)
+
+    return jsonify({
+        "platforms": {r["platform"]: r["count"] for r in platform_stats},
+        "date_range": {"from": date_range["min_ts"][:10] if date_range["min_ts"] else "N/A",
+                       "to": date_range["max_ts"][:10] if date_range["max_ts"] else "N/A"},
+        "channels": channels,
+        "users": users,
+        "report_meta": report.get("meta", {}) if (report := load_report()) else {}
+    })
 
 
-@app.route("/users")
-def users():
+@app.route("/api/sentiment/timeseries")
+def api_sentiment_timeseries():
+    """Time-series sentiment data for charts."""
     db = get_db()
-    users = db.execute(
-        "SELECT display_name, username, role, messages, reactions_received, reactions_given, first_seen, last_seen "
-        "FROM users ORDER BY COALESCE(messages,0) DESC"
-    ).fetchall()
+
+    # Get messages with sentiment - we'll compute on the fly
+    # For performance, we use pre-computed daily aggregates
+    rows = db.execute("""
+        SELECT date(timestamp) as day, platform,
+               SUM(CASE WHEN reactions > 0 THEN 1 ELSE 0 END) as positive_proxy,
+               SUM(CASE WHEN reactions < 0 THEN 1 ELSE 0 END) as negative_proxy,
+               COUNT(*) as total
+        FROM messages
+        WHERE timestamp IS NOT NULL
+        GROUP BY day, platform
+        ORDER BY day
+    """).fetchall()
+
     db.close()
-    rows = "".join(
-        f"<tr><td><strong>{u['display_name'] or u['username'] or 'Unknown'}</strong></td>"
-        f"<td>{u['role']}</td><td>{u['messages']}</td><td>{u['reactions_received']}</td>"
-        f"<td>{u['reactions_given']}</td><td>{u['first_seen'] or ''}</td><td>{u['last_seen'] or ''}</td></tr>"
-        for u in users
-    )
-    return render_template_string("""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Users — CommunityRadar</title><style>
-        body{font-family:-apple-system,system-ui,sans-serif;background:#0f0f13;color:#e8e8f0;padding:24px;max-width:1200px;margin:0 auto}
-        h1{background:linear-gradient(135deg,#6c5ce7,#00cec9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        a{color:#6c5ce7;text-decoration:none}
-        table{width:100%;border-collapse:collapse;margin-top:16px}
-        th{text-align:left;padding:10px;background:#22222e;border-bottom:2px solid #2a2a3a;font-size:0.75rem;text-transform:uppercase;color:#8888a0}
-        td{padding:10px;border-bottom:1px solid #2a2a3a;font-size:0.85rem}
-        tr:hover td{background:#1a1a24}
-        .count{color:#8888a0;margin:8px 0}
-    </style></head><body>
-    <a href="/">← Back</a><h1>Users</h1>
-    <div class="count">{{ users|length }} users</div>
-    <table><thead><tr><th>User</th><th>Role</th><th>Msgs</th><th>Reacts Given</th><th>Reacts Received</th><th>First Seen</th><th>Last Seen</th></tr></thead>
-    <tbody>""" + rows + "</tbody></table></body></html>", users=users)
+
+    # Also get actual sentiment from report if available
+    report = load_report()
+
+    # Build time series by platform
+    series = defaultdict(lambda: defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0, "total": 0}))
+
+    for r in rows:
+        day = r["day"]
+        platform = r["platform"]
+        series[platform][day] = {
+            "positive": r["positive_proxy"],  # Using reactions as proxy
+            "negative": r["negative_proxy"],
+            "neutral": r["total"] - r["positive_proxy"] - r["negative_proxy"],
+            "total": r["total"]
+        }
+
+    return jsonify({
+        "series": {p: dict(d) for p, d in series.items()},
+        "report_sentiment": report.get("sentiment", {})
+    })
 
 
-@app.route("/servers")
-def servers():
+@app.route("/api/sentiment/by_channel")
+def api_sentiment_by_channel():
+    """Sentiment breakdown by channel."""
+    report = load_report()
+    return jsonify(report.get("sentiment", {}).get("by_channel", {}))
+
+
+@app.route("/api/topics")
+def api_topics():
+    """Topic-level sentiment."""
+    report = load_report()
+    return jsonify(report.get("topic_sentiment", {}))
+
+
+@app.route("/api/power_words")
+def api_power_words():
+    """Community power words."""
+    report = load_report()
+    return jsonify(report.get("power_words", {}))
+
+
+@app.route("/api/engagement")
+def api_engagement():
+    """Engagement metrics."""
+    report = load_report()
+    return jsonify(report.get("engagement", {}))
+
+
+@app.route("/api/contributors")
+def api_contributors():
+    """Top contributors."""
+    report = load_report()
+    return jsonify(report.get("top_contributors", []))
+
+
+@app.route("/api/negative_messages")
+def api_negative_messages():
+    """Top negative messages."""
+    report = load_report()
+    return jsonify(report.get("top_negative", []))
+
+
+@app.route("/api/positive_messages")
+def api_positive_messages():
+    """Top positive messages."""
+    report = load_report()
+    return jsonify(report.get("top_positive", []))
+
+
+@app.route("/api/purpose")
+def api_purpose():
+    """Purpose classification."""
+    report = load_report()
+    return jsonify(report.get("purpose", {}))
+
+
+@app.route("/api/reddit/comparison")
+def api_reddit_comparison():
+    """Reddit vs Discord comparison."""
+    report = load_report()
+    return jsonify(report.get("sentiment", {}).get("reddit_comparison", {}))
+
+
+@app.route("/api/raw_messages")
+def api_raw_messages():
+    """Raw messages for detailed view with filters."""
     db = get_db()
-    servers = db.execute(
-        "SELECT id, name, total_messages, total_users, first_scan, last_scan "
-        "FROM servers ORDER BY name"
-    ).fetchall()
-    rows = ""
-    for s in servers:
-        channels = db.execute(
-            "SELECT name, message_count, last_scan FROM channels WHERE server_id=? ORDER BY name",
-            (s["id"],)
-        ).fetchall()
-        chan_info = "".join(
-            f"<div style='font-size:0.8rem;color:#8888a0;margin-left:20px'>📺 #{c['name']}: {c['message_count']} msgs</div>"
-            for c in channels
-        )
-        rows += f"<tr><td><strong>{s['name']}</strong>{chan_info}</td><td>{s['total_messages'] or 0}</td><td>{s['total_users'] or 0}</td><td>{s['last_scan'] or 'never'}</td></tr>"
+
+    platform = request.args.get("platform")
+    channel = request.args.get("channel")
+    sentiment = request.args.get("sentiment")  # positive, negative, neutral
+    limit = min(int(request.args.get("limit", 100)), 500)
+    offset = int(request.args.get("offset", 0))
+
+    query = """
+        SELECT m.message_id, m.content, m.timestamp, m.reactions, m.channel_id,
+               m.platform, m.reply_to,
+               c.name as channel_name,
+               u.display_name, u.role
+        FROM messages m
+        JOIN channels c ON m.channel_id = c.id
+        LEFT JOIN users u ON m.user_id = u.id
+        WHERE m.content IS NOT NULL AND m.content != ''
+    """
+    params = []
+
+    if platform:
+        query += " AND m.platform = ?"
+        params.append(platform)
+    if channel:
+        query += " AND c.name = ?"
+        params.append(channel)
+
+    query += " ORDER BY m.timestamp DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+
+    rows = db.execute(query, params).fetchall()
     db.close()
-    return render_template_string("""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Servers — CommunityRadar</title><style>
-        body{font-family:-apple-system,system-ui,sans-serif;background:#0f0f13;color:#e8e8f0;padding:24px;max-width:1200px;margin:0 auto}
-        h1{background:linear-gradient(135deg,#6c5ce7,#00cec9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        a{color:#6c5ce7;text-decoration:none}
-        table{width:100%;border-collapse:collapse;margin-top:16px}
-        th{text-align:left;padding:10px;background:#22222e;border-bottom:2px solid #2a2a3a;font-size:0.75rem;text-transform:uppercase;color:#8888a0}
-        td{padding:10px;border-bottom:1px solid #2a2a3a;font-size:0.85rem}
-        tr:hover td{background:#1a1a24}
-    </style></head><body>
-    <a href="/">← Back</a><h1>Servers</h1>
-    <table><thead><tr><th>Server</th><th>Messages</th><th>Users</th><th>Last Scan</th></tr></thead>
-    <tbody>""" + rows + "</tbody></table></body></html>")
+
+    return jsonify([dict(r) for r in rows])
 
 
-def run_dashboard(host="0.0.0.0", port=5050):
-    print(f"  Dashboard starting at http://localhost:{port}")
-    print(f"  Press Ctrl+C to stop")
-    app.run(host=host, port=port, debug=True)
+@app.route("/api/channels")
+def api_channels():
+    """List all channels with stats."""
+    db = get_db()
+
+    rows = db.execute("""
+        SELECT c.id, c.name, c.server_id, c.message_count, c.last_scan,
+               s.name as server_name
+        FROM channels c
+        LEFT JOIN servers s ON c.server_id = s.id
+        ORDER BY c.message_count DESC
+    """).fetchall()
+    db.close()
+
+    return jsonify([dict(r) for r in rows])
 
 
 if __name__ == "__main__":
-    run_dashboard()
+    app.run(host="0.0.0.0", port=5001, debug=True)

@@ -1,20 +1,20 @@
 # Community Sentiment & Classification Analysis
-\n*Generated from 15842 Discord messages + 4314 Reddit messages (DB) + 1197 Reddit posts (JSON)*
-*Date range: 2025-04-17 → 2026-02-23*
+\n*Generated from 23865 Discord messages + 4314 Reddit messages (DB) + 1197 Reddit posts (JSON)*
+*Date range: 2025-04-17 → 2026-06-05*
 \n\n## Platform Overview
 | Platform | Messages |
 |----------|----------|
-| Discord | 15842 |
+| Discord | 23865 |
 | Reddit | 5511 |
-| **Total** | **21353** |
+| **Total** | **29376** |
 
 
 ## Executive Summary
 
-**Overall Sentiment Ratio: 2.55** (positive:negative)
-- 16.9% positive (2670 messages)
-- 6.6% negative (1046 messages)
-- 76.5% neutral (12126 messages)
+**Overall Sentiment Ratio: 2.58** (positive:negative)
+- 15.2% positive (3618 messages)
+- 5.9% negative (1403 messages)
+- 79.0% neutral (18844 messages)
 
 **Community feel: strongly positive — members are enthusiastic and supportive**
 
@@ -23,24 +23,32 @@
 
 | Channel | Messages | Positive | Negative | Neutral | Pos% | Neg% |
 |---------|----------|----------|----------|---------|------|------|
-| chat-pure-pool-pro | 8088 | 998 | 444 | 6646 | 12.3% | 5.5% |
-| questions-and-suggestions-pure-pool-pro | 2232 | 394 | 160 | 1678 | 17.7% | 7.2% |
-| find-a-game-pure-pool-pro | 696 | 98 | 30 | 568 | 14.1% | 4.3% |
-| play-of-the-month-submissions | 46 | 4 | 0 | 42 | 8.7% | 0.0% |
-| pool-and-snooker-talk | 414 | 40 | 2 | 372 | 9.7% | 0.5% |
-| announcements-ripstone | 52 | 9 | 2 | 41 | 17.3% | 3.8% |
+| chat-pure-pool-pro | 12132 | 1497 | 666 | 9969 | 12.3% | 5.5% |
+| questions-and-suggestions-pure-pool-pro | 3348 | 591 | 240 | 2517 | 17.7% | 7.2% |
+| find-a-game-pure-pool-pro | 1044 | 147 | 45 | 852 | 14.1% | 4.3% |
+| play-of-the-month-submissions | 69 | 6 | 0 | 63 | 8.7% | 0.0% |
+| pool-and-snooker-talk | 621 | 60 | 3 | 558 | 9.7% | 0.5% |
+| announcements-ripstone | 104 | 18 | 4 | 82 | 17.3% | 3.8% |
 | reddit-PurePoolPro-new | 1959 | 511 | 192 | 1256 | 26.1% | 9.8% |
 | reddit-PurePoolPro-hot | 932 | 253 | 80 | 599 | 27.1% | 8.6% |
 | reddit-PurePoolPro-top?t=month | 225 | 51 | 21 | 153 | 22.7% | 9.3% |
 | reddit-PurePoolPro-top?t=year | 913 | 250 | 77 | 586 | 27.4% | 8.4% |
 | reddit-PurePoolPro-top?t=all | 285 | 62 | 38 | 185 | 21.8% | 13.3% |
+| 💬・pro-talk-general | 727 | 30 | 16 | 681 | 4.1% | 2.2% |
+| 💬・general | 200 | 9 | 4 | 187 | 4.5% | 2.0% |
+| 🎱・pool-talk | 35 | 6 | 0 | 29 | 17.1% | 0.0% |
+| 👀・looking-for-a-game | 94 | 4 | 0 | 90 | 4.3% | 0.0% |
+| tetradome-season-2-⚔️ | 576 | 62 | 5 | 509 | 10.8% | 0.9% |
+| rackhaus-season-2🛡️ | 143 | 11 | 2 | 130 | 7.7% | 1.4% |
+| 🎱8ball-focused-s2 | 427 | 50 | 10 | 367 | 11.7% | 2.3% |
+| 💚pro-killer-tournament | 31 | 0 | 0 | 31 | 0.0% | 0.0% |
 
 
 ## Cross-Platform Comparison: Discord vs Reddit
 
 | Platform | Positive | Negative | Neutral |
 |----------|----------|----------|---------|
-| Discord | 16.9% | 6.6% | 76.5% |
+| Discord | 15.2% | 5.9% | 79.0% |
 | Reddit | 25.1% | 10.3% | 64.6% |
 
 > Sentiment is broadly similar across platforms.
@@ -52,26 +60,34 @@ Message purpose classification:
 
 | Purpose | Count | % |
 |---------|-------|---|
-| general | 7991 | 50.4% |
-| feedback | 2485 | 15.7% |
-| showcase | 1427 | 9.0% |
-| support | 1364 | 8.6% |
-| competition | 1263 | 8.0% |
-| social | 1228 | 7.8% |
-| off_topic | 84 | 0.5% |
+| general | 12952 | 54.3% |
+| feedback | 3309 | 13.9% |
+| showcase | 1972 | 8.3% |
+| competition | 1934 | 8.1% |
+| support | 1918 | 8.0% |
+| social | 1668 | 7.0% |
+| off_topic | 112 | 0.5% |
 
 ### Purpose by Channel
-- **chat-pure-pool-pro**: general (4602), feedback (930), showcase (730)
-- **questions-and-suggestions-pure-pool-pro**: general (1018), feedback (424), competition (234)
-- **find-a-game-pure-pool-pro**: general (490), social (80), competition (58)
-- **play-of-the-month-submissions**: showcase (32), general (12), support (2)
-- **pool-and-snooker-talk**: general (320), competition (50), showcase (18)
-- **announcements-ripstone**: feedback (31), general (6), showcase (4)
+- **chat-pure-pool-pro**: general (6903), feedback (1395), showcase (1095)
+- **questions-and-suggestions-pure-pool-pro**: general (1527), feedback (636), competition (351)
+- **find-a-game-pure-pool-pro**: general (735), social (120), competition (87)
+- **play-of-the-month-submissions**: showcase (48), general (18), support (3)
+- **pool-and-snooker-talk**: general (480), competition (75), showcase (27)
+- **announcements-ripstone**: feedback (62), general (12), showcase (8)
 - **reddit-PurePoolPro-new**: general (718), feedback (487), showcase (203)
 - **reddit-PurePoolPro-hot**: general (350), feedback (221), social (96)
 - **reddit-PurePoolPro-top?t=month**: general (72), feedback (54), competition (27)
 - **reddit-PurePoolPro-top?t=year**: general (346), feedback (221), social (92)
 - **reddit-PurePoolPro-top?t=all**: feedback (75), general (57), showcase (46)
+- **💬・pro-talk-general**: general (537), competition (84), support (39)
+- **💬・general**: general (154), competition (18), showcase (14)
+- **🎱・pool-talk**: general (29), competition (3), showcase (2)
+- **👀・looking-for-a-game**: general (76), competition (8), feedback (4)
+- **tetradome-season-2-⚔️**: general (442), competition (78), feedback (30)
+- **rackhaus-season-2🛡️**: general (107), competition (13), feedback (11)
+- **🎱8ball-focused-s2**: general (363), competition (32), feedback (11)
+- **💚pro-killer-tournament**: general (26), competition (2), feedback (2)
 
 
 ## Community Identity: Power Words
@@ -80,36 +96,36 @@ Most frequently used community-specific terms:
 
 | Word/Phrase | Mentions |
 |-------------|----------|
-| pool | 2461 |
-| pure pool | 1274 |
-| table | 944 |
-| cue | 808 |
-| ripstone | 772 |
-| snooker | 721 |
-| control | 418 |
-| rest | 367 |
-| power | 320 |
-| improve | 305 |
-| tip | 295 |
-| focus | 294 |
-| pocket | 267 |
-| rail | 262 |
-| 8 ball | 237 |
-| cue ball | 220 |
-| improvement | 164 |
-| 9 ball | 163 |
-| position | 163 |
-| jump | 161 |
-| skill | 153 |
-| bank | 145 |
-| speed | 137 |
-| trick | 137 |
-| angle | 137 |
-| 9-ball | 132 |
-| spin | 125 |
-| english | 125 |
-| felt | 117 |
-| follow | 108 |
+| pool | 3357 |
+| pure pool | 1566 |
+| table | 1228 |
+| cue | 1085 |
+| ripstone | 1067 |
+| snooker | 953 |
+| control | 522 |
+| rest | 507 |
+| focus | 445 |
+| power | 399 |
+| improve | 369 |
+| tip | 368 |
+| pocket | 340 |
+| 8 ball | 339 |
+| rail | 331 |
+| cue ball | 290 |
+| 9 ball | 228 |
+| position | 212 |
+| skill | 212 |
+| jump | 209 |
+| improvement | 191 |
+| trick | 181 |
+| speed | 179 |
+| angle | 176 |
+| bank | 172 |
+| spin | 170 |
+| english | 154 |
+| felt | 153 |
+| 9-ball | 153 |
+| follow | 143 |
 
 
 ## Topic-Level Sentiment
@@ -118,26 +134,26 @@ What drives positivity vs negativity:
 
 | Topic | Mentions | Pos% | Neg% | Net Sentiment |
 |-------|----------|------|------|---------------|
-| shot | 1440 | 30.2% | 10.5% | 🟢 +20 |
-| add | 952 | 26.6% | 19.7% | 🟡 +7 |
-| dev | 795 | 32.6% | 15.1% | 🟢 +18 |
-| ps5 | 758 | 19.1% | 11.9% | 🟡 +7 |
-| online | 729 | 27.0% | 12.1% | 🟢 +15 |
-| patch | 636 | 19.5% | 34.9% | 🔴 -15 |
-| issue | 613 | 12.7% | 42.3% | 🔴 -30 |
-| steam | 514 | 19.3% | 21.4% | 🟡 -2 |
-| launch | 509 | 29.1% | 14.9% | 🟢 +14 |
-| update | 506 | 21.5% | 44.1% | 🔴 -22 |
-| bug | 478 | 10.5% | 37.4% | 🔴 -27 |
-| release | 436 | 21.1% | 8.5% | 🟢 +13 |
-| fix | 414 | 13.8% | 48.1% | 🔴 -34 |
-| xbox | 372 | 20.7% | 10.2% | 🟢 +10 |
-| suggestion | 325 | 40.0% | 5.8% | 🟢 +34 |
-| wish | 314 | 29.3% | 9.2% | 🟢 +20 |
-| feature | 285 | 23.9% | 28.4% | 🟡 -5 |
-| problem | 255 | 13.3% | 40.8% | 🔴 -28 |
-| version | 248 | 35.5% | 12.5% | 🟢 +23 |
-| playstation | 212 | 18.4% | 11.8% | 🟡 +7 |
+| shot | 1856 | 28.2% | 9.8% | 🟢 +18 |
+| add | 1245 | 24.3% | 19.5% | 🟡 +5 |
+| dev | 1015 | 31.9% | 15.2% | 🟢 +17 |
+| online | 956 | 25.2% | 11.6% | 🟢 +14 |
+| ps5 | 948 | 18.0% | 11.4% | 🟡 +7 |
+| issue | 838 | 12.3% | 41.6% | 🔴 -29 |
+| patch | 777 | 18.0% | 34.1% | 🔴 -16 |
+| bug | 668 | 9.7% | 36.7% | 🔴 -27 |
+| steam | 652 | 20.2% | 18.9% | 🟡 +1 |
+| launch | 645 | 27.9% | 14.0% | 🟢 +14 |
+| update | 630 | 20.5% | 42.2% | 🔴 -22 |
+| release | 600 | 19.2% | 8.5% | 🟢 +11 |
+| fix | 572 | 12.1% | 45.5% | 🔴 -33 |
+| xbox | 490 | 20.4% | 10.4% | 🟡 +10 |
+| suggestion | 451 | 38.4% | 5.5% | 🟢 +33 |
+| wish | 374 | 27.8% | 9.4% | 🟢 +18 |
+| feature | 357 | 21.8% | 28.6% | 🟡 -7 |
+| problem | 354 | 11.0% | 39.8% | 🔴 -29 |
+| version | 319 | 34.2% | 13.2% | 🟢 +21 |
+| playstation | 284 | 16.9% | 10.2% | 🟡 +7 |
 
 
 ## Top Negative Messages
@@ -250,8 +266,14 @@ The reasons for that are….
 
 
 
-> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
-> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
+> **JAMBO--C** (chat-pure-pool-pro, 2026-02-17) [+13]
+> @Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. 
+
+BUT…. Yes, I do think pure pool is better. 
+
+The reasons for that are….
+
+
 
 > **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
 > Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
@@ -264,9 +286,9 @@ The reasons for that are….
 
 
 ## Engagement Metrics
-- Total reactions: 20777
-- Avg reactions/message: 1.31
-- Reply rate: 91.1% (14425 replies)
+- Total reactions: 24196
+- Avg reactions/message: 1.01
+- Reply rate: 94.9% (22643 replies)
 - Active users (5+ msgs): 20
 
 ### Top Contributors
@@ -293,13 +315,12 @@ The reasons for that are….
 ## Gap Analysis: Purpose vs Reality
 
 ### What the community wants: general
-### What's working: physics (net sentiment: +64%)
-### What's broken: fix (net sentiment: -34%)
+### What's working: physics (net sentiment: +63%)
+### What's broken: fix (net sentiment: -33%)
 
 ### Identified Gaps
-- **High feedback volume (15.7%)**: Community is actively requesting features/changes. Need structured feedback pipeline.
-- **'fix' is a pain point**: 48.1% negative sentiment. Needs immediate attention.
-- **Bug frustration high**: Bug-related messages are 37.4% negative. Communication about fixes needed.
+- **'fix' is a pain point**: 45.5% negative sentiment. Needs immediate attention.
+- **Bug frustration high**: Bug-related messages are 36.7% negative. Communication about fixes needed.
 
 ### Recommendations
 1. **Address the top negative topic** — dedicate dev resources to the highest-negativity area

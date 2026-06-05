@@ -5,17 +5,18 @@ import json
 import time
 from pathlib import Path
 
+import yaml
+
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
-REDDIT_SKILLS_DIR = Path(__file__).parent.parent.parent / "scripts"
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
+# Load config
+CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
+with open(CONFIG_PATH) as f:
+    CONFIG = yaml.safe_load(f)
 
-SUBREDDITS = {
-    "PurePoolPro": {
-        "name": "PurePoolPro",
-        "sorts": ["top", "new", "hot"],
-    }
-}
+REDDIT_SKILLS_DIR = Path(CONFIG["reddit"]["skills_dir"])
+DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
+SUBREDDITS = CONFIG["reddit"]["subreddits"]
 
 
 def run_cli(args):

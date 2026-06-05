@@ -1,0 +1,42 @@
+# CommunityRadar Configuration
+# Edit this file to add/remove servers, channels, and subreddits.
+
+discord:
+  # Discord user token — stored in BWS, referenced by secret ID
+  bws_secret_id: "70909217-9e02-452b-b933-b45f00c17fee"  # DISCORD_USER_TOKEN_M3
+
+  # DCE binary path
+  dce_bin: "/Users/mathias/.hermes/profiles/glenn/home/tools/discordchatexporter/cli/DiscordChatExporter.Cli"
+
+  # Tracked servers and channels
+  # Add new servers by adding a new entry with server ID, name, and channels
+  servers:
+    "203428322082816001":
+      name: "Ripstone - Pure Pool Pro"
+      channels:
+        "1362333099089727488": "chat-pure-pool-pro"
+        "1427915258147766303": "questions-and-suggestions-pure-pool-pro"
+
+reddit:
+  # Path to reddit-skills directory (Chrome extension bridge)
+  skills_dir: "/Users/mathias/Development/community-radar/scripts"
+
+  # Tracked subreddits and sort methods
+  subreddits:
+    PurePoolPro:
+      name: "PurePoolPro"
+      sorts:
+        - top
+        - new
+        - hot
+
+# Output directories
+data_dir: "data"
+docs_dir: "docs"
+
+# Export settings
+export:
+  # Timeout in seconds for DCE export (per channel)
+  dce_timeout: 1200
+  # Batch size for message inserts
+  batch_size: 500

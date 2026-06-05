@@ -6,22 +6,21 @@ import time
 import os
 from pathlib import Path
 
+import yaml
+
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
-DCE_BIN = "/Users/mathias/.hermes/profiles/glenn/home/tools/discordchatexporter/cli/DiscordChatExporter.Cli"
-BWS_SECRET_ID = "70909217-9e02-452b-b933-b45f00c17fee"  # DISCORD_USER_TOKEN_M3
+# Load config
+CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
+with open(CONFIG_PATH) as f:
+    CONFIG = yaml.safe_load(f)
 
-# Tracked servers and channels
-SERVERS = {
-    "203428322082816001": {
-        "name": "Ripstone - Pure Pool Pro",
-        "channels": {
-            "1362333099089727488": "chat-pure-pool-pro",
-            "1427915258147766303": "questions-and-suggestions-pure-pool-pro",
-        }
-    }
-}
+DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
+DCE_BIN = CONFIG["discord"]["dce_bin"]
+BWS_SECRET_ID = CONFIG["discord"]["bws_secret_id"]
+SERVERS = CONFIG["discord"]["servers"]
+DCE_TIMEOUT = CONFIG.get("export", {}).get("dce_timeout", 1200)
+BATCH_SIZE = CONFIG.get("export", {}).get("batch_size", 500)
 
 
 def get_token():

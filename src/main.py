@@ -140,6 +140,15 @@ def import_data():
     import_all()
 
 
+def config():
+    """Show current configuration"""
+    import yaml
+    CONFIG_PATH = Path(__file__).parent.parent / "config.yaml"
+    with open(CONFIG_PATH) as f:
+        cfg = yaml.safe_load(f)
+    print(yaml.dump(cfg, default_flow_style=False, sort_keys=False))
+
+
 def help_cmd():
     print("""CommunityRadar — Community Intelligence Tool
 
@@ -151,6 +160,7 @@ Commands:
   search     Search message content (usage: search <term>)
   topics     Show top topics from message analysis
   xref       Show cross-platform user matches
+  config     Show current configuration
   report     Generate HTML report
   dashboard  Launch web dashboard
   help       Show this message
@@ -170,6 +180,7 @@ def cli():
         "search": search,
         "topics": topics,
         "xref": xref,
+        "config": config,
         "report": report,
         "dashboard": dashboard,
         "help": help_cmd,

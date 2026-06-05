@@ -11,12 +11,19 @@ Analyzes all Discord + Reddit content for:
 import sqlite3
 import json
 import re
+import hashlib
 from collections import Counter, defaultdict
 from pathlib import Path
+from datetime import datetime, timedelta
+import statistics
 
 DB_PATH = Path("/Users/mathias/Development/community-radar/data/community_radar.db")
 RESEARCH_DIR = Path("/Users/mathias/Development/DiscordBot/cuebot/docs/research")
 OUTPUT_DIR = Path("/Users/mathias/Development/community-radar/docs")
+
+# ─── Config ───────────────────────────────────────────────────────────────
+WEEKS_IN_TREND = 8
+ANOMALY_THRESHOLD = 2.0  # Standard deviations
 
 # ─── Sentiment Lexicon (gaming/community-specific) ───────────────────────────
 
@@ -174,6 +181,157 @@ def extract_power_words(text):
     return found
 
 
+def content_hash(text):
+    """Generate hash for deduplication"""
+    return hashlib.sha256(text.lower().strip().encode()).hexdigest()[:16]
+
+
+def deduplicate_reddit(messages):
+    """Remove cross-posted Reddit content that appears in multiple sorts.
+    
+    Reddit posts appear in new, hot, top?t=month, top?t=year, top?t=all.
+    We identify duplicates by content hash and keep only the first occurrence
+    (chronologically earliest) per unique post.
+    """
+    seen_hashes = set()
+    deduped = []
+    dup_count = 0
+    
+    # Sort by timestamp so we keep earliest
+    sorted_msgs = sorted(messages, key=lambda m: m["timestamp"] or "")
+    
+    for msg in sorted_msgs:
+        # Only deduplicate Reddit messages
+        if msg["channel_name"].startswith("reddit-"):
+            h = content_hash(msg["content"])
+            if h in seen_hashes:
+                dup_count += 1
+                continue
+            seen_hashes.add(h)
+        deduped.append(msg)
+    
+    return deduped
+
+
+def compute_weekly_trends(messages, weeks=WEEKS_IN_TREND):
+    """Compute weekly sentiment trends for the last N weeks."""
+    # Group by week
+    weekly = defaultdict(lambda: {"pos": 0, "neg": 0, "neu": 0, "total": 0, 
+                                   "discord_pos": 0, "discord_neg": 0, "discord_neu": 0, "discord_total": 0,
+                                   "reddit_pos": 0, "reddit_neg": 0, "reddit_neu": 0, "reddit_total": 0})
+    
+    for msg in messages:
+        if not msg["timestamp"]:
+            continue
+        try:
+            dt = datetime.fromisoformat(msg["timestamp"].replace("Z", "+00:00"))
+        except:
+            continue
+        
+        # ISO week
+        week_key = dt.strftime("%Y-W%U")
+        score, label = classify_sentiment(msg["content"])
+        
+        weekly[week_key]["total"] += 1
+        weekly[week_key][label[:3]] += 1
+        
+        platform = "discord" if not msg["channel_name"].startswith("reddit-") else "reddit"
+        weekly[week_key][f"{platform}_total"] += 1
+        weekly[week_key][f"{platform}_{label[:3]}"] += 1
+    
+    # Sort weeks and take last N
+    sorted_weeks = sorted(weekly.items())[-weeks:]
+    
+    trends = []
+    for week_key, data in sorted_weeks:
+        total = data["total"]
+        if total == 0:
+            continue
+        
+        pos_pct = data["pos"] / total * 100
+        neg_pct = data["neg"] / total * 100
+        neu_pct = data["neu"] / total * 100
+        
+        d_total = data["discord_total"]
+        r_total = data["reddit_total"]
+        d_pos_pct = data["discord_pos"] / d_total * 100 if d_total else 0
+        d_neg_pct = data["discord_neg"] / d_total * 100 if d_total else 0
+        r_pos_pct = data["reddit_pos"] / r_total * 100 if r_total else 0
+        r_neg_pct = data["reddit_neg"] / r_total * 100 if r_total else 0
+        
+        trends.append({
+            "week": week_key,
+            "total": total,
+            "pos_pct": round(pos_pct, 1),
+            "neg_pct": round(neg_pct, 1),
+            "neu_pct": round(neu_pct, 1),
+            "discord_total": d_total,
+            "discord_pos_pct": round(d_pos_pct, 1),
+            "discord_neg_pct": round(d_neg_pct, 1),
+            "reddit_total": r_total,
+            "reddit_pos_pct": round(r_pos_pct, 1),
+            "reddit_neg_pct": round(r_neg_pct, 1),
+        })
+    
+    return trends
+
+
+def detect_anomalies(trends, threshold=ANOMALY_THRESHOLD):
+    """Detect sentiment anomalies using rolling statistics (2σ).
+    
+    Returns list of anomaly dicts with week, metric, value, expected, severity.
+    """
+    if len(trends) < 3:
+        return []
+    
+    anomalies = []
+    
+    # Extract time series for each metric
+    metrics = {
+        "overall_pos_pct": [t["pos_pct"] for t in trends],
+        "overall_neg_pct": [t["neg_pct"] for t in trends],
+        "discord_pos_pct": [t["discord_pos_pct"] for t in trends],
+        "discord_neg_pct": [t["discord_neg_pct"] for t in trends],
+        "reddit_pos_pct": [t["reddit_pos_pct"] for t in trends],
+        "reddit_neg_pct": [t["reddit_neg_pct"] for t in trends],
+    }
+    
+    for metric_name, values in metrics.items():
+        if len(values) < 3:
+            continue
+        
+        # Rolling mean/std (excluding current week for detection)
+        for i in range(2, len(values)):
+            prior = values[:i]
+            mean = statistics.mean(prior)
+            stdev = statistics.stdev(prior) if len(prior) > 1 else 0
+            
+            if stdev == 0:
+                continue
+            
+            current = values[i]
+            z_score = abs(current - mean) / stdev
+            
+            if z_score >= threshold:
+                severity = "🔴 CRITICAL" if z_score >= 3 else ("🟠 HIGH" if z_score >= 2.5 else "🟡 MEDIUM")
+                direction = "↑ spike" if current > mean else "↓ drop"
+                
+                anomalies.append({
+                    "week": trends[i]["week"],
+                    "metric": metric_name.replace("_", " ").title(),
+                    "value": round(current, 1),
+                    "expected": round(mean, 1),
+                    "z_score": round(z_score, 2),
+                    "severity": severity,
+                    "direction": direction,
+                    "platform": "Discord" if "discord" in metric_name else ("Reddit" if "reddit" in metric_name else "Overall"),
+                })
+    
+    # Sort by severity (z_score desc)
+    anomalies.sort(key=lambda x: -x["z_score"])
+    return anomalies
+
+
 def run_analysis():
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
@@ -233,8 +391,23 @@ def run_analysis():
         purpose_dist[purpose] += 1
         purpose_by_channel[msg["channel_name"]][purpose] += 1
 
+    # ─── DEDUP: Remove cross-posted Reddit content ─────────────────────
+    print("\n[1.5/7] Deduplicating cross-posted Reddit content...")
+    deduped_messages = deduplicate_reddit(messages)
+    print(f"  {len(messages)} → {len(deduped_messages)} messages ({len(messages) - len(deduped_messages)} duplicates removed)")
+
+    # ─── WEEKLY TREND: Compute 8-week rolling sentiment ───────────────
+    print("\n[2/7] Computing weekly sentiment trends...")
+    weekly_trends = compute_weekly_trends(deduped_messages, WEEKS_IN_TREND)
+    print(f"  {len(weekly_trends)} weeks of trend data")
+
+    # ─── ANOMALY DETECTION: Find sentiment spikes ─────────────────────
+    print("\n[2.5/7] Detecting anomalies...")
+    anomalies = detect_anomalies(weekly_trends, ANOMALY_THRESHOLD)
+    print(f"  {len(anomalies)} anomalies detected")
+
     # ─── 2. Topic-level sentiment ───────────────────────────────────────
-    print("[2/6] Topic-level sentiment...")
+    print("\n[3/7] Topic-level sentiment...")
     topic_sentiment = defaultdict(lambda: {"pos": 0, "neg": 0, "neu": 0, "total": 0})
 
     # Use existing topic keywords from the DB
@@ -326,6 +499,8 @@ def run_analysis():
     print("[6/6] Compiling report...")
 
     total = len(messages)
+    deduped_total = len(deduped_messages)
+    duplicates_removed = total - deduped_total
     pos_pct = sentiment_dist["positive"] / total * 100
     neg_pct = sentiment_dist["negative"] / total * 100
     neu_pct = sentiment_dist["neutral"] / total * 100
@@ -333,6 +508,8 @@ def run_analysis():
     report = {
         "meta": {
             "total_messages_analyzed": total,
+            "deduped_messages": deduped_total,
+            "duplicates_removed": duplicates_removed,
             "channels": len(sentiment_by_channel),
             "date_range": {
                 "from": messages[0]["timestamp"][:10] if messages else "N/A",
@@ -401,6 +578,8 @@ def run_analysis():
             {"name": u["display_name"], "messages": u["messages"], "reactions_received": u["reactions_received"]}
             for u in active_users[:15]
         ],
+        "weekly_trends": weekly_trends,
+        "anomalies": anomalies,
     }
 
     # Save JSON
@@ -425,16 +604,37 @@ def generate_markdown_report(r):
     a = r  # shorthand
 
     lines.append("# Community Sentiment & Classification Analysis")
-    lines.append(f"\\n*Generated from {a['meta']['total_messages_analyzed']} Discord messages + {a['meta']['reddit_messages_in_db']} Reddit messages (DB) + {a['meta']['reddit_posts_in_json']} Reddit posts (JSON)*")
+    lines.append(f"\n*Generated from {a['meta']['total_messages_analyzed']} Discord messages + {a['meta']['reddit_messages_in_db']} Reddit messages (DB) + {a['meta']['reddit_posts_in_json']} Reddit posts (JSON)*")
+    lines.append(f"*Deduplicated: {a['meta']['deduped_messages']} unique messages ({a['meta']['duplicates_removed']} cross-post duplicates removed)*")
     lines.append(f"*Date range: {a['meta']['date_range']['from']} → {a['meta']['date_range']['to']}*")
 
     # ── Platform Breakdown ──
-    lines.append("\\n\\n## Platform Overview")
+    lines.append("\n\n## Platform Overview")
     lines.append(f"| Platform | Messages |")
     lines.append(f"|----------|----------|")
     lines.append(f"| Discord | {a['meta']['total_messages_analyzed']} |")
     lines.append(f"| Reddit | {a['meta']['reddit_messages_in_db'] + a['meta']['reddit_posts_in_json']} |")
-    lines.append(f"| **Total** | **{a['meta']['total_messages_analyzed'] + a['meta']['reddit_messages_in_db'] + a['meta']['reddit_posts_in_json']}** |")
+    lines.append(f"| **Total (raw)** | **{a['meta']['total_messages_analyzed'] + a['meta']['reddit_messages_in_db'] + a['meta']['reddit_posts_in_json']}** |")
+    lines.append(f"| **Total (deduped)** | **{a['meta']['deduped_messages']}** |")
+
+    # ── WEEKLY SENTIMENT TRENDS ──
+    lines.append("\n\n## Weekly Sentiment Trends (Last 8 Weeks)")
+    lines.append("\n| Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% |")
+    lines.append("|------|-------|------|------|------|--------------|--------------|-------------|-------------|")
+    for t in a.get("weekly_trends", []):
+        lines.append(f"| {t['week']} | {t['total']} | {t['pos_pct']}% | {t['neg_pct']}% | {t['neu_pct']}% | {t['discord_pos_pct']}% | {t['discord_neg_pct']}% | {t['reddit_pos_pct']}% | {t['reddit_neg_pct']}% |")
+
+    # ── ANOMALY ALERTS ──
+    anomalies = a.get("anomalies", [])
+    if anomalies:
+        lines.append("\n\n## 🚨 Anomaly Alerts (2σ Detection)")
+        lines.append("\n| Week | Platform | Metric | Value | Expected | Z-Score | Severity |")
+        lines.append("|------|----------|--------|-------|----------|---------|----------|")
+        for anom in anomalies[:10]:
+            lines.append(f"| {anom['week']} | {anom['platform']} | {anom['metric']} | {anom['value']}% | {anom['expected']}% | {anom['z_score']} | {anom['severity']} {anom['direction']} |")
+    else:
+        lines.append("\n\n## 🚨 Anomaly Alerts")
+        lines.append("\nNo significant sentiment anomalies detected (all metrics within 2σ of rolling average).")
 
     # ── Executive Summary ──
     lines.append("\n\n## Executive Summary")
@@ -454,6 +654,76 @@ def generate_markdown_report(r):
     else:
         feel = "predominantly negative — community frustration is high"
     lines.append(f"\n**Community feel: {feel}**")
+
+    # ── DECISION CARD ──
+    lines.append("\n\n## 🎯 Decisions Needed This Week")
+    lines.append("\n| Priority | Issue | Evidence | Recommended Action | Owner |")
+    lines.append("|----------|-------|----------|-------------------|-------|")
+
+    # Build decision cards from anomalies and gap analysis
+    decisions = []
+
+    # From anomalies
+    for anom in anomalies[:3]:
+        if "neg" in anom["metric"].lower() and anom["direction"] == "↑ spike":
+            decisions.append({
+                "priority": "🔴 HIGH",
+                "issue": f"{anom['platform']} negative sentiment spike",
+                "evidence": f"{anom['metric']} {anom['value']}% (expected {anom['expected']}%, z={anom['z_score']})",
+                "action": "Investigate root cause; prepare comms response if patch/bug related",
+                "owner": "Dev Lead + CM"
+            })
+        elif "pos" in anom["metric"].lower() and anom["direction"] == "↓ drop":
+            decisions.append({
+                "priority": "🟡 MED",
+                "issue": f"{anom['platform']} positive sentiment drop",
+                "evidence": f"{anom['metric']} {anom['value']}% (expected {anom['expected']}%, z={anom['z_score']})",
+                "action": "Review recent changes; amplify positive content",
+                "owner": "CM"
+            })
+
+    # From gap analysis
+    neg_topic = min(a["topic_sentiment"].items(), key=lambda x: x[1]["net_sentiment"]) if a["topic_sentiment"] else None
+    if neg_topic and neg_topic[1]["neg_pct"] > 40:
+        decisions.append({
+            "priority": "🔴 HIGH",
+            "issue": f"'{neg_topic[0]}' pain point",
+            "evidence": f"{neg_topic[1]['neg_pct']}% negative sentiment, net {neg_topic[1]['net_sentiment']:+.0f}%",
+            "action": "Dedicate dev resources; communicate fix timeline",
+            "owner": "Dev Lead"
+        })
+
+    feedback_pct = a["purpose"]["distribution"].get("feedback", {}).get("pct", 0)
+    if feedback_pct > 15:
+        decisions.append({
+            "priority": "🟡 MED",
+            "issue": "High feedback volume",
+            "evidence": f"{feedback_pct}% of messages are feedback/feature requests",
+            "action": "Implement structured feedback pipeline (voting, roadmap visibility)",
+            "owner": "PM"
+        })
+
+    support_pct = a["purpose"]["distribution"].get("support", {}).get("pct", 0)
+    if support_pct > 10:
+        decisions.append({
+            "priority": "🟡 MED",
+            "issue": "High support needs",
+            "evidence": f"{support_pct}% of messages are support/questions",
+            "action": "Create FAQ/pinned guides; consider bot auto-responses",
+            "owner": "CM"
+        })
+
+    if not decisions:
+        decisions.append({
+            "priority": "🟢 LOW",
+            "issue": "No urgent actions",
+            "evidence": "Sentiment stable within normal bounds",
+            "action": "Continue monitoring",
+            "owner": "CM"
+        })
+
+    for d in decisions:
+        lines.append(f"| {d['priority']} | {d['issue']} | {d['evidence']} | {d['action']} | {d['owner']} |")
 
     # ── Sentiment by Channel ──
     lines.append("\n\n## Sentiment by Channel")
@@ -509,15 +779,33 @@ def generate_markdown_report(r):
         indicator = "🟢" if net > 10 else ("🔴" if net < -10 else "🟡")
         lines.append(f"| {topic} | {data['total']} | {data['pos_pct']}% | {data['neg_pct']}% | {indicator} {net:+.0f} |")
 
-    # ── Top Negatives ──
+    # ── Top Negatives (deduplicated) ──
     lines.append("\n\n## Top Negative Messages")
-    for msg in a["top_negative"][:10]:
+    seen_content = set()
+    neg_count = 0
+    for msg in a["top_negative"]:
+        content_key = msg["content"][:100]
+        if content_key in seen_content:
+            continue
+        seen_content.add(content_key)
+        neg_count += 1
+        if neg_count > 10:
+            break
         lines.append(f"\n> **{msg['author']}** ({msg['channel']}, {msg['timestamp']}) [{msg['score']}]")
         lines.append(f"> {msg['content']}")
 
-    # ── Top Positives ──
+    # ── Top Positives (deduplicated) ──
     lines.append("\n\n## Top Positive Messages")
-    for msg in a["top_positive"][:10]:
+    seen_content = set()
+    pos_count = 0
+    for msg in a["top_positive"]:
+        content_key = msg["content"][:100]
+        if content_key in seen_content:
+            continue
+        seen_content.add(content_key)
+        pos_count += 1
+        if pos_count > 10:
+            break
         lines.append(f"\n> **{msg['author']}** ({msg['channel']}, {msg['timestamp']}) [+{msg['score']}]")
         lines.append(f"> {msg['content']}")
 

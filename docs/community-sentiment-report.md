@@ -1,22 +1,56 @@
 # Community Sentiment & Classification Analysis
-\n*Generated from 23865 Discord messages + 4314 Reddit messages (DB) + 1197 Reddit posts (JSON)*
-*Date range: 2025-04-17 → 2026-06-05*
-\n\n## Platform Overview
+
+*Generated from 33697 Discord messages + 14146 Reddit messages (DB) + 1997 Reddit posts (JSON)*
+*Deduplicated: 26785 unique messages (6912 cross-post duplicates removed)*
+*Date range: 2025-04-17 → 2026-05-07*
+
+
+## Platform Overview
 | Platform | Messages |
 |----------|----------|
-| Discord | 23865 |
-| Reddit | 5511 |
-| **Total** | **29376** |
+| Discord | 33697 |
+| Reddit | 16143 |
+| **Total (raw)** | **49840** |
+| **Total (deduped)** | **26785** |
+
+
+## Weekly Sentiment Trends (Last 8 Weeks)
+
+| Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% |
+|------|-------|------|------|------|--------------|--------------|-------------|-------------|
+| 2026-W15 | 807 | 13.9% | 8.4% | 77.7% | 13.6% | 8.4% | 23.8% | 9.5% |
+| 2026-W16 | 1075 | 9.5% | 3.9% | 86.6% | 9.4% | 3.9% | 13.3% | 6.7% |
+| 2026-W17 | 1022 | 9.9% | 1.5% | 88.6% | 9.7% | 1.4% | 23.5% | 5.9% |
+| 2026-W18 | 1550 | 17.0% | 3.2% | 79.8% | 10.7% | 3.5% | 20.7% | 3.0% |
+| 2026-W19 | 2132 | 12.9% | 3.9% | 83.2% | 9.5% | 6.0% | 14.9% | 2.7% |
+| 2026-W20 | 1802 | 15.4% | 3.7% | 81.0% | 11.5% | 4.7% | 18.3% | 2.9% |
+| 2026-W21 | 2003 | 12.3% | 2.5% | 85.1% | 13.3% | 3.0% | 11.8% | 2.3% |
+| 2026-W22 | 2285 | 16.9% | 5.0% | 78.1% | 9.0% | 7.7% | 20.3% | 3.9% |
+
+
+## 🚨 Anomaly Alerts (2σ Detection)
+
+| Week | Platform | Metric | Value | Expected | Z-Score | Severity |
+|------|----------|--------|-------|----------|---------|----------|
+| 2026-W18 | Overall | Overall Pos Pct | 17.0% | 11.1% | 2.42 | 🟡 MEDIUM ↑ spike |
+| 2026-W18 | Reddit | Reddit Neg Pct | 3.0% | 7.4% | 2.31 | 🟡 MEDIUM ↓ drop |
 
 
 ## Executive Summary
 
-**Overall Sentiment Ratio: 2.58** (positive:negative)
-- 15.2% positive (3618 messages)
-- 5.9% negative (1403 messages)
-- 79.0% neutral (18844 messages)
+**Overall Sentiment Ratio: 3.16** (positive:negative)
+- 15.8% positive (5308 messages)
+- 5.0% negative (1681 messages)
+- 79.3% neutral (26708 messages)
 
 **Community feel: strongly positive — members are enthusiastic and supportive**
+
+
+## 🎯 Decisions Needed This Week
+
+| Priority | Issue | Evidence | Recommended Action | Owner |
+|----------|-------|----------|-------------------|-------|
+| 🔴 HIGH | 'fix' pain point | 42.1% negative sentiment, net -30% | Dedicate dev resources; communicate fix timeline | Dev Lead |
 
 
 ## Sentiment by Channel
@@ -42,14 +76,20 @@
 | rackhaus-season-2🛡️ | 143 | 11 | 2 | 130 | 7.7% | 1.4% |
 | 🎱8ball-focused-s2 | 427 | 50 | 10 | 367 | 11.7% | 2.3% |
 | 💚pro-killer-tournament | 31 | 0 | 0 | 31 | 0.0% | 0.0% |
+| reddit-billiards-new | 1450 | 268 | 47 | 1135 | 18.5% | 3.2% |
+| reddit-snooker-new | 1975 | 310 | 61 | 1604 | 15.7% | 3.1% |
+| reddit-billiards-hot | 1179 | 267 | 27 | 885 | 22.6% | 2.3% |
+| reddit-snooker-hot | 1440 | 220 | 41 | 1179 | 15.3% | 2.8% |
+| reddit-billiards-top?t=month | 2002 | 325 | 47 | 1630 | 16.2% | 2.3% |
+| reddit-snooker-top?t=month | 1786 | 300 | 55 | 1431 | 16.8% | 3.1% |
 
 
 ## Cross-Platform Comparison: Discord vs Reddit
 
 | Platform | Positive | Negative | Neutral |
 |----------|----------|----------|---------|
-| Discord | 15.2% | 5.9% | 79.0% |
-| Reddit | 25.1% | 10.3% | 64.6% |
+| Discord | 15.8% | 5.0% | 79.3% |
+| Reddit | 20.6% | 5.4% | 74.0% |
 
 > Sentiment is broadly similar across platforms.
 
@@ -60,13 +100,13 @@ Message purpose classification:
 
 | Purpose | Count | % |
 |---------|-------|---|
-| general | 12952 | 54.3% |
-| feedback | 3309 | 13.9% |
-| showcase | 1972 | 8.3% |
-| competition | 1934 | 8.1% |
-| support | 1918 | 8.0% |
-| social | 1668 | 7.0% |
-| off_topic | 112 | 0.5% |
+| general | 18235 | 54.1% |
+| feedback | 4187 | 12.4% |
+| competition | 3412 | 10.1% |
+| showcase | 2883 | 8.6% |
+| support | 2744 | 8.1% |
+| social | 2099 | 6.2% |
+| off_topic | 137 | 0.4% |
 
 ### Purpose by Channel
 - **chat-pure-pool-pro**: general (6903), feedback (1395), showcase (1095)
@@ -88,6 +128,12 @@ Message purpose classification:
 - **rackhaus-season-2🛡️**: general (107), competition (13), feedback (11)
 - **🎱8ball-focused-s2**: general (363), competition (32), feedback (11)
 - **💚pro-killer-tournament**: general (26), competition (2), feedback (2)
+- **reddit-billiards-new**: general (701), competition (234), support (179)
+- **reddit-snooker-new**: general (1103), competition (331), showcase (164)
+- **reddit-billiards-hot**: general (561), competition (166), support (144)
+- **reddit-snooker-hot**: general (855), competition (189), showcase (141)
+- **reddit-billiards-top?t=month**: general (1092), competition (229), showcase (221)
+- **reddit-snooker-top?t=month**: general (971), competition (329), showcase (164)
 
 
 ## Community Identity: Power Words
@@ -96,36 +142,36 @@ Most frequently used community-specific terms:
 
 | Word/Phrase | Mentions |
 |-------------|----------|
-| pool | 3357 |
+| pool | 4143 |
+| table | 2442 |
+| cue | 2003 |
+| snooker | 1845 |
 | pure pool | 1566 |
-| table | 1228 |
-| cue | 1085 |
 | ripstone | 1067 |
-| snooker | 953 |
-| control | 522 |
-| rest | 507 |
-| focus | 445 |
-| power | 399 |
-| improve | 369 |
-| tip | 368 |
-| pocket | 340 |
-| 8 ball | 339 |
-| rail | 331 |
-| cue ball | 290 |
-| 9 ball | 228 |
-| position | 212 |
-| skill | 212 |
-| jump | 209 |
-| improvement | 191 |
-| trick | 181 |
-| speed | 179 |
-| angle | 176 |
-| bank | 172 |
-| spin | 170 |
-| english | 154 |
-| felt | 153 |
-| 9-ball | 153 |
-| follow | 143 |
+| rest | 805 |
+| pocket | 699 |
+| control | 656 |
+| tip | 626 |
+| cue ball | 603 |
+| focus | 528 |
+| rail | 488 |
+| power | 479 |
+| improve | 465 |
+| 8 ball | 455 |
+| skill | 405 |
+| 9 ball | 376 |
+| position | 375 |
+| practice | 353 |
+| follow | 314 |
+| angle | 307 |
+| jump | 300 |
+| spin | 290 |
+| english | 280 |
+| speed | 269 |
+| bank | 259 |
+| felt | 245 |
+| pockets | 241 |
+| trick | 236 |
 
 
 ## Topic-Level Sentiment
@@ -134,80 +180,31 @@ What drives positivity vs negativity:
 
 | Topic | Mentions | Pos% | Neg% | Net Sentiment |
 |-------|----------|------|------|---------------|
-| shot | 1856 | 28.2% | 9.8% | 🟢 +18 |
-| add | 1245 | 24.3% | 19.5% | 🟡 +5 |
-| dev | 1015 | 31.9% | 15.2% | 🟢 +17 |
-| online | 956 | 25.2% | 11.6% | 🟢 +14 |
-| ps5 | 948 | 18.0% | 11.4% | 🟡 +7 |
-| issue | 838 | 12.3% | 41.6% | 🔴 -29 |
-| patch | 777 | 18.0% | 34.1% | 🔴 -16 |
-| bug | 668 | 9.7% | 36.7% | 🔴 -27 |
-| steam | 652 | 20.2% | 18.9% | 🟡 +1 |
-| launch | 645 | 27.9% | 14.0% | 🟢 +14 |
-| update | 630 | 20.5% | 42.2% | 🔴 -22 |
-| release | 600 | 19.2% | 8.5% | 🟢 +11 |
-| fix | 572 | 12.1% | 45.5% | 🔴 -33 |
-| xbox | 490 | 20.4% | 10.4% | 🟡 +10 |
-| suggestion | 451 | 38.4% | 5.5% | 🟢 +33 |
-| wish | 374 | 27.8% | 9.4% | 🟢 +18 |
-| feature | 357 | 21.8% | 28.6% | 🟡 -7 |
-| problem | 354 | 11.0% | 39.8% | 🔴 -29 |
-| version | 319 | 34.2% | 13.2% | 🟢 +21 |
-| playstation | 284 | 16.9% | 10.2% | 🟡 +7 |
+| shot | 2633 | 28.6% | 8.6% | 🟢 +20 |
+| add | 1453 | 24.4% | 18.3% | 🟡 +6 |
+| dev | 1102 | 33.3% | 14.2% | 🟢 +19 |
+| online | 991 | 25.1% | 11.5% | 🟢 +14 |
+| issue | 964 | 13.9% | 39.7% | 🔴 -26 |
+| ps5 | 950 | 18.2% | 11.4% | 🟡 +7 |
+| patch | 784 | 18.2% | 33.9% | 🔴 -16 |
+| bug | 673 | 9.8% | 36.4% | 🔴 -27 |
+| fix | 667 | 12.4% | 42.1% | 🔴 -30 |
+| steam | 659 | 20.5% | 18.7% | 🟡 +2 |
+| update | 654 | 20.2% | 41.3% | 🔴 -21 |
+| launch | 649 | 27.7% | 13.9% | 🟢 +14 |
+| release | 643 | 19.4% | 8.7% | 🟢 +11 |
+| tournament | 515 | 31.1% | 2.1% | 🟢 +29 |
+| problem | 494 | 13.8% | 35.4% | 🔴 -22 |
+| xbox | 492 | 20.7% | 10.4% | 🟢 +10 |
+| suggestion | 490 | 39.4% | 5.5% | 🟢 +34 |
+| wish | 417 | 29.5% | 9.8% | 🟢 +20 |
+| feature | 387 | 23.5% | 27.6% | 🟡 -4 |
+| version | 354 | 35.6% | 11.9% | 🟢 +24 |
 
 
 ## Top Negative Messages
 
 > **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
-> Patch 3 is now live on PS5 &amp; Steam
-
-Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
-
-[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
-
-> **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
-> Patch 3 is now live on PS5 &amp; Steam
-
-Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
-
-[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
-
-> **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
-> Patch 3 is now live on PS5 &amp; Steam
-
-Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
-
-[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
-
-> **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
-> Patch 3 is now live on PS5 &amp; Steam
-
-Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
-
-[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
-
-> **RipstoneGames** (reddit-PurePoolPro-hot, 2026-05-21) [-13]
-> Patch 3 is now live on PS5 &amp; Steam
-
-Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
-
-[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
-
-> **RipstoneGames** (reddit-PurePoolPro-top?t=month, 2026-05-21) [-13]
-> Patch 3 is now live on PS5 &amp; Steam
-
-Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
-
-[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
-
-> **RipstoneGames** (reddit-PurePoolPro-top?t=year, 2026-05-21) [-13]
-> Patch 3 is now live on PS5 &amp; Steam
-
-Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
-
-[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
-
-> **RipstoneGames** (reddit-PurePoolPro-top?t=all, 2026-05-21) [-13]
 > Patch 3 is now live on PS5 &amp; Steam
 
 Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
@@ -225,28 +222,62 @@ Hey @ImStrappedIn  - let’s reset this a bit.
 
 It’s completely fair to be frustrated if something isn’t working the way you expected. That doesn’t make you wron
 
+> **itsJake** (questions-and-suggestions-pure-pool-pro, 2026-02-18) [-9]
+> Heyooooo. @JAMBO--C - I'm fully aware of the Halo effect, don't worry. Unfortunately, it won't be in the week 1 patch that solves the popping. 
+I'm looking at getting this in as part of the larger mon
+
+> **SnwcerLwpi** (reddit-snooker-new, 2026-05-31) [-9]
+> I think it's helpful to see what the Church itself has said about this:
+
+A Statement in Response to Recent Social Media Posts Regarding the Snooker Club:
+
+St Matthias Church is deeply committed to usi
+
 
 ## Top Positive Messages
+
+> **CreeDorofl** (reddit-billiards-hot, 2025-02-06) [+27]
+> [Guide] What cue should I get?
+
+###tl;dr###
+
+Updated for 2025, old guide is [here.](https://www.reddit.com/r/billiards/comments/7x1iub/guide_buying_your_first_cue_need_help/) This one will be shorter!
+
+> **eljefe883** (reddit-snooker-new, 2026-05-24) [+20]
+> Staying on Tour By Winning One Match in Each Ranking Event
+
+During one of the 2025 Championship League summer broadcasts, a commentator wondered if a player could stay on the Tour if all they did was 
+
+> **Aromatic_Tangelo4967** (reddit-snooker-new, 2026-05-06) [+20]
+> WORLD'S DECIDERS, 6 IN ALL, 4 IN THE CRUCIBLE ERA.
+
+Here's some decider action to watch in the snooker less northern summer.
+
+1. John Pulman (ENG) bt. Fred Davis (ENG)
+
+37–36, 1965. Decider frame scor
+
+> **GreenLion777** (reddit-snooker-new, 2026-05-08) [+19]
+> Ronnie has not been the best for two decades lol. Most gifted, yes.
+    
+      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca
+
+> **Confident_Leg2370** (reddit-snooker-new, 2026-05-07) [+16]
+> What seals the GOAT argument for you?
+
+Hendry and O Sullivan are regarded as the greatest of all time, I feel most would say Ronnie was GOAT, but Hendry to a lot of others is still GOAT. So how do you
+
+> **wlscwoj** (reddit-billiards-top?t=month, 2026-05-09) [+15]
+> As a former captain, and my current captain looks to me (SL7/9). I do not agree with this during the regular season. You want your players to have fun, learn and develop their game.
+BUT when it gets c
 
 > **getting_stoked** (reddit-PurePoolPro-new, 2026-02-14) [+14]
 > As a big fan of the original, i have three pieces of feedback.
 
 i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
 
-> **getting_stoked** (reddit-PurePoolPro-hot, 2026-02-14) [+14]
-> As a big fan of the original, i have three pieces of feedback.
-
-i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
-
-> **getting_stoked** (reddit-PurePoolPro-top?t=year, 2026-02-14) [+14]
-> As a big fan of the original, i have three pieces of feedback.
-
-i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
-
-> **getting_stoked** (reddit-PurePoolPro-top?t=all, 2026-02-14) [+14]
-> As a big fan of the original, i have three pieces of feedback.
-
-i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
+> **Popular_Speed5838** (reddit-billiards-new, 2026-06-03) [+14]
+> Agreed, OP achieved their goal of having a Dojo look that functions perfectly as pool room. Everything is to theme, even the Rolex panda on the wall fits for some reason, although I’d have probably go
 
 > **JAMBO--C** (chat-pure-pool-pro, 2026-02-17) [+13]
 > @Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. 
@@ -256,39 +287,12 @@ BUT…. Yes, I do think pure pool is better.
 The reasons for that are….
 
 
-
-> **JAMBO--C** (chat-pure-pool-pro, 2026-02-17) [+13]
-> @Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. 
-
-BUT…. Yes, I do think pure pool is better. 
-
-The reasons for that are….
-
-
-
-> **JAMBO--C** (chat-pure-pool-pro, 2026-02-17) [+13]
-> @Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. 
-
-BUT…. Yes, I do think pure pool is better. 
-
-The reasons for that are….
-
-
-
-> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
-> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
-
-> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
-> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
-
-> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
-> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
 
 
 ## Engagement Metrics
-- Total reactions: 24196
-- Avg reactions/message: 1.01
-- Reply rate: 94.9% (22643 replies)
+- Total reactions: 96201
+- Avg reactions/message: 2.85
+- Reply rate: 94.0% (31675 replies)
 - Active users (5+ msgs): 20
 
 ### Top Contributors
@@ -316,11 +320,12 @@ The reasons for that are….
 
 ### What the community wants: general
 ### What's working: physics (net sentiment: +63%)
-### What's broken: fix (net sentiment: -33%)
+### What's broken: fix (net sentiment: -30%)
 
 ### Identified Gaps
-- **'fix' is a pain point**: 45.5% negative sentiment. Needs immediate attention.
-- **Bug frustration high**: Bug-related messages are 36.7% negative. Communication about fixes needed.
+- **Competition interest (10.1%)**: Tournament/league demand exists. Formal competition structure needed.
+- **'fix' is a pain point**: 42.1% negative sentiment. Needs immediate attention.
+- **Bug frustration high**: Bug-related messages are 36.4% negative. Communication about fixes needed.
 
 ### Recommendations
 1. **Address the top negative topic** — dedicate dev resources to the highest-negativity area

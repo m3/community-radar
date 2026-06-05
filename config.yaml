@@ -37,6 +37,7 @@ reddit:
   skills_dir: "/Users/mathias/Development/community-radar/scripts"
 
   # Tracked subreddits and sort methods
+  # Add new subreddits to monitor for opportunities, sentiment, mentions, and competitors
   subreddits:
     PurePoolPro:
       name: "PurePoolPro"
@@ -46,6 +47,38 @@ reddit:
         - top?t=month
         - top?t=year
         - top?t=all
+    billiards:
+      name: "billiards"
+      sorts:
+        - new
+        - hot
+        - top?t=month
+        - top?t=year
+      # Tags for filtering opportunities and competitor mentions
+      track_keywords:
+        - "pure pool"
+        - "ripstone"
+        - "snooker"
+        - "8 ball"
+        - "9 ball"
+        - "10 ball"
+        - "physics"
+        - "simulation"
+    snooker:
+      name: "snooker"
+      sorts:
+        - new
+        - hot
+        - top?t=month
+        - top?t=year
+      # Tags for filtering opportunities and competitor mentions
+      track_keywords:
+        - "pure pool"
+        - "ripstone"
+        - "billiards"
+        - "pool"
+        - "physics"
+        - "simulation"
 
 # Output directories
 data_dir: "data"

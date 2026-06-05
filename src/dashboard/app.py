@@ -234,5 +234,253 @@ def api_channels():
     return jsonify([dict(r) for r in rows])
 
 
+# ─── Cuebot Engagement Scoring API ──────────────────────────────────────
+
+@app.route("/api/cuebot/engagement/score")
+def api_cuebot_engagement_score():
+    """Get engagement scores for all users across platforms.
+    
+    Returns a ranked list of users with composite engagement scores
+    based on message count, reactions, replies, sentiment, and recency.
+    """
+    db = get_db()
+
+    # Calculate engagement scores
+    # Components: message_count, reactions_received, reply_count, sentiment_score, recency
+    rows = db.execute("""
+        SELECT 
+            u.id as user_id,
+            u.display_name,
+            u.username,
+            u.messages as total_messages,
+            u.reactions_received,
+            u.last_seen,
+            COALESCE(u.sentiment, 0) as sentiment_score,
+            (SELECT platform FROM messages WHERE user_id = u.id LIMIT 1) as platform,
+            (SELECT COUNT(*) FROM messages WHERE reply_to IN 
+                (SELECT message_id FROM messages WHERE user_id = u.id)
+            ) as reply_count
+        FROM users u
+        WHERE u.messages > 0
+    """).fetchall()
+
+    scores = []
+    now = datetime.now()
+    for r in rows:
+        # Recency score (0-1, 1 = active today)
+        last_active = r["last_seen"]
+        recency = 0
+        if last_active:
+            try:
+                last_dt = datetime.fromisoformat(last_active.replace("Z", "+00:00"))
+                days_ago = (now - last_dt).days
+                recency = max(0, 1 - days_ago / 90)  # Decay over 90 days
+            except:
+                recency = 0
+
+        # Composite engagement score
+        # Weights: messages 30%, reactions 25%, replies 20%, sentiment 15%, recency 10%
+        msg_score = min(r["total_messages"] / 500, 1) * 30  # Cap at 500 messages
+        reaction_score = min(r["reactions_received"] / 200, 1) * 25  # Cap at 200 reactions
+        reply_score = min(r["reply_count"] / 100, 1) * 20  # Cap at 100 replies
+        sent_score = (r["sentiment_score"] + 1) / 2 * 15  # -1 to 1 → 0 to 15
+        recency_score = recency * 10
+
+        total_score = msg_score + reaction_score + reply_score + sent_score + recency_score
+
+        scores.append({
+            "user_id": r["user_id"],
+            "display_name": r["display_name"],
+            "username": r["username"],
+            "platform": r["platform"],
+            "total_messages": r["total_messages"],
+            "reactions_received": r["reactions_received"],
+            "reply_count": r["reply_count"],
+            "sentiment_score": round(r["sentiment_score"], 3),
+            "last_active": r["last_seen"],
+            "engagement_score": round(total_score, 2),
+            "score_breakdown": {
+                "messages": round(msg_score, 2),
+                "reactions": round(reaction_score, 2),
+                "replies": round(reply_score, 2),
+                "sentiment": round(sent_score, 2),
+                "recency": round(recency_score, 2)
+            }
+        })
+
+    # Sort by engagement score descending
+    scores.sort(key=lambda x: x["engagement_score"], reverse=True)
+
+    db.close()
+
+    return jsonify({
+        "scores": scores,
+        "total_users": len(scores),
+        "generated_at": now.isoformat()
+    })
+
+
+@app.route("/api/cuebot/engagement/leaderboard")
+def api_cuebot_leaderboard():
+    """Get top N users by engagement score."""
+    limit = min(int(request.args.get("limit", 50)), 200)
+    platform = request.args.get("platform")
+
+    db = get_db()
+
+    query = """
+        SELECT 
+            u.id as user_id,
+            u.display_name,
+            u.username,
+            u.messages as total_messages,
+            u.reactions_received,
+            u.last_seen,
+            COALESCE(u.sentiment, 0) as sentiment_score,
+            (SELECT platform FROM messages WHERE user_id = u.id LIMIT 1) as platform,
+            (SELECT COUNT(*) FROM messages WHERE reply_to IN 
+                (SELECT message_id FROM messages WHERE user_id = u.id)
+            ) as reply_count
+        FROM users u
+        WHERE u.messages > 0
+    """
+    params = []
+
+    if platform:
+        query += " AND u.platform = ?"
+        params.append(platform)
+
+    rows = db.execute(query, params).fetchall()
+
+    now = datetime.now()
+    scores = []
+    for r in rows:
+        last_active = r["last_seen"]
+        recency = 0
+        if last_active:
+            try:
+                last_dt = datetime.fromisoformat(last_active.replace("Z", "+00:00"))
+                days_ago = (now - last_dt).days
+                recency = max(0, 1 - days_ago / 90)
+            except:
+                recency = 0
+
+        msg_score = min(r["total_messages"] / 500, 1) * 30
+        reaction_score = min(r["reactions_received"] / 200, 1) * 25
+        reply_score = min(r["reply_count"] / 100, 1) * 20
+        sent_score = (r["sentiment_score"] + 1) / 2 * 15
+        recency_score = recency * 10
+
+        total_score = msg_score + reaction_score + reply_score + sent_score + recency_score
+
+        scores.append({
+            "user_id": r["user_id"],
+            "display_name": r["display_name"],
+            "username": r["username"],
+            "platform": r["platform"],
+            "engagement_score": round(total_score, 2),
+            "total_messages": r["total_messages"],
+            "reactions_received": r["reactions_received"],
+            "reply_count": r["reply_count"]
+        })
+
+    scores.sort(key=lambda x: x["engagement_score"], reverse=True)
+    db.close()
+
+    return jsonify({
+        "leaderboard": scores[:limit],
+        "limit": limit,
+        "platform_filter": platform
+    })
+
+
+@app.route("/api/cuebot/engagement/user/<user_id>")
+def api_cuebot_user_profile(user_id):
+    """Get detailed engagement profile for a specific user."""
+    db = get_db()
+
+    user = db.execute("""
+        SELECT u.*, 
+            (SELECT COUNT(*) FROM messages WHERE reply_to IN 
+                (SELECT message_id FROM messages WHERE user_id = u.id)
+            ) as reply_count
+        FROM users u
+        WHERE u.id = ?
+    """, (user_id,)).fetchone()
+
+    if not user:
+        db.close()
+        return jsonify({"error": "User not found"}), 404
+
+    # Get user's messages with sentiment
+    messages = db.execute("""
+        SELECT m.content, m.timestamp, m.reactions, m.platform, m.channel_id,
+               c.name as channel_name,
+               CASE 
+                   WHEN m.reactions > 2 THEN 'positive'
+                   WHEN m.reactions < 0 THEN 'negative'
+                   ELSE 'neutral'
+               END as sentiment_proxy
+        FROM messages m
+        JOIN channels c ON m.channel_id = c.id
+        WHERE m.user_id = ? AND m.content IS NOT NULL AND m.content != ''
+        ORDER BY m.timestamp DESC
+        LIMIT 100
+    """, (user_id,)).fetchall()
+
+    # Channel activity
+    channel_activity = db.execute("""
+        SELECT c.name as channel_name, m.platform, COUNT(*) as msg_count
+        FROM messages m
+        JOIN channels c ON m.channel_id = c.id
+        WHERE m.user_id = ?
+        GROUP BY c.id, m.platform
+        ORDER BY msg_count DESC
+    """, (user_id,)).fetchall()
+
+    # Cross-platform presence
+    platforms = db.execute("""
+        SELECT DISTINCT platform FROM messages WHERE user_id = ?
+    """, (user_id,)).fetchall()
+
+    db.close()
+
+    return jsonify({
+        "user_id": user["id"],
+        "display_name": user["display_name"],
+        "username": user["username"],
+        "total_messages": user["messages"],
+        "reactions_received": user["reactions_received"],
+        "reply_count": user["reply_count"],
+        "sentiment_score": user["sentiment"] if user["sentiment"] else 0,
+        "last_active": user["last_seen"],
+        "platforms": [p["platform"] for p in platforms],
+        "channel_activity": [dict(c) for c in channel_activity],
+        "recent_messages": [dict(m) for m in messages]
+    })
+
+
+@app.route("/api/cuebot/engagement/crossref")
+def api_cuebot_crossref():
+    """Get cross-references between Discord and Reddit users."""
+    db = get_db()
+
+    rows = db.execute("""
+        SELECT cr.*, 
+            u1.display_name as discord_name, u1.username as discord_username,
+            u2.display_name as reddit_name, u2.username as reddit_username
+        FROM cross_references cr
+        LEFT JOIN users u1 ON cr.username1 = u1.username
+        LEFT JOIN users u2 ON cr.username2 = u2.username
+    """).fetchall()
+
+    db.close()
+
+    return jsonify({
+        "cross_references": [dict(r) for r in rows],
+        "total": len(rows)
+    })
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

@@ -1,363 +1,547 @@
 {
   "meta": {
-    "total_messages_analyzed": 5738,
-    "channels": 5,
+    "total_messages_analyzed": 15842,
+    "channels": 11,
     "date_range": {
       "from": "2025-04-17",
-      "to": "2026-06-05"
+      "to": "2026-02-23"
     },
-    "reddit_posts_analyzed": 8
+    "reddit_posts_analyzed": 5511,
+    "reddit_messages_in_db": 4314,
+    "reddit_posts_in_json": 1197
   },
   "sentiment": {
     "overall": {
       "positive": {
-        "count": 767,
-        "pct": 13.4
+        "count": 2670,
+        "pct": 16.9
       },
       "negative": {
-        "count": 318,
-        "pct": 5.5
+        "count": 1046,
+        "pct": 6.6
       },
       "neutral": {
-        "count": 4653,
-        "pct": 81.1
+        "count": 12126,
+        "pct": 76.5
       },
-      "sentiment_ratio": 2.41
+      "sentiment_ratio": 2.55
     },
     "by_channel": {
       "chat-pure-pool-pro": {
-        "positive": 499,
-        "negative": 222,
-        "neutral": 3323,
-        "total": 4044,
+        "positive": 998,
+        "negative": 444,
+        "neutral": 6646,
+        "total": 8088,
         "pos_pct": 12.3,
         "neg_pct": 5.5
       },
       "questions-and-suggestions-pure-pool-pro": {
-        "positive": 197,
-        "negative": 80,
-        "neutral": 839,
-        "total": 1116,
+        "positive": 394,
+        "negative": 160,
+        "neutral": 1678,
+        "total": 2232,
         "pos_pct": 17.7,
         "neg_pct": 7.2
       },
       "find-a-game-pure-pool-pro": {
-        "positive": 49,
-        "negative": 15,
-        "neutral": 284,
-        "total": 348,
+        "positive": 98,
+        "negative": 30,
+        "neutral": 568,
+        "total": 696,
         "pos_pct": 14.1,
         "neg_pct": 4.3
       },
       "play-of-the-month-submissions": {
-        "positive": 2,
+        "positive": 4,
         "negative": 0,
-        "neutral": 21,
-        "total": 23,
+        "neutral": 42,
+        "total": 46,
         "pos_pct": 8.7,
         "neg_pct": 0.0
       },
       "pool-and-snooker-talk": {
-        "positive": 20,
-        "negative": 1,
-        "neutral": 186,
-        "total": 207,
+        "positive": 40,
+        "negative": 2,
+        "neutral": 372,
+        "total": 414,
         "pos_pct": 9.7,
         "neg_pct": 0.5
+      },
+      "announcements-ripstone": {
+        "positive": 9,
+        "negative": 2,
+        "neutral": 41,
+        "total": 52,
+        "pos_pct": 17.3,
+        "neg_pct": 3.8
+      },
+      "reddit-PurePoolPro-new": {
+        "positive": 511,
+        "negative": 192,
+        "neutral": 1256,
+        "total": 1959,
+        "pos_pct": 26.1,
+        "neg_pct": 9.8
+      },
+      "reddit-PurePoolPro-hot": {
+        "positive": 253,
+        "negative": 80,
+        "neutral": 599,
+        "total": 932,
+        "pos_pct": 27.1,
+        "neg_pct": 8.6
+      },
+      "reddit-PurePoolPro-top?t=month": {
+        "positive": 51,
+        "negative": 21,
+        "neutral": 153,
+        "total": 225,
+        "pos_pct": 22.7,
+        "neg_pct": 9.3
+      },
+      "reddit-PurePoolPro-top?t=year": {
+        "positive": 250,
+        "negative": 77,
+        "neutral": 586,
+        "total": 913,
+        "pos_pct": 27.4,
+        "neg_pct": 8.4
+      },
+      "reddit-PurePoolPro-top?t=all": {
+        "positive": 62,
+        "negative": 38,
+        "neutral": 185,
+        "total": 285,
+        "pos_pct": 21.8,
+        "neg_pct": 13.3
       }
     },
     "reddit_comparison": {
-      "positive": 0,
-      "negative": 0,
-      "neutral": 8,
-      "pos_pct": 0.0,
-      "neg_pct": 0.0
+      "positive": 1383,
+      "negative": 566,
+      "neutral": 3554,
+      "pos_pct": 25.1,
+      "neg_pct": 10.3,
+      "reddit_by_channel": {
+        "reddit-PurePoolPro-new": {
+          "neutral": 1256,
+          "negative": 192,
+          "positive": 511
+        },
+        "reddit-PurePoolPro-hot": {
+          "neutral": 599,
+          "positive": 253,
+          "negative": 80
+        },
+        "reddit-PurePoolPro-top?t=month": {
+          "negative": 21,
+          "neutral": 153,
+          "positive": 51
+        },
+        "reddit-PurePoolPro-top?t=year": {
+          "neutral": 586,
+          "positive": 250,
+          "negative": 77
+        },
+        "reddit-PurePoolPro-top?t=all": {
+          "neutral": 185,
+          "negative": 38,
+          "positive": 62
+        }
+      }
     }
   },
   "purpose": {
     "distribution": {
       "general": {
-        "count": 3221,
-        "pct": 56.1
+        "count": 7991,
+        "pct": 50.4
       },
       "feedback": {
-        "count": 698,
-        "pct": 12.2
+        "count": 2485,
+        "pct": 15.7
       },
       "showcase": {
-        "count": 489,
-        "pct": 8.5
+        "count": 1427,
+        "pct": 9.0
       },
       "support": {
-        "count": 481,
-        "pct": 8.4
+        "count": 1364,
+        "pct": 8.6
       },
       "competition": {
-        "count": 429,
-        "pct": 7.5
+        "count": 1263,
+        "pct": 8.0
       },
       "social": {
-        "count": 398,
-        "pct": 6.9
+        "count": 1228,
+        "pct": 7.8
       },
       "off_topic": {
-        "count": 22,
-        "pct": 0.4
+        "count": 84,
+        "pct": 0.5
       }
     },
     "by_channel": {
       "chat-pure-pool-pro": {
-        "general": 2301,
-        "feedback": 465,
-        "showcase": 365
+        "general": 4602,
+        "feedback": 930,
+        "showcase": 730
       },
       "questions-and-suggestions-pure-pool-pro": {
-        "general": 509,
-        "feedback": 212,
-        "competition": 117
+        "general": 1018,
+        "feedback": 424,
+        "competition": 234
       },
       "find-a-game-pure-pool-pro": {
-        "general": 245,
-        "social": 40,
-        "competition": 29
+        "general": 490,
+        "social": 80,
+        "competition": 58
       },
       "play-of-the-month-submissions": {
-        "showcase": 16,
-        "general": 6,
-        "support": 1
+        "showcase": 32,
+        "general": 12,
+        "support": 2
       },
       "pool-and-snooker-talk": {
-        "general": 160,
-        "competition": 25,
-        "showcase": 9
+        "general": 320,
+        "competition": 50,
+        "showcase": 18
+      },
+      "announcements-ripstone": {
+        "feedback": 31,
+        "general": 6,
+        "showcase": 4
+      },
+      "reddit-PurePoolPro-new": {
+        "general": 718,
+        "feedback": 487,
+        "showcase": 203
+      },
+      "reddit-PurePoolPro-hot": {
+        "general": 350,
+        "feedback": 221,
+        "social": 96
+      },
+      "reddit-PurePoolPro-top?t=month": {
+        "general": 72,
+        "feedback": 54,
+        "competition": 27
+      },
+      "reddit-PurePoolPro-top?t=year": {
+        "general": 346,
+        "feedback": 221,
+        "social": 92
+      },
+      "reddit-PurePoolPro-top?t=all": {
+        "feedback": 75,
+        "general": 57,
+        "showcase": 46
       }
     }
   },
   "power_words": {
-    "pool": 685,
-    "pure pool": 265,
-    "ripstone": 255,
-    "table": 250,
-    "cue": 239,
-    "snooker": 220,
-    "rest": 126,
-    "control": 100,
-    "focus": 96,
-    "8 ball": 75,
-    "power": 73,
-    "pocket": 72,
-    "cue ball": 70,
-    "tip": 67,
-    "rail": 66,
-    "improve": 57,
-    "skill": 50,
-    "9 ball": 48,
-    "position": 47,
-    "spin": 43,
-    "trick": 43,
-    "speed": 41,
-    "jump": 40,
-    "angle": 38,
-    "pockets": 35,
-    "felt": 34,
-    "practice": 30,
-    "follow": 29,
-    "english": 28,
-    "bank": 26,
-    "cueball": 24,
-    "kick": 23,
-    "improvement": 23,
-    "8-ball": 17,
-    "angles": 16,
-    "9-ball": 16,
-    "cloth": 14,
-    "jump shot": 14,
-    "consistent": 14,
-    "rails": 13
+    "pool": 2461,
+    "pure pool": 1274,
+    "table": 944,
+    "cue": 808,
+    "ripstone": 772,
+    "snooker": 721,
+    "control": 418,
+    "rest": 367,
+    "power": 320,
+    "improve": 305,
+    "tip": 295,
+    "focus": 294,
+    "pocket": 267,
+    "rail": 262,
+    "8 ball": 237,
+    "cue ball": 220,
+    "improvement": 164,
+    "9 ball": 163,
+    "position": 163,
+    "jump": 161,
+    "skill": 153,
+    "bank": 145,
+    "speed": 137,
+    "trick": 137,
+    "angle": 137,
+    "9-ball": 132,
+    "spin": 125,
+    "english": 125,
+    "felt": 117,
+    "follow": 108,
+    "kick": 106,
+    "practice": 106,
+    "pockets": 104,
+    "8-ball": 81,
+    "angles": 66,
+    "rails": 59,
+    "cueball": 58,
+    "trick shot": 56,
+    "bank shot": 49,
+    "consistent": 47
   },
   "topic_sentiment": {
     "shot": {
-      "total": 384,
-      "pos_pct": 21.6,
-      "neg_pct": 8.1,
-      "net_sentiment": 13.5
+      "total": 1440,
+      "pos_pct": 30.2,
+      "neg_pct": 10.5,
+      "net_sentiment": 19.7
     },
     "add": {
-      "total": 266,
-      "pos_pct": 17.7,
-      "neg_pct": 19.5,
-      "net_sentiment": -1.9
+      "total": 952,
+      "pos_pct": 26.6,
+      "neg_pct": 19.7,
+      "net_sentiment": 6.8
     },
     "dev": {
-      "total": 213,
-      "pos_pct": 29.6,
-      "neg_pct": 15.0,
-      "net_sentiment": 14.6
-    },
-    "online": {
-      "total": 212,
-      "pos_pct": 19.8,
-      "neg_pct": 10.8,
-      "net_sentiment": 9.0
-    },
-    "issue": {
-      "total": 208,
-      "pos_pct": 11.5,
-      "neg_pct": 41.3,
-      "net_sentiment": -29.8
+      "total": 795,
+      "pos_pct": 32.6,
+      "neg_pct": 15.1,
+      "net_sentiment": 17.5
     },
     "ps5": {
-      "total": 180,
-      "pos_pct": 13.3,
-      "neg_pct": 8.3,
-      "net_sentiment": 5.0
-    },
-    "bug": {
-      "total": 159,
-      "pos_pct": 8.2,
-      "neg_pct": 39.6,
-      "net_sentiment": -31.4
-    },
-    "release": {
-      "total": 135,
-      "pos_pct": 16.3,
-      "neg_pct": 9.6,
-      "net_sentiment": 6.7
-    },
-    "patch": {
-      "total": 135,
-      "pos_pct": 11.1,
-      "neg_pct": 30.4,
-      "net_sentiment": -19.3
-    },
-    "steam": {
-      "total": 127,
-      "pos_pct": 24.4,
-      "neg_pct": 9.4,
-      "net_sentiment": 15.0
-    },
-    "launch": {
-      "total": 127,
-      "pos_pct": 24.4,
-      "neg_pct": 10.2,
-      "net_sentiment": 14.2
-    },
-    "xbox": {
-      "total": 112,
-      "pos_pct": 19.6,
-      "neg_pct": 10.7,
-      "net_sentiment": 8.9
-    },
-    "fix": {
-      "total": 108,
-      "pos_pct": 10.2,
-      "neg_pct": 51.9,
-      "net_sentiment": -41.7
-    },
-    "update": {
-      "total": 104,
-      "pos_pct": 17.3,
-      "neg_pct": 36.5,
-      "net_sentiment": -19.2
-    },
-    "suggestion": {
-      "total": 97,
-      "pos_pct": 41.2,
-      "neg_pct": 6.2,
-      "net_sentiment": 35.1
-    },
-    "problem": {
-      "total": 89,
-      "pos_pct": 5.6,
-      "neg_pct": 38.2,
-      "net_sentiment": -32.6
-    },
-    "feature": {
-      "total": 71,
-      "pos_pct": 14.1,
-      "neg_pct": 28.2,
-      "net_sentiment": -14.1
-    },
-    "version": {
-      "total": 70,
-      "pos_pct": 30.0,
-      "neg_pct": 14.3,
-      "net_sentiment": 15.7
-    },
-    "playstation": {
-      "total": 55,
-      "pos_pct": 14.5,
-      "neg_pct": 7.3,
+      "total": 758,
+      "pos_pct": 19.1,
+      "neg_pct": 11.9,
       "net_sentiment": 7.3
     },
+    "online": {
+      "total": 729,
+      "pos_pct": 27.0,
+      "neg_pct": 12.1,
+      "net_sentiment": 15.0
+    },
+    "patch": {
+      "total": 636,
+      "pos_pct": 19.5,
+      "neg_pct": 34.9,
+      "net_sentiment": -15.4
+    },
+    "issue": {
+      "total": 613,
+      "pos_pct": 12.7,
+      "neg_pct": 42.3,
+      "net_sentiment": -29.5
+    },
+    "steam": {
+      "total": 514,
+      "pos_pct": 19.3,
+      "neg_pct": 21.4,
+      "net_sentiment": -2.1
+    },
+    "launch": {
+      "total": 509,
+      "pos_pct": 29.1,
+      "neg_pct": 14.9,
+      "net_sentiment": 14.1
+    },
+    "update": {
+      "total": 506,
+      "pos_pct": 21.5,
+      "neg_pct": 44.1,
+      "net_sentiment": -22.5
+    },
+    "bug": {
+      "total": 478,
+      "pos_pct": 10.5,
+      "neg_pct": 37.4,
+      "net_sentiment": -27.0
+    },
+    "release": {
+      "total": 436,
+      "pos_pct": 21.1,
+      "neg_pct": 8.5,
+      "net_sentiment": 12.6
+    },
+    "fix": {
+      "total": 414,
+      "pos_pct": 13.8,
+      "neg_pct": 48.1,
+      "net_sentiment": -34.3
+    },
+    "xbox": {
+      "total": 372,
+      "pos_pct": 20.7,
+      "neg_pct": 10.2,
+      "net_sentiment": 10.5
+    },
+    "suggestion": {
+      "total": 325,
+      "pos_pct": 40.0,
+      "neg_pct": 5.8,
+      "net_sentiment": 34.2
+    },
     "wish": {
-      "total": 52,
-      "pos_pct": 21.2,
-      "neg_pct": 9.6,
-      "net_sentiment": 11.5
+      "total": 314,
+      "pos_pct": 29.3,
+      "neg_pct": 9.2,
+      "net_sentiment": 20.1
+    },
+    "feature": {
+      "total": 285,
+      "pos_pct": 23.9,
+      "neg_pct": 28.4,
+      "net_sentiment": -4.6
+    },
+    "problem": {
+      "total": 255,
+      "pos_pct": 13.3,
+      "neg_pct": 40.8,
+      "net_sentiment": -27.5
+    },
+    "version": {
+      "total": 248,
+      "pos_pct": 35.5,
+      "neg_pct": 12.5,
+      "net_sentiment": 23.0
+    },
+    "playstation": {
+      "total": 212,
+      "pos_pct": 18.4,
+      "neg_pct": 11.8,
+      "net_sentiment": 6.6
     },
     "gameplay": {
-      "total": 47,
-      "pos_pct": 34.0,
-      "neg_pct": 8.5,
-      "net_sentiment": 25.5
-    },
-    "physics": {
-      "total": 39,
-      "pos_pct": 59.0,
-      "neg_pct": 0.0,
-      "net_sentiment": 59.0
+      "total": 203,
+      "pos_pct": 36.0,
+      "neg_pct": 14.8,
+      "net_sentiment": 21.2
     },
     "ranked": {
-      "total": 39,
-      "pos_pct": 25.6,
-      "neg_pct": 17.9,
-      "net_sentiment": 7.7
+      "total": 192,
+      "pos_pct": 21.9,
+      "neg_pct": 23.4,
+      "net_sentiment": -1.6
+    },
+    "physics": {
+      "total": 190,
+      "pos_pct": 63.7,
+      "neg_pct": 0.0,
+      "net_sentiment": 63.7
     },
     "request": {
-      "total": 38,
-      "pos_pct": 15.8,
-      "neg_pct": 23.7,
-      "net_sentiment": -7.9
+      "total": 156,
+      "pos_pct": 24.4,
+      "neg_pct": 19.9,
+      "net_sentiment": 4.5
     },
     "buy": {
-      "total": 33,
-      "pos_pct": 12.1,
-      "neg_pct": 18.2,
-      "net_sentiment": -6.1
+      "total": 153,
+      "pos_pct": 30.1,
+      "neg_pct": 21.6,
+      "net_sentiment": 8.5
     },
     "aiming": {
-      "total": 33,
-      "pos_pct": 30.3,
-      "neg_pct": 12.1,
-      "net_sentiment": 18.2
-    },
-    "developer": {
-      "total": 33,
-      "pos_pct": 48.5,
-      "neg_pct": 24.2,
-      "net_sentiment": 24.2
-    },
-    "worth": {
-      "total": 26,
-      "pos_pct": 26.9,
-      "neg_pct": 11.5,
-      "net_sentiment": 15.4
+      "total": 129,
+      "pos_pct": 44.2,
+      "neg_pct": 6.2,
+      "net_sentiment": 38.0
     },
     "switch": {
-      "total": 24,
-      "pos_pct": 37.5,
-      "neg_pct": 0.0,
-      "net_sentiment": 37.5
+      "total": 119,
+      "pos_pct": 29.4,
+      "neg_pct": 5.0,
+      "net_sentiment": 24.4
     },
-    "matchmaking": {
-      "total": 20,
-      "pos_pct": 20.0,
-      "neg_pct": 15.0,
-      "net_sentiment": 5.0
+    "multiplayer": {
+      "total": 118,
+      "pos_pct": 23.7,
+      "neg_pct": 8.5,
+      "net_sentiment": 15.3
+    },
+    "developer": {
+      "total": 115,
+      "pos_pct": 45.2,
+      "neg_pct": 17.4,
+      "net_sentiment": 27.8
+    },
+    "worth": {
+      "total": 106,
+      "pos_pct": 31.1,
+      "neg_pct": 8.5,
+      "net_sentiment": 22.6
     }
   },
   "top_negative": [
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "reddit-PurePoolPro-hot",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "reddit-PurePoolPro-top?t=month",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "reddit-PurePoolPro-top?t=year",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "reddit-PurePoolPro-top?t=all",
+      "author": "RipstoneGames",
+      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
+      "score": -13,
+      "timestamp": "2026-05-21"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "Queenie Lucy II",
+      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
+      "score": -9,
+      "timestamp": "2026-05-26"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "Ripstone",
+      "content": "Yeah, what OvercookedOctopusFeet said! \n\nHey @ImStrappedIn  - let’s reset this a bit.\n\nIt’s completely fair to be frustrated if something isn’t working the way you expected. That doesn’t make you wron",
+      "score": -9,
+      "timestamp": "2026-02-16"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "itsJake",
+      "content": "Heyooooo. @JAMBO--C - I'm fully aware of the Halo effect, don't worry. Unfortunately, it won't be in the week 1 patch that solves the popping. \nI'm looking at getting this in as part of the larger mon",
+      "score": -9,
+      "timestamp": "2026-02-18"
+    },
     {
       "channel": "chat-pure-pool-pro",
       "author": "Queenie Lucy II",
@@ -402,110 +586,124 @@
     },
     {
       "channel": "chat-pure-pool-pro",
-      "author": "Qi-Phoenix",
-      "content": "There's only one or two more issues I noticed about the PS4 version and they're so minor that it's not really an that much of an issue. One of those issues also has to do with the way the ball travels",
-      "score": -6,
-      "timestamp": "2025-08-08"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Ripstone",
-      "content": "Hey Outlawkaze 👋 \n\nThought I'd message back before I try to get some sleep\n\nWe have your received your: \n\n- bug report, \n- your Steam review,\n-  we've responded here twice, \n- and we've responded in  ",
-      "score": -6,
-      "timestamp": "2026-02-13"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Deleted User",
-      "content": "Update on the disconnects ; So yesterday we changed 1 windows setting related to ethernet. For me this seems to be the fix to all disconnects. 1 or 2 people had connection issues when they invited me ",
-      "score": -6,
-      "timestamp": "2026-02-25"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
       "author": "JAMBO--C",
-      "content": "Disappointed in the patch. Majorly disappointed. \n\nThe look and graphics on the balls has taken a big hit, which is disappointing as it was one of the biggest marketing points before release. They now",
-      "score": -6,
-      "timestamp": "2026-03-17"
+      "content": "I’ve had this since patch 1 and 2, but it seems to be getting worse. It’s horrible. Unplayable. Not in the sense that you can’t play, but in the sense of it’s just terrible and makes you not really wa",
+      "score": -7,
+      "timestamp": "2026-03-24"
     },
     {
       "channel": "chat-pure-pool-pro",
       "author": "Ripstone",
-      "content": "Hey all, \n\nI will update regarding the PS5 crash issue in #announcements-pure-pool-pro as soon as I have more information. \n\nOur programmer was investigating the network issues reported since the week",
-      "score": -6,
-      "timestamp": "2026-05-12"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Ripstone Em",
-      "content": "Please also remember that issues seen on the live build have to be reproduced in the developer environment (which is actually a slightly different build) so that we can debug and ultimately fix these ",
-      "score": -6,
-      "timestamp": "2026-06-04"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "Altivias",
-      "content": "Exactly so! It feels quite wired. When they do miss those basic shots, it almost feels like they are pitying on me, since they are capable to do those super fancy shots. In game modes that needs a lot",
-      "score": -6,
-      "timestamp": "2026-02-14"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "itsJake",
-      "content": "TLDR; Reduce to the point it's not noticeable. \n\nThere's two parts to it:\n1 - The reflection update time and the \"popping\" (This is seperate to the initial Shadow pop we fixed in the week one) this ca",
-      "score": -6,
-      "timestamp": "2026-02-24"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "Batesy",
-      "content": "Hey guys, I've just submitted a bug report on this as apparently my 'Offer Rematch' functionality is not working. Playing on PSN with base PS5. Initially I thought this was a server issue where 2 x of",
-      "score": -6,
-      "timestamp": "2026-04-05"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Ripstone Em",
-      "content": "Please also remember that issues seen on the live build have to be reproduced in the developer environment (which is actually a slightly different build) so that we can debug and ultimately fix these ",
-      "score": -6,
-      "timestamp": "2026-06-04"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Aurakite",
-      "content": "Could be any reason from being on the wrong type of storage, console reset, license restore to an actual issue with the game.\n\nPlease send in #feedback-bug-reports-ripstone form for the older titles i",
-      "score": -5,
-      "timestamp": "2026-03-02"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "eeriearcade",
-      "content": "That Ripstone message was written to everyone.\n\nSaying “I’m having problems finding matches” is different to “the game is dead” and “no one is playing”.\n\nSo I’d say you’re fine to raise your problem. ",
-      "score": -5,
-      "timestamp": "2026-04-15"
+      "content": "🎱  A couple of heads up for the community! \n\n- We've got another Hotfix update coming up later today; this one fixes a few known crash bugs and an issue with the \"Clearance Streak\" Crest not counting ",
+      "score": -7,
+      "timestamp": "2026-03-31"
     },
     {
       "channel": "chat-pure-pool-pro",
       "author": "Ripstone",
-      "content": "It felt important for us to add Lag for Break alongside Ranked so that control of the first shot is earned. In real pool, the break (for most players) is a genuine advantage, so letting a background c",
-      "score": -5,
-      "timestamp": "2026-05-14"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "Ripstone",
-      "content": "Hi Darts4life - we're investigating some outlying issues with cross-play, but if you're having a specific disconnect problem, please tell us about it in detail via the #bug-reports-pure-pool-pro form!",
-      "score": -5,
-      "timestamp": "2026-03-10"
+      "content": "Hey Jambo!\n\nFor Patch 3, in terms of features the main focus is on the things we’ve already talked about in passing; \n\n-  Ranked Game mode\n-  Push outs in 9‑ball\n-  Lag to break \n\nIn terms of optimisa",
+      "score": -7,
+      "timestamp": "2026-04-16"
     }
   ],
   "top_positive": [
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "getting_stoked",
+      "content": "As a big fan of the original, i have three pieces of feedback.\n\ni am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new",
+      "score": 14,
+      "timestamp": "2026-02-14"
+    },
+    {
+      "channel": "reddit-PurePoolPro-hot",
+      "author": "getting_stoked",
+      "content": "As a big fan of the original, i have three pieces of feedback.\n\ni am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new",
+      "score": 14,
+      "timestamp": "2026-02-14"
+    },
+    {
+      "channel": "reddit-PurePoolPro-top?t=year",
+      "author": "getting_stoked",
+      "content": "As a big fan of the original, i have three pieces of feedback.\n\ni am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new",
+      "score": 14,
+      "timestamp": "2026-02-14"
+    },
+    {
+      "channel": "reddit-PurePoolPro-top?t=all",
+      "author": "getting_stoked",
+      "content": "As a big fan of the original, i have three pieces of feedback.\n\ni am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new",
+      "score": 14,
+      "timestamp": "2026-02-14"
+    },
     {
       "channel": "chat-pure-pool-pro",
       "author": "JAMBO--C",
       "content": "@Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. \n\nBUT…. Yes, I do think pure pool is better. \n\nThe reasons for that are….\n\n",
       "score": 13,
       "timestamp": "2026-02-17"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "JAMBO--C",
+      "content": "@Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. \n\nBUT…. Yes, I do think pure pool is better. \n\nThe reasons for that are….\n\n",
+      "score": 13,
+      "timestamp": "2026-02-17"
+    },
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "JudCasper68",
+      "content": "Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go",
+      "score": 12,
+      "timestamp": "2026-04-07"
+    },
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "JudCasper68",
+      "content": "Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go",
+      "score": 12,
+      "timestamp": "2026-04-07"
+    },
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "JudCasper68",
+      "content": "Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go",
+      "score": 12,
+      "timestamp": "2026-04-07"
+    },
+    {
+      "channel": "reddit-PurePoolPro-new",
+      "author": "JudCasper68",
+      "content": "Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go",
+      "score": 12,
+      "timestamp": "2026-04-07"
+    },
+    {
+      "channel": "reddit-PurePoolPro-hot",
+      "author": "JudCasper68",
+      "content": "Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go",
+      "score": 12,
+      "timestamp": "2026-04-07"
+    },
+    {
+      "channel": "reddit-PurePoolPro-top?t=year",
+      "author": "JudCasper68",
+      "content": "Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go",
+      "score": 12,
+      "timestamp": "2026-04-07"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "Ripstone",
+      "content": "Hey @JAMBO--C  and @eeriearcade \n\nThanks for sharing your thoughts! Just to put your FPS comparison into perspective - while the credits for the most recent Battlefield aren’t publicly available, Batt",
+      "score": 11,
+      "timestamp": "2025-10-10"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "Ripstone",
+      "content": "**20 Min Question Blitz to Catch up from the Bank Holiday! **\n\n1. @eeriearcade asks : Will the ranks get reset at any point?\n\nAnswer: we're discussing how to handle this internally. With Xbox, Epic an",
+      "score": 11,
+      "timestamp": "2026-05-26"
     },
     {
       "channel": "chat-pure-pool-pro",
@@ -530,122 +728,31 @@
     },
     {
       "channel": "chat-pure-pool-pro",
-      "author": "Qi-Phoenix",
-      "content": "Kinda like the poker club feel but if at all possible some day I'd like to have a playable character that I get to see in cut scenes or maybe in between games it would show the character I created sto",
-      "score": 8,
-      "timestamp": "2025-08-06"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "JepM4sta70202",
-      "content": "Can I just take a minute here to say something nice about the devs?\n\nI as you may or may not have known have been somewhat… Negative in my statements slightly talking about when the Xbox version of th",
-      "score": 8,
-      "timestamp": "2026-03-26"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
       "author": "Ripstone",
-      "content": "Very strong entries for the first \"Play of the Month\" comp! Thanks for sharing these for the past few weeks - it's been great to see the Reddit flooded with excellent gameplay  😍 \n\nLooking forward to ",
-      "score": 8,
-      "timestamp": "2026-04-30"
+      "content": "Hey @xCyb3rneticx! Aww thanks for checking in - we're doing great thank you - very busy and stressful launch week but we're looking forward to it! \n\nHow're you? Looking forward to Thursday?",
+      "score": 9,
+      "timestamp": "2026-02-09"
     },
     {
-      "channel": "find-a-game-pure-pool-pro",
-      "author": "Ripstone",
-      "content": "**Find-a-Game Etiquette Reminder**\n\nWe love seeing competitive matches, rivalries, and banter in here - that’s part of what makes it fun!\n\nA few simple expectations to keep things enjoyable for everyo",
-      "score": 8,
-      "timestamp": "2026-02-26"
+      "channel": "reddit-PurePoolPro-new",
+      "author": "Pure-Celebration-574",
+      "content": "Ok so first off… absolutely love the new game!!! I love and respect how all of the unlockables are done so without havin to pay for bundles and passes and all that stuff. I like how it’s kinda plain a",
+      "score": 9,
+      "timestamp": "2026-02-21"
     },
     {
-      "channel": "chat-pure-pool-pro",
-      "author": "Ripstone",
-      "content": "Hey Cyber,\n\nThanks for checking in - how're you!?\n\nWe're doing good thank you! \n\nOverwhelmed with how well the PS5 audience has received it\n\nA little disheartened by Steam reviews - but we're acting a",
-      "score": 7,
-      "timestamp": "2026-02-13"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Phil Elliott",
-      "content": "A few things I've noticed after about 50 games or so.\n\nOverall, really good - very enjoyable, visually spectacular and I really like the way the career has been structured to give you plenty to do. I'",
-      "score": 7,
-      "timestamp": "2026-02-14"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Mcfcdave71",
-      "content": "I see that completely. \nI'm not just being kind though. I'm being honest. I really love the game. The basics are right.\n I mean really right.\nAmazing value for money as I know for a fact I will be pla",
-      "score": 7,
-      "timestamp": "2026-02-17"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "eeriearcade",
-      "content": "I watched some gameplay on YouTube earlier and it looks great to me (just waiting for the Xbox release). Yes, there are definitely some improvements that can be made to the AI, but it seems like a ver",
-      "score": 7,
-      "timestamp": "2026-02-17"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "Misha (M.H REELS)",
-      "content": "@Ripstone thank you so much for this fantastic game. My friend the prisoner and I finally were able to play a couple matches today! We both streamed it. We became good friends because of this amazing ",
-      "score": 7,
-      "timestamp": "2026-02-27"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "boolyanov",
-      "content": "Menus & navigation:\nIt’s a bit hard to describe, but the menu logic often feels confusing and easy to get lost in.\n• During matches, it would really help to see the current game mode name at the top a",
-      "score": 7,
-      "timestamp": "2026-02-15"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "boolyanov",
-      "content": "Again, the core game is excellent. These are mostly quality-of-life improvements that would make the experience smoother and more intuitive.\nThanks for the great work!",
-      "score": 7,
-      "timestamp": "2026-02-15"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "Hawkshaw Blues",
-      "content": "I absolutely love this game and have been hyped for such a long time, however I do have a few suggestions I'd love to see taken forward:\n\n- Online-specific crests/badges.\n- A rating system similar to ",
-      "score": 7,
-      "timestamp": "2026-02-16"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "JAMBO--C",
-      "content": "Thank you for the reply. Appreciate that. \n\nWhat you say makes absolute sense. \n\nIt’s a double edged sword….\n\nI personally haven’t left a review anywhere, whereas I normally leave reviews for every ga",
-      "score": 7,
-      "timestamp": "2026-03-25"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "MrsRocket",
-      "content": "Eagerly awaiting the Xbox version! Can't wait, all the videos I have seen and the chats here have me looking forward to a new game (been a challenge finding anything besides Forza H4 and Pure Pool tha",
-      "score": 7,
-      "timestamp": "2026-04-20"
-    },
-    {
-      "channel": "pool-and-snooker-talk",
-      "author": "eeriearcade",
-      "content": "Who are you cheering on in the quarters? I would love to see Vafaei go on and win the whole thing. Or someone else who’s never won it before (although I do like the idea of Higgins winning another bef",
-      "score": 7,
-      "timestamp": "2026-04-28"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "PoliteMenace",
-      "content": "Thanks for the reply. Glad to know all those things are being considered! As a note though, Pure Pool is only rated \"Playable\" on SteamDeck, therefore doesn't show up under the \"great on deck\" page, a",
-      "score": 6,
-      "timestamp": "2025-05-21"
+      "channel": "reddit-PurePoolPro-hot",
+      "author": "Pure-Celebration-574",
+      "content": "Ok so first off… absolutely love the new game!!! I love and respect how all of the unlockables are done so without havin to pay for bundles and passes and all that stuff. I like how it’s kinda plain a",
+      "score": 9,
+      "timestamp": "2026-02-21"
     }
   ],
   "engagement": {
-    "total_reactions": 2346,
-    "avg_reactions_per_message": 0.41,
-    "reply_count": 5843,
-    "reply_rate": 101.8,
+    "total_reactions": 20777,
+    "avg_reactions_per_message": 1.31,
+    "reply_count": 14425,
+    "reply_rate": 91.1,
     "active_users_5plus": 20
   },
   "top_contributors": [

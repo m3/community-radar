@@ -259,9 +259,25 @@ def run_analysis():
         user_sentiment[uid]["total"] += 1
         user_sentiment[uid][label[:3]] += 1
 
-    # ─── 4. Reddit comparison ───────────────────────────────────────────
-    print("[4/6] Loading Reddit data...")
-    reddit_posts = []
+    # ─── 4. Reddit comparison (from DB) ──────────────────────────────────
+    print("[4/6] Reddit data from DB...")
+    reddit_messages = db.execute("""
+        SELECT m.content, m.reactions, m.timestamp, c.name as channel_name
+        FROM messages m
+        JOIN channels c ON m.channel_id = c.id
+        WHERE m.platform = 'reddit' AND m.content IS NOT NULL AND m.content != ''
+    """).fetchall()
+
+    reddit_sentiment = Counter()
+    reddit_by_channel = defaultdict(Counter)
+    for msg in reddit_messages:
+        text = msg["content"]
+        _, label = classify_sentiment(text)
+        reddit_sentiment[label] += 1
+        reddit_by_channel[msg["channel_name"]][label] += 1
+
+    # Legacy Reddit JSON files (keep for backward compat)
+    reddit_posts_legacy = []
     reddit_files = [
         RESEARCH_DIR / "reddit-top-posts.json",
         RESEARCH_DIR / "reddit-new-posts.json",
@@ -272,17 +288,25 @@ def run_analysis():
             with open(rf) as f:
                 data = json.load(f)
             if isinstance(data, list):
-                reddit_posts.extend(data)
+                reddit_posts_legacy.extend(data)
             elif isinstance(data, dict) and "posts" in data:
-                reddit_posts.extend(data["posts"])
+                reddit_posts_legacy.extend(data["posts"])
 
-    reddit_sentiment = Counter()
-    for post in reddit_posts:
-        title = post.get("title", "")
-        body = post.get("selftext", post.get("body", ""))
-        text = f"{title} {body}"
-        _, label = classify_sentiment(text)
-        reddit_sentiment[label] += 1
+    # Also load new full export JSONs
+    reddit_export_dir = Path("/Users/mathias/Development/community-radar/data/reddit-exports")
+    for jf in reddit_export_dir.glob("*-full.json"):
+        with open(jf) as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            for post in data:
+                title = post.get("title", "")
+                body = post.get("selftext", "")
+                text = f"{title} {body}"
+                _, label = classify_sentiment(text)
+                reddit_sentiment[label] += 1
+                reddit_posts_legacy.append(post)
+
+    total_reddit = len(reddit_messages) + len(reddit_posts_legacy)
 
     # ─── 5. Engagement metrics ──────────────────────────────────────────
     print("[5/6] Engagement metrics...")
@@ -314,7 +338,9 @@ def run_analysis():
                 "from": messages[0]["timestamp"][:10] if messages else "N/A",
                 "to": messages[-1]["timestamp"][:10] if messages else "N/A",
             },
-            "reddit_posts_analyzed": len(reddit_posts),
+            "reddit_posts_analyzed": total_reddit,
+            "reddit_messages_in_db": len(reddit_messages),
+            "reddit_posts_in_json": len(reddit_posts_legacy),
         },
         "sentiment": {
             "overall": {
@@ -338,8 +364,11 @@ def run_analysis():
                 "positive": reddit_sentiment["positive"],
                 "negative": reddit_sentiment["negative"],
                 "neutral": reddit_sentiment["neutral"],
-                "pos_pct": round(reddit_sentiment["positive"] / max(len(reddit_posts), 1) * 100, 1),
-                "neg_pct": round(reddit_sentiment["negative"] / max(len(reddit_posts), 1) * 100, 1),
+                "pos_pct": round(reddit_sentiment["positive"] / max(total_reddit, 1) * 100, 1),
+                "neg_pct": round(reddit_sentiment["negative"] / max(total_reddit, 1) * 100, 1),
+                "reddit_by_channel": {
+                    ch: dict(counts) for ch, counts in reddit_by_channel.items()
+                },
             },
         },
         "purpose": {
@@ -396,8 +425,16 @@ def generate_markdown_report(r):
     a = r  # shorthand
 
     lines.append("# Community Sentiment & Classification Analysis")
-    lines.append(f"\n*Generated from {a['meta']['total_messages_analyzed']} Discord messages + {a['meta']['reddit_posts_analyzed']} Reddit posts*")
+    lines.append(f"\\n*Generated from {a['meta']['total_messages_analyzed']} Discord messages + {a['meta']['reddit_messages_in_db']} Reddit messages (DB) + {a['meta']['reddit_posts_in_json']} Reddit posts (JSON)*")
     lines.append(f"*Date range: {a['meta']['date_range']['from']} → {a['meta']['date_range']['to']}*")
+
+    # ── Platform Breakdown ──
+    lines.append("\\n\\n## Platform Overview")
+    lines.append(f"| Platform | Messages |")
+    lines.append(f"|----------|----------|")
+    lines.append(f"| Discord | {a['meta']['total_messages_analyzed']} |")
+    lines.append(f"| Reddit | {a['meta']['reddit_messages_in_db'] + a['meta']['reddit_posts_in_json']} |")
+    lines.append(f"| **Total** | **{a['meta']['total_messages_analyzed'] + a['meta']['reddit_messages_in_db'] + a['meta']['reddit_posts_in_json']}** |")
 
     # ── Executive Summary ──
     lines.append("\n\n## Executive Summary")

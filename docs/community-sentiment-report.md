@@ -1,15 +1,20 @@
 # Community Sentiment & Classification Analysis
-
-*Generated from 5738 Discord messages + 8 Reddit posts*
-*Date range: 2025-04-17 → 2026-06-05*
+\n*Generated from 15842 Discord messages + 4314 Reddit messages (DB) + 1197 Reddit posts (JSON)*
+*Date range: 2025-04-17 → 2026-02-23*
+\n\n## Platform Overview
+| Platform | Messages |
+|----------|----------|
+| Discord | 15842 |
+| Reddit | 5511 |
+| **Total** | **21353** |
 
 
 ## Executive Summary
 
-**Overall Sentiment Ratio: 2.41** (positive:negative)
-- 13.4% positive (767 messages)
-- 5.5% negative (318 messages)
-- 81.1% neutral (4653 messages)
+**Overall Sentiment Ratio: 2.55** (positive:negative)
+- 16.9% positive (2670 messages)
+- 6.6% negative (1046 messages)
+- 76.5% neutral (12126 messages)
 
 **Community feel: strongly positive — members are enthusiastic and supportive**
 
@@ -18,19 +23,25 @@
 
 | Channel | Messages | Positive | Negative | Neutral | Pos% | Neg% |
 |---------|----------|----------|----------|---------|------|------|
-| chat-pure-pool-pro | 4044 | 499 | 222 | 3323 | 12.3% | 5.5% |
-| questions-and-suggestions-pure-pool-pro | 1116 | 197 | 80 | 839 | 17.7% | 7.2% |
-| find-a-game-pure-pool-pro | 348 | 49 | 15 | 284 | 14.1% | 4.3% |
-| play-of-the-month-submissions | 23 | 2 | 0 | 21 | 8.7% | 0.0% |
-| pool-and-snooker-talk | 207 | 20 | 1 | 186 | 9.7% | 0.5% |
+| chat-pure-pool-pro | 8088 | 998 | 444 | 6646 | 12.3% | 5.5% |
+| questions-and-suggestions-pure-pool-pro | 2232 | 394 | 160 | 1678 | 17.7% | 7.2% |
+| find-a-game-pure-pool-pro | 696 | 98 | 30 | 568 | 14.1% | 4.3% |
+| play-of-the-month-submissions | 46 | 4 | 0 | 42 | 8.7% | 0.0% |
+| pool-and-snooker-talk | 414 | 40 | 2 | 372 | 9.7% | 0.5% |
+| announcements-ripstone | 52 | 9 | 2 | 41 | 17.3% | 3.8% |
+| reddit-PurePoolPro-new | 1959 | 511 | 192 | 1256 | 26.1% | 9.8% |
+| reddit-PurePoolPro-hot | 932 | 253 | 80 | 599 | 27.1% | 8.6% |
+| reddit-PurePoolPro-top?t=month | 225 | 51 | 21 | 153 | 22.7% | 9.3% |
+| reddit-PurePoolPro-top?t=year | 913 | 250 | 77 | 586 | 27.4% | 8.4% |
+| reddit-PurePoolPro-top?t=all | 285 | 62 | 38 | 185 | 21.8% | 13.3% |
 
 
 ## Cross-Platform Comparison: Discord vs Reddit
 
 | Platform | Positive | Negative | Neutral |
 |----------|----------|----------|---------|
-| Discord | 13.4% | 5.5% | 81.1% |
-| Reddit | 0.0% | 0.0% | 100.0% |
+| Discord | 16.9% | 6.6% | 76.5% |
+| Reddit | 25.1% | 10.3% | 64.6% |
 
 > Sentiment is broadly similar across platforms.
 
@@ -41,20 +52,26 @@ Message purpose classification:
 
 | Purpose | Count | % |
 |---------|-------|---|
-| general | 3221 | 56.1% |
-| feedback | 698 | 12.2% |
-| showcase | 489 | 8.5% |
-| support | 481 | 8.4% |
-| competition | 429 | 7.5% |
-| social | 398 | 6.9% |
-| off_topic | 22 | 0.4% |
+| general | 7991 | 50.4% |
+| feedback | 2485 | 15.7% |
+| showcase | 1427 | 9.0% |
+| support | 1364 | 8.6% |
+| competition | 1263 | 8.0% |
+| social | 1228 | 7.8% |
+| off_topic | 84 | 0.5% |
 
 ### Purpose by Channel
-- **chat-pure-pool-pro**: general (2301), feedback (465), showcase (365)
-- **questions-and-suggestions-pure-pool-pro**: general (509), feedback (212), competition (117)
-- **find-a-game-pure-pool-pro**: general (245), social (40), competition (29)
-- **play-of-the-month-submissions**: showcase (16), general (6), support (1)
-- **pool-and-snooker-talk**: general (160), competition (25), showcase (9)
+- **chat-pure-pool-pro**: general (4602), feedback (930), showcase (730)
+- **questions-and-suggestions-pure-pool-pro**: general (1018), feedback (424), competition (234)
+- **find-a-game-pure-pool-pro**: general (490), social (80), competition (58)
+- **play-of-the-month-submissions**: showcase (32), general (12), support (2)
+- **pool-and-snooker-talk**: general (320), competition (50), showcase (18)
+- **announcements-ripstone**: feedback (31), general (6), showcase (4)
+- **reddit-PurePoolPro-new**: general (718), feedback (487), showcase (203)
+- **reddit-PurePoolPro-hot**: general (350), feedback (221), social (96)
+- **reddit-PurePoolPro-top?t=month**: general (72), feedback (54), competition (27)
+- **reddit-PurePoolPro-top?t=year**: general (346), feedback (221), social (92)
+- **reddit-PurePoolPro-top?t=all**: feedback (75), general (57), showcase (46)
 
 
 ## Community Identity: Power Words
@@ -63,36 +80,36 @@ Most frequently used community-specific terms:
 
 | Word/Phrase | Mentions |
 |-------------|----------|
-| pool | 685 |
-| pure pool | 265 |
-| ripstone | 255 |
-| table | 250 |
-| cue | 239 |
-| snooker | 220 |
-| rest | 126 |
-| control | 100 |
-| focus | 96 |
-| 8 ball | 75 |
-| power | 73 |
-| pocket | 72 |
-| cue ball | 70 |
-| tip | 67 |
-| rail | 66 |
-| improve | 57 |
-| skill | 50 |
-| 9 ball | 48 |
-| position | 47 |
-| spin | 43 |
-| trick | 43 |
-| speed | 41 |
-| jump | 40 |
-| angle | 38 |
-| pockets | 35 |
-| felt | 34 |
-| practice | 30 |
-| follow | 29 |
-| english | 28 |
-| bank | 26 |
+| pool | 2461 |
+| pure pool | 1274 |
+| table | 944 |
+| cue | 808 |
+| ripstone | 772 |
+| snooker | 721 |
+| control | 418 |
+| rest | 367 |
+| power | 320 |
+| improve | 305 |
+| tip | 295 |
+| focus | 294 |
+| pocket | 267 |
+| rail | 262 |
+| 8 ball | 237 |
+| cue ball | 220 |
+| improvement | 164 |
+| 9 ball | 163 |
+| position | 163 |
+| jump | 161 |
+| skill | 153 |
+| bank | 145 |
+| speed | 137 |
+| trick | 137 |
+| angle | 137 |
+| 9-ball | 132 |
+| spin | 125 |
+| english | 125 |
+| felt | 117 |
+| follow | 108 |
 
 
 ## Topic-Level Sentiment
@@ -101,29 +118,85 @@ What drives positivity vs negativity:
 
 | Topic | Mentions | Pos% | Neg% | Net Sentiment |
 |-------|----------|------|------|---------------|
-| shot | 384 | 21.6% | 8.1% | 🟢 +14 |
-| add | 266 | 17.7% | 19.5% | 🟡 -2 |
-| dev | 213 | 29.6% | 15.0% | 🟢 +15 |
-| online | 212 | 19.8% | 10.8% | 🟡 +9 |
-| issue | 208 | 11.5% | 41.3% | 🔴 -30 |
-| ps5 | 180 | 13.3% | 8.3% | 🟡 +5 |
-| bug | 159 | 8.2% | 39.6% | 🔴 -31 |
-| release | 135 | 16.3% | 9.6% | 🟡 +7 |
-| patch | 135 | 11.1% | 30.4% | 🔴 -19 |
-| steam | 127 | 24.4% | 9.4% | 🟢 +15 |
-| launch | 127 | 24.4% | 10.2% | 🟢 +14 |
-| xbox | 112 | 19.6% | 10.7% | 🟡 +9 |
-| fix | 108 | 10.2% | 51.9% | 🔴 -42 |
-| update | 104 | 17.3% | 36.5% | 🔴 -19 |
-| suggestion | 97 | 41.2% | 6.2% | 🟢 +35 |
-| problem | 89 | 5.6% | 38.2% | 🔴 -33 |
-| feature | 71 | 14.1% | 28.2% | 🔴 -14 |
-| version | 70 | 30.0% | 14.3% | 🟢 +16 |
-| playstation | 55 | 14.5% | 7.3% | 🟡 +7 |
-| wish | 52 | 21.2% | 9.6% | 🟢 +12 |
+| shot | 1440 | 30.2% | 10.5% | 🟢 +20 |
+| add | 952 | 26.6% | 19.7% | 🟡 +7 |
+| dev | 795 | 32.6% | 15.1% | 🟢 +18 |
+| ps5 | 758 | 19.1% | 11.9% | 🟡 +7 |
+| online | 729 | 27.0% | 12.1% | 🟢 +15 |
+| patch | 636 | 19.5% | 34.9% | 🔴 -15 |
+| issue | 613 | 12.7% | 42.3% | 🔴 -30 |
+| steam | 514 | 19.3% | 21.4% | 🟡 -2 |
+| launch | 509 | 29.1% | 14.9% | 🟢 +14 |
+| update | 506 | 21.5% | 44.1% | 🔴 -22 |
+| bug | 478 | 10.5% | 37.4% | 🔴 -27 |
+| release | 436 | 21.1% | 8.5% | 🟢 +13 |
+| fix | 414 | 13.8% | 48.1% | 🔴 -34 |
+| xbox | 372 | 20.7% | 10.2% | 🟢 +10 |
+| suggestion | 325 | 40.0% | 5.8% | 🟢 +34 |
+| wish | 314 | 29.3% | 9.2% | 🟢 +20 |
+| feature | 285 | 23.9% | 28.4% | 🟡 -5 |
+| problem | 255 | 13.3% | 40.8% | 🔴 -28 |
+| version | 248 | 35.5% | 12.5% | 🟢 +23 |
+| playstation | 212 | 18.4% | 11.8% | 🟡 +7 |
 
 
 ## Top Negative Messages
+
+> **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
+
+> **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
+
+> **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
+
+> **RipstoneGames** (reddit-PurePoolPro-new, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
+
+> **RipstoneGames** (reddit-PurePoolPro-hot, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
+
+> **RipstoneGames** (reddit-PurePoolPro-top?t=month, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
+
+> **RipstoneGames** (reddit-PurePoolPro-top?t=year, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
+
+> **RipstoneGames** (reddit-PurePoolPro-top?t=all, 2026-05-21) [-13]
+> Patch 3 is now live on PS5 &amp; Steam
+
+Patch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...
+
+[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie
 
 > **Queenie Lucy II** (chat-pure-pool-pro, 2026-05-26) [-9]
 > And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao
@@ -136,54 +209,28 @@ Hey @ImStrappedIn  - let’s reset this a bit.
 
 It’s completely fair to be frustrated if something isn’t working the way you expected. That doesn’t make you wron
 
-> **itsJake** (questions-and-suggestions-pure-pool-pro, 2026-02-18) [-9]
-> Heyooooo. @JAMBO--C - I'm fully aware of the Halo effect, don't worry. Unfortunately, it won't be in the week 1 patch that solves the popping. 
-I'm looking at getting this in as part of the larger mon
-
-> **JAMBO--C** (chat-pure-pool-pro, 2026-03-24) [-7]
-> I’ve had this since patch 1 and 2, but it seems to be getting worse. It’s horrible. Unplayable. Not in the sense that you can’t play, but in the sense of it’s just terrible and makes you not really wa
-
-> **Ripstone** (chat-pure-pool-pro, 2026-03-31) [-7]
-> 🎱  A couple of heads up for the community! 
-
-- We've got another Hotfix update coming up later today; this one fixes a few known crash bugs and an issue with the "Clearance Streak" Crest not counting 
-
-> **Ripstone** (chat-pure-pool-pro, 2026-04-16) [-7]
-> Hey Jambo!
-
-For Patch 3, in terms of features the main focus is on the things we’ve already talked about in passing; 
-
--  Ranked Game mode
--  Push outs in 9‑ball
--  Lag to break 
-
-In terms of optimisa
-
-> **Qi-Phoenix** (chat-pure-pool-pro, 2025-08-08) [-6]
-> There's only one or two more issues I noticed about the PS4 version and they're so minor that it's not really an that much of an issue. One of those issues also has to do with the way the ball travels
-
-> **Ripstone** (chat-pure-pool-pro, 2026-02-13) [-6]
-> Hey Outlawkaze 👋 
-
-Thought I'd message back before I try to get some sleep
-
-We have your received your: 
-
-- bug report, 
-- your Steam review,
--  we've responded here twice, 
-- and we've responded in  
-
-> **Deleted User** (chat-pure-pool-pro, 2026-02-25) [-6]
-> Update on the disconnects ; So yesterday we changed 1 windows setting related to ethernet. For me this seems to be the fix to all disconnects. 1 or 2 people had connection issues when they invited me 
-
-> **JAMBO--C** (chat-pure-pool-pro, 2026-03-17) [-6]
-> Disappointed in the patch. Majorly disappointed. 
-
-The look and graphics on the balls has taken a big hit, which is disappointing as it was one of the biggest marketing points before release. They now
-
 
 ## Top Positive Messages
+
+> **getting_stoked** (reddit-PurePoolPro-new, 2026-02-14) [+14]
+> As a big fan of the original, i have three pieces of feedback.
+
+i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
+
+> **getting_stoked** (reddit-PurePoolPro-hot, 2026-02-14) [+14]
+> As a big fan of the original, i have three pieces of feedback.
+
+i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
+
+> **getting_stoked** (reddit-PurePoolPro-top?t=year, 2026-02-14) [+14]
+> As a big fan of the original, i have three pieces of feedback.
+
+i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
+
+> **getting_stoked** (reddit-PurePoolPro-top?t=all, 2026-02-14) [+14]
+> As a big fan of the original, i have three pieces of feedback.
+
+i am absolutely loving Pure Pool Pro, i’ve played 80+ hours of the original and i am really enjoying the physics and the look of the new
 
 > **JAMBO--C** (chat-pure-pool-pro, 2026-02-17) [+13]
 > @Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. 
@@ -194,64 +241,32 @@ The reasons for that are….
 
 
 
-> **Ripstone** (chat-pure-pool-pro, 2025-10-10) [+11]
-> Hey @JAMBO--C  and @eeriearcade 
+> **JAMBO--C** (chat-pure-pool-pro, 2026-02-17) [+13]
+> @Mcfcdave71 firstly…. I really like pure pool pro. I’m playing it as I type. I’ve been playing it all night. It’s very good. 
 
-Thanks for sharing your thoughts! Just to put your FPS comparison into perspective - while the credits for the most recent Battlefield aren’t publicly available, Batt
+BUT…. Yes, I do think pure pool is better. 
 
-> **Ripstone** (questions-and-suggestions-pure-pool-pro, 2026-05-26) [+11]
-> **20 Min Question Blitz to Catch up from the Bank Holiday! **
+The reasons for that are….
 
-1. @eeriearcade asks : Will the ranks get reset at any point?
 
-Answer: we're discussing how to handle this internally. With Xbox, Epic an
 
-> **Ripstone** (chat-pure-pool-pro, 2026-02-09) [+9]
-> Hey @xCyb3rneticx! Aww thanks for checking in - we're doing great thank you - very busy and stressful launch week but we're looking forward to it! 
+> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
+> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
 
-How're you? Looking forward to Thursday?
+> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
+> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
 
-> **Qi-Phoenix** (chat-pure-pool-pro, 2025-08-06) [+8]
-> Kinda like the poker club feel but if at all possible some day I'd like to have a playable character that I get to see in cut scenes or maybe in between games it would show the character I created sto
+> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
+> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
 
-> **JepM4sta70202** (chat-pure-pool-pro, 2026-03-26) [+8]
-> Can I just take a minute here to say something nice about the devs?
-
-I as you may or may not have known have been somewhat… Negative in my statements slightly talking about when the Xbox version of th
-
-> **Ripstone** (chat-pure-pool-pro, 2026-04-30) [+8]
-> Very strong entries for the first "Play of the Month" comp! Thanks for sharing these for the past few weeks - it's been great to see the Reddit flooded with excellent gameplay  😍 
-
-Looking forward to 
-
-> **Ripstone** (find-a-game-pure-pool-pro, 2026-02-26) [+8]
-> **Find-a-Game Etiquette Reminder**
-
-We love seeing competitive matches, rivalries, and banter in here - that’s part of what makes it fun!
-
-A few simple expectations to keep things enjoyable for everyo
-
-> **Ripstone** (chat-pure-pool-pro, 2026-02-13) [+7]
-> Hey Cyber,
-
-Thanks for checking in - how're you!?
-
-We're doing good thank you! 
-
-Overwhelmed with how well the PS5 audience has received it
-
-A little disheartened by Steam reviews - but we're acting a
-
-> **Phil Elliott** (chat-pure-pool-pro, 2026-02-14) [+7]
-> A few things I've noticed after about 50 games or so.
-
-Overall, really good - very enjoyable, visually spectacular and I really like the way the career has been structured to give you plenty to do. I'
+> **JudCasper68** (reddit-PurePoolPro-new, 2026-04-07) [+12]
+> Fair point. I never suggested laziness, but I hold up my hands to the better coders comment. That said, it wasn’t meant in a disrespectful or toxic way, more an appreciation of how difficult coding go
 
 
 ## Engagement Metrics
-- Total reactions: 2346
-- Avg reactions/message: 0.41
-- Reply rate: 101.8% (5843 replies)
+- Total reactions: 20777
+- Avg reactions/message: 1.31
+- Reply rate: 91.1% (14425 replies)
 - Active users (5+ msgs): 20
 
 ### Top Contributors
@@ -278,12 +293,13 @@ Overall, really good - very enjoyable, visually spectacular and I really like th
 ## Gap Analysis: Purpose vs Reality
 
 ### What the community wants: general
-### What's working: physics (net sentiment: +59%)
-### What's broken: fix (net sentiment: -42%)
+### What's working: physics (net sentiment: +64%)
+### What's broken: fix (net sentiment: -34%)
 
 ### Identified Gaps
-- **'fix' is a pain point**: 51.9% negative sentiment. Needs immediate attention.
-- **Bug frustration high**: Bug-related messages are 39.6% negative. Communication about fixes needed.
+- **High feedback volume (15.7%)**: Community is actively requesting features/changes. Need structured feedback pipeline.
+- **'fix' is a pain point**: 48.1% negative sentiment. Needs immediate attention.
+- **Bug frustration high**: Bug-related messages are 37.4% negative. Communication about fixes needed.
 
 ### Recommendations
 1. **Address the top negative topic** — dedicate dev resources to the highest-negativity area

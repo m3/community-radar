@@ -186,6 +186,26 @@ def content_hash(text):
     return hashlib.sha256(text.lower().strip().encode()).hexdigest()[:16]
 
 
+# Unicode block elements for sparklines (low to high)
+SPARKLINE_GLYPHS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+
+
+def sparkline_for_value(value, all_values):
+    """Return a single sparkline glyph representing this value's relative magnitude.
+    
+    Normalises the value against the min/max of all_values to pick one of 8 block elements.
+    Returns ▁ for minimum, █ for maximum, with intermediate levels in between.
+    """
+    if not all_values:
+        return "▁"
+    lo, hi = min(all_values), max(all_values)
+    if hi == lo:
+        return "▄"  # All values equal
+    normalised = (value - lo) / (hi - lo)  # 0..1
+    idx = int(normalised * (len(SPARKLINE_GLYPHS) - 1))
+    return SPARKLINE_GLYPHS[idx]
+
+
 def deduplicate_reddit(messages):
     """Remove cross-posted Reddit content that appears in multiple sorts.
     
@@ -505,6 +525,14 @@ def run_analysis():
     neg_pct = sentiment_dist["negative"] / total * 100
     neu_pct = sentiment_dist["neutral"] / total * 100
 
+    # Compute true date range from DB (not from messages list which may be unsorted)
+    date_range = db.execute("""
+        SELECT MIN(timestamp), MAX(timestamp) FROM messages
+        WHERE content IS NOT NULL AND content != ''
+    """).fetchone()
+    true_from = date_range[0][:10] if date_range[0] else "N/A"
+    true_to = date_range[1][:10] if date_range[1] else "N/A"
+
     report = {
         "meta": {
             "total_messages_analyzed": total,
@@ -512,8 +540,8 @@ def run_analysis():
             "duplicates_removed": duplicates_removed,
             "channels": len(sentiment_by_channel),
             "date_range": {
-                "from": messages[0]["timestamp"][:10] if messages else "N/A",
-                "to": messages[-1]["timestamp"][:10] if messages else "N/A",
+                "from": true_from,
+                "to": true_to,
             },
             "reddit_posts_analyzed": total_reddit,
             "reddit_messages_in_db": len(reddit_messages),
@@ -604,9 +632,10 @@ def generate_markdown_report(r):
     a = r  # shorthand
 
     lines.append("# Community Sentiment & Classification Analysis")
+    lines.append(f"\n*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
     lines.append(f"\n*Generated from {a['meta']['total_messages_analyzed']} Discord messages + {a['meta']['reddit_messages_in_db']} Reddit messages (DB) + {a['meta']['reddit_posts_in_json']} Reddit posts (JSON)*")
     lines.append(f"*Deduplicated: {a['meta']['deduped_messages']} unique messages ({a['meta']['duplicates_removed']} cross-post duplicates removed)*")
-    lines.append(f"*Date range: {a['meta']['date_range']['from']} → {a['meta']['date_range']['to']}*")
+    lines.append(f"*Data date range: {a['meta']['date_range']['from']} → {a['meta']['date_range']['to']}*")
 
     # ── Platform Breakdown ──
     lines.append("\n\n## Platform Overview")
@@ -619,10 +648,16 @@ def generate_markdown_report(r):
 
     # ── WEEKLY SENTIMENT TRENDS ──
     lines.append("\n\n## Weekly Sentiment Trends (Last 8 Weeks)")
-    lines.append("\n| Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% |")
-    lines.append("|------|-------|------|------|------|--------------|--------------|-------------|-------------|")
+    # Compute sparkline data for overall neg% across the 8-week window
+    neg_pcts = [t["neg_pct"] for t in a.get("weekly_trends", [])]
+    pos_pcts = [t["pos_pct"] for t in a.get("weekly_trends", [])]
+    lines.append("\n| Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% | Pos Trend | Neg Trend |")
+    lines.append("|------|-------|------|------|------|--------------|--------------|-------------|-------------|-----------|-----------|")
     for t in a.get("weekly_trends", []):
-        lines.append(f"| {t['week']} | {t['total']} | {t['pos_pct']}% | {t['neg_pct']}% | {t['neu_pct']}% | {t['discord_pos_pct']}% | {t['discord_neg_pct']}% | {t['reddit_pos_pct']}% | {t['reddit_neg_pct']}% |")
+        # Sparkline glyphs (▁▂▃▄▅▆▇█) — use simple text representation
+        pos_spark = sparkline_for_value(t["pos_pct"], pos_pcts)
+        neg_spark = sparkline_for_value(t["neg_pct"], neg_pcts)
+        lines.append(f"| {t['week']} | {t['total']} | {t['pos_pct']}% | {t['neg_pct']}% | {t['neu_pct']}% | {t['discord_pos_pct']}% | {t['discord_neg_pct']}% | {t['reddit_pos_pct']}% | {t['reddit_neg_pct']}% | {pos_spark} | {neg_spark} |")
 
     # ── ANOMALY ALERTS ──
     anomalies = a.get("anomalies", [])

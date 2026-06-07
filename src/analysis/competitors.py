@@ -10,7 +10,9 @@ Scans r/billiards, r/snooker, and other niche subreddits for:
 import sqlite3
 import json
 import re
+import hashlib
 from pathlib import Path
+from datetime import datetime
 from collections import Counter, defaultdict
 
 DB_PATH = Path("/Users/mathias/Development/community-radar/data/community_radar.db")
@@ -218,6 +220,7 @@ def generate_markdown(r):
 
     lines.append("# Competitor & Opportunity Analysis")
     lines.append(f"\n*Scanned {m['total_messages_scanned']} messages from r/billiards + r/snooker*")
+    lines.append(f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
     lines.append(f"\n**Key findings:**")
     lines.append(f"- {m['pure_pool_mentions']} mentions of Pure Pool / Ripstone (opportunity leads)")
     lines.append(f"- {m['competitor_mentions']} mentions of {m['unique_competitors']} competitor games")

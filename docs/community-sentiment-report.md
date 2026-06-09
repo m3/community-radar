@@ -1,33 +1,33 @@
 # Community Sentiment & Classification Analysis
 
-*Generated: 2026-06-08 03:00*
+*Generated: 2026-06-09 03:03*
 
-*Generated from 57497 Discord messages + 37707 Reddit messages (DB) + 3446 Reddit posts (JSON)*
-*Deduplicated: 33313 unique messages (24184 cross-post duplicates removed)*
-*Data date range: 2017-07-21 → 2026-06-07*
+*Generated from 57711 Discord messages + 37707 Reddit messages (DB) + 3446 Reddit posts (JSON)*
+*Deduplicated: 33527 unique messages (24184 cross-post duplicates removed)*
+*Data date range: 2017-07-21 → 2026-06-09*
 
 
 ## Platform Overview
 | Platform | Messages |
 |----------|----------|
-| Discord | 57497 |
+| Discord | 57711 |
 | Reddit | 41153 |
-| **Total (raw)** | **98650** |
-| **Total (deduped)** | **33313** |
+| **Total (raw)** | **98864** |
+| **Total (deduped)** | **33527** |
 
 
 ## Weekly Sentiment Trends (Last 8 Weeks)
 
 | Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% | Pos Trend | Neg Trend |
 |------|-------|------|------|------|--------------|--------------|-------------|-------------|-----------|-----------|
-| 2026-W16 | 1112 | 9.6% | 3.9% | 86.5% | 9.4% | 3.9% | 13.5% | 3.8% | ▁ | ▂ |
-| 2026-W17 | 1326 | 11.0% | 1.6% | 87.4% | 9.7% | 1.4% | 15.3% | 2.2% | ▁ | ▁ |
-| 2026-W18 | 2486 | 17.8% | 2.9% | 79.3% | 10.7% | 3.5% | 19.9% | 2.7% | ▂ | ▁ |
-| 2026-W19 | 2272 | 13.1% | 4.0% | 82.9% | 9.5% | 6.0% | 14.9% | 2.9% | ▁ | ▂ |
-| 2026-W20 | 2065 | 15.8% | 3.8% | 80.4% | 11.4% | 4.6% | 18.5% | 3.4% | ▂ | ▂ |
-| 2026-W21 | 2129 | 12.8% | 2.5% | 84.7% | 13.2% | 3.0% | 12.5% | 2.3% | ▁ | ▁ |
-| 2026-W22 | 2549 | 16.3% | 5.0% | 78.7% | 9.3% | 7.1% | 20.0% | 3.9% | ▂ | ▂ |
-| 2026-W23 | 13 | 38.5% | 15.4% | 46.2% | 33.3% | 16.7% | 100.0% | 0.0% | █ | █ |
+| 2026-W16 | 1112 | 9.6% | 3.9% | 86.5% | 9.4% | 3.9% | 13.5% | 3.8% | ▁ | ▄ |
+| 2026-W17 | 1326 | 11.0% | 1.6% | 87.4% | 9.7% | 1.4% | 15.3% | 2.2% | ▂ | ▁ |
+| 2026-W18 | 2486 | 17.8% | 2.9% | 79.3% | 10.7% | 3.5% | 19.9% | 2.7% | █ | ▃ |
+| 2026-W19 | 2272 | 13.1% | 4.0% | 82.9% | 9.5% | 6.0% | 14.9% | 2.9% | ▃ | ▅ |
+| 2026-W20 | 2076 | 15.8% | 3.8% | 80.4% | 11.4% | 4.5% | 18.5% | 3.4% | ▆ | ▄ |
+| 2026-W21 | 2131 | 12.8% | 2.5% | 84.7% | 13.2% | 3.0% | 12.5% | 2.3% | ▃ | ▂ |
+| 2026-W22 | 2573 | 16.3% | 5.0% | 78.7% | 9.4% | 7.0% | 20.0% | 3.9% | ▆ | ▆ |
+| 2026-W23 | 190 | 13.7% | 5.8% | 80.5% | 13.2% | 5.8% | 100.0% | 0.0% | ▄ | █ |
 
 
 ## 🚨 Anomaly Alerts (2σ Detection)
@@ -35,23 +35,23 @@
 | Week | Platform | Metric | Value | Expected | Z-Score | Severity |
 |------|----------|--------|-------|----------|---------|----------|
 | 2026-W23 | Reddit | Reddit Pos Pct | 100.0% | 16.4% | 27.21 | 🔴 CRITICAL ↑ spike |
-| 2026-W23 | Discord | Discord Pos Pct | 33.3% | 10.5% | 15.88 | 🔴 CRITICAL ↑ spike |
-| 2026-W23 | Overall | Overall Neg Pct | 15.4% | 3.4% | 10.65 | 🔴 CRITICAL ↑ spike |
-| 2026-W23 | Overall | Overall Pos Pct | 38.5% | 13.8% | 8.3 | 🔴 CRITICAL ↑ spike |
 | 2026-W18 | Overall | Overall Pos Pct | 17.8% | 10.3% | 7.58 | 🔴 CRITICAL ↑ spike |
-| 2026-W23 | Discord | Discord Neg Pct | 16.7% | 4.2% | 6.57 | 🔴 CRITICAL ↑ spike |
 | 2026-W18 | Discord | Discord Pos Pct | 10.7% | 9.6% | 5.42 | 🔴 CRITICAL ↑ spike |
 | 2026-W23 | Reddit | Reddit Neg Pct | 0.0% | 3.0% | 4.41 | 🔴 CRITICAL ↓ drop |
 | 2026-W18 | Reddit | Reddit Pos Pct | 19.9% | 14.4% | 4.32 | 🔴 CRITICAL ↑ spike |
 | 2026-W21 | Discord | Discord Pos Pct | 13.2% | 10.1% | 3.5 | 🔴 CRITICAL ↑ spike |
+| 2026-W20 | Discord | Discord Pos Pct | 11.4% | 9.8% | 2.64 | 🟠 HIGH ↑ spike |
+| 2026-W19 | Discord | Discord Neg Pct | 6.0% | 2.9% | 2.28 | 🟡 MEDIUM ↑ spike |
+| 2026-W23 | Overall | Overall Neg Pct | 5.8% | 3.4% | 2.14 | 🟡 MEDIUM ↑ spike |
+| 2026-W22 | Discord | Discord Neg Pct | 7.0% | 3.7% | 2.14 | 🟡 MEDIUM ↑ spike |
 
 
 ## Executive Summary
 
-**Overall Sentiment Ratio: 3.77** (positive:negative)
-- 16.3% positive (9361 messages)
-- 4.3% negative (2486 messages)
-- 79.4% neutral (45650 messages)
+**Overall Sentiment Ratio: 3.76** (positive:negative)
+- 16.3% positive (9386 messages)
+- 4.3% negative (2496 messages)
+- 79.4% neutral (45829 messages)
 
 **Community feel: strongly positive — members are enthusiastic and supportive**
 
@@ -60,32 +60,32 @@
 
 | Priority | Issue | Evidence | Recommended Action | Owner |
 |----------|-------|----------|-------------------|-------|
-| 🔴 HIGH | Overall negative sentiment spike | Overall Neg Pct 15.4% (expected 3.4%, z=10.65) | Investigate root cause; prepare comms response if patch/bug related | Dev Lead + CM |
+| 🟢 LOW | No urgent actions | Sentiment stable within normal bounds | Continue monitoring | CM |
 
 
 ## Sentiment by Channel
 
 | Channel | Messages | Positive | Negative | Neutral | Pos% | Neg% |
 |---------|----------|----------|----------|---------|------|------|
-| chat-pure-pool-pro | 12217 | 1504 | 674 | 10039 | 12.3% | 5.5% |
-| questions-and-suggestions-pure-pool-pro | 3366 | 593 | 242 | 2531 | 17.6% | 7.2% |
-| find-a-game-pure-pool-pro | 1050 | 149 | 45 | 856 | 14.2% | 4.3% |
-| play-of-the-month-submissions | 71 | 6 | 0 | 65 | 8.5% | 0.0% |
-| pool-and-snooker-talk | 627 | 61 | 3 | 563 | 9.7% | 0.5% |
-| announcements-ripstone | 106 | 20 | 4 | 82 | 18.9% | 3.8% |
+| chat-pure-pool-pro | 12236 | 1506 | 676 | 10054 | 12.3% | 5.5% |
+| questions-and-suggestions-pure-pool-pro | 3411 | 605 | 246 | 2560 | 17.7% | 7.2% |
+| find-a-game-pure-pool-pro | 1055 | 152 | 45 | 858 | 14.4% | 4.3% |
+| play-of-the-month-submissions | 72 | 6 | 0 | 66 | 8.3% | 0.0% |
+| pool-and-snooker-talk | 629 | 61 | 3 | 565 | 9.7% | 0.5% |
+| announcements-ripstone | 107 | 21 | 4 | 82 | 19.6% | 3.7% |
 | reddit-PurePoolPro-new | 2888 | 764 | 272 | 1852 | 26.5% | 9.4% |
 | reddit-PurePoolPro-hot | 1861 | 506 | 160 | 1195 | 27.2% | 8.6% |
 | reddit-PurePoolPro-top?t=month | 442 | 99 | 41 | 302 | 22.4% | 9.3% |
 | reddit-PurePoolPro-top?t=year | 913 | 250 | 77 | 586 | 27.4% | 8.4% |
 | reddit-PurePoolPro-top?t=all | 1203 | 307 | 115 | 781 | 25.5% | 9.6% |
-| 💬・pro-talk-general | 729 | 30 | 16 | 683 | 4.1% | 2.2% |
-| 💬・general | 218 | 9 | 4 | 205 | 4.1% | 1.8% |
-| 🎱・pool-talk | 57 | 8 | 0 | 49 | 14.0% | 0.0% |
-| 👀・looking-for-a-game | 96 | 4 | 0 | 92 | 4.2% | 0.0% |
-| tetradome-season-2-⚔️ | 629 | 71 | 5 | 553 | 11.3% | 0.8% |
-| rackhaus-season-2🛡️ | 146 | 13 | 2 | 131 | 8.9% | 1.4% |
-| 🎱8ball-focused-s2 | 431 | 50 | 12 | 369 | 11.6% | 2.8% |
-| 💚pro-killer-tournament | 47 | 0 | 0 | 47 | 0.0% | 0.0% |
+| 💬・pro-talk-general | 731 | 30 | 16 | 685 | 4.1% | 2.2% |
+| 💬・general | 235 | 9 | 4 | 222 | 3.8% | 1.7% |
+| 🎱・pool-talk | 68 | 9 | 0 | 59 | 13.2% | 0.0% |
+| 👀・looking-for-a-game | 97 | 4 | 0 | 93 | 4.1% | 0.0% |
+| tetradome-season-2-⚔️ | 704 | 76 | 7 | 621 | 10.8% | 1.0% |
+| rackhaus-season-2🛡️ | 147 | 14 | 2 | 131 | 9.5% | 1.4% |
+| 🎱8ball-focused-s2 | 446 | 50 | 14 | 382 | 11.2% | 3.1% |
+| 💚pro-killer-tournament | 66 | 0 | 0 | 66 | 0.0% | 0.0% |
 | reddit-billiards-new | 3350 | 551 | 98 | 2701 | 16.4% | 2.9% |
 | reddit-snooker-new | 4136 | 700 | 121 | 3315 | 16.9% | 2.9% |
 | reddit-billiards-hot | 3110 | 576 | 79 | 2455 | 18.5% | 2.5% |
@@ -112,34 +112,34 @@ Message purpose classification:
 
 | Purpose | Count | % |
 |---------|-------|---|
-| general | 31024 | 54.0% |
-| competition | 6739 | 11.7% |
-| feedback | 6629 | 11.5% |
-| showcase | 5017 | 8.7% |
-| support | 4646 | 8.1% |
-| social | 3203 | 5.6% |
+| general | 31170 | 54.0% |
+| competition | 6777 | 11.7% |
+| feedback | 6639 | 11.5% |
+| showcase | 5022 | 8.7% |
+| support | 4655 | 8.1% |
+| social | 3209 | 5.6% |
 | off_topic | 239 | 0.4% |
 
 ### Purpose by Channel
-- **chat-pure-pool-pro**: general (6964), feedback (1401), showcase (1098)
-- **questions-and-suggestions-pure-pool-pro**: general (1538), feedback (638), competition (351)
-- **find-a-game-pure-pool-pro**: general (741), social (120), competition (87)
-- **play-of-the-month-submissions**: showcase (50), general (18), support (3)
-- **pool-and-snooker-talk**: general (484), competition (75), showcase (29)
-- **announcements-ripstone**: feedback (62), general (12), support (10)
+- **chat-pure-pool-pro**: general (6974), feedback (1403), showcase (1101)
+- **questions-and-suggestions-pure-pool-pro**: general (1555), feedback (641), competition (374)
+- **find-a-game-pure-pool-pro**: general (746), social (120), competition (87)
+- **play-of-the-month-submissions**: showcase (51), general (18), support (3)
+- **pool-and-snooker-talk**: general (485), competition (75), showcase (30)
+- **announcements-ripstone**: feedback (62), general (12), support (11)
 - **reddit-PurePoolPro-new**: general (1068), feedback (708), showcase (294)
 - **reddit-PurePoolPro-hot**: general (700), feedback (442), social (190)
 - **reddit-PurePoolPro-top?t=month**: general (141), feedback (105), competition (53)
 - **reddit-PurePoolPro-top?t=year**: general (346), feedback (221), social (92)
 - **reddit-PurePoolPro-top?t=all**: general (416), feedback (287), showcase (136)
-- **💬・pro-talk-general**: general (537), competition (85), support (40)
-- **💬・general**: general (170), competition (20), showcase (14)
-- **🎱・pool-talk**: general (49), competition (5), showcase (2)
-- **👀・looking-for-a-game**: general (78), competition (8), feedback (4)
-- **tetradome-season-2-⚔️**: general (486), competition (81), feedback (34)
-- **rackhaus-season-2🛡️**: general (109), competition (13), feedback (11)
-- **🎱8ball-focused-s2**: general (365), competition (32), feedback (11)
-- **💚pro-killer-tournament**: general (41), competition (3), feedback (2)
+- **💬・pro-talk-general**: general (537), competition (86), support (41)
+- **💬・general**: general (184), competition (22), showcase (14)
+- **🎱・pool-talk**: general (59), competition (6), showcase (2)
+- **👀・looking-for-a-game**: general (79), competition (8), feedback (4)
+- **tetradome-season-2-⚔️**: general (548), competition (85), feedback (39)
+- **rackhaus-season-2🛡️**: general (110), competition (13), feedback (11)
+- **🎱8ball-focused-s2**: general (376), competition (35), feedback (11)
+- **💚pro-killer-tournament**: general (55), competition (6), feedback (2)
 - **reddit-billiards-new**: general (1722), competition (443), support (416)
 - **reddit-snooker-new**: general (2243), competition (802), feedback (338)
 - **reddit-billiards-hot**: general (1604), support (380), competition (368)
@@ -156,35 +156,35 @@ Most frequently used community-specific terms:
 
 | Word/Phrase | Mentions |
 |-------------|----------|
-| pool | 6413 |
-| table | 5005 |
-| cue | 4074 |
-| snooker | 3731 |
-| pure pool | 2088 |
+| pool | 6436 |
+| table | 5012 |
+| cue | 4076 |
+| snooker | 3732 |
+| pure pool | 2092 |
 | pocket | 1523 |
-| rest | 1446 |
+| rest | 1450 |
+| ripstone | 1231 |
 | cue ball | 1231 |
-| ripstone | 1227 |
 | tip | 1212 |
-| control | 999 |
+| control | 1000 |
 | rail | 950 |
-| 8 ball | 781 |
+| 8 ball | 782 |
 | improve | 737 |
+| practice | 722 |
 | power | 720 |
-| practice | 720 |
-| focus | 704 |
-| skill | 695 |
-| position | 682 |
-| 9 ball | 670 |
-| follow | 668 |
+| focus | 711 |
+| skill | 706 |
+| position | 683 |
+| 9 ball | 673 |
+| follow | 669 |
 | english | 654 |
-| angle | 602 |
+| angle | 603 |
 | spin | 571 |
 | felt | 569 |
 | cloth | 537 |
-| jump | 508 |
+| jump | 510 |
 | pockets | 507 |
-| chalk | 482 |
+| chalk | 483 |
 | kick | 460 |
 
 
@@ -194,26 +194,26 @@ What drives positivity vs negativity:
 
 | Topic | Mentions | Pos% | Neg% | Net Sentiment |
 |-------|----------|------|------|---------------|
-| shot | 4639 | 28.9% | 7.9% | 🟢 +21 |
-| add | 2141 | 25.9% | 17.0% | 🟡 +9 |
-| dev | 1516 | 33.5% | 13.7% | 🟢 +20 |
-| tournament | 1318 | 33.5% | 2.3% | 🟢 +31 |
-| issue | 1300 | 16.1% | 38.2% | 🔴 -22 |
-| online | 1279 | 27.1% | 11.2% | 🟢 +16 |
+| shot | 4641 | 28.9% | 7.9% | 🟢 +21 |
+| add | 2145 | 25.9% | 17.1% | 🟡 +9 |
+| dev | 1517 | 33.6% | 13.6% | 🟢 +20 |
+| tournament | 1322 | 33.4% | 2.3% | 🟢 +31 |
+| issue | 1305 | 16.0% | 38.2% | 🔴 -22 |
+| online | 1282 | 27.1% | 11.2% | 🟢 +16 |
 | ps5 | 1226 | 20.4% | 11.5% | 🟡 +9 |
-| patch | 1022 | 20.1% | 34.1% | 🔴 -14 |
-| fix | 986 | 13.9% | 39.2% | 🔴 -25 |
-| update | 876 | 21.2% | 40.3% | 🔴 -19 |
+| patch | 1023 | 20.0% | 34.1% | 🔴 -14 |
+| fix | 987 | 13.9% | 39.2% | 🔴 -25 |
+| update | 878 | 21.2% | 40.3% | 🔴 -19 |
 | steam | 849 | 19.9% | 20.1% | 🟡 -0 |
-| launch | 840 | 28.5% | 14.0% | 🟢 +14 |
-| release | 820 | 21.6% | 8.7% | 🟢 +13 |
-| problem | 808 | 15.8% | 33.5% | 🔴 -18 |
-| bug | 766 | 10.6% | 36.4% | 🔴 -26 |
-| wish | 679 | 32.1% | 9.4% | 🟢 +23 |
+| launch | 841 | 28.4% | 14.0% | 🟢 +14 |
+| release | 823 | 21.5% | 8.6% | 🟢 +13 |
+| problem | 811 | 15.9% | 33.7% | 🔴 -18 |
+| bug | 769 | 10.5% | 36.4% | 🔴 -26 |
+| wish | 680 | 32.1% | 9.4% | 🟢 +23 |
 | buy | 631 | 36.5% | 12.8% | 🟢 +24 |
+| suggestion | 606 | 40.9% | 5.6% | 🟢 +35 |
 | xbox | 605 | 20.5% | 10.2% | 🟢 +10 |
-| suggestion | 605 | 40.8% | 5.6% | 🟢 +35 |
-| feature | 529 | 25.3% | 26.7% | 🟡 -1 |
+| feature | 530 | 25.3% | 26.6% | 🟡 -1 |
 
 
 ## Top Negative Messages
@@ -279,9 +279,9 @@ Hendry and O Sullivan are regarded as the greatest of all time, I feel most woul
 
 
 ## Engagement Metrics
-- Total reactions: 469566
-- Avg reactions/message: 8.17
-- Reply rate: 90.6% (52121 replies)
+- Total reactions: 469652
+- Avg reactions/message: 8.14
+- Reply rate: 90.7% (52341 replies)
 - Active users (5+ msgs): 20
 
 ### Top Contributors
@@ -296,9 +296,9 @@ Hendry and O Sullivan are regarded as the greatest of all time, I feel most woul
 | JAMBO--C | 140 | 114 |
 | queenie_lucy_ii | 96 | 53 |
 | IAmLucifee | 94 | 35 |
-| OvercookedOctopusFeet | 87 | 54 |
+| overcookedoctopusfeet | 87 | 54 |
 | modska61 | 63 | 15 |
-| Lemmy9 | 60 | 38 |
+| lemmy9. | 60 | 38 |
 | eltorofire6996 | 50 | 13 |
 | itsJake | 43 | 31 |
 | jepm4sta | 42 | 35 |

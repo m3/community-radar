@@ -17,9 +17,9 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import statistics
 
-DB_PATH = Path("/Users/mathias/Development/community-radar/data/community_radar.db")
+DB_PATH = Path("/Users/mathias/Development/Projects/community-radar/data/community_radar.db")
 RESEARCH_DIR = Path("/Users/mathias/Development/DiscordBot/cuebot/docs/research")
-OUTPUT_DIR = Path("/Users/mathias/Development/community-radar/docs")
+OUTPUT_DIR = Path("/Users/mathias/Development/Projects/community-radar/docs")
 
 # ─── Config ───────────────────────────────────────────────────────────────
 WEEKS_IN_TREND = 8
@@ -486,7 +486,7 @@ def run_analysis():
                 reddit_posts_legacy.extend(data["posts"])
 
     # Also load new full export JSONs
-    reddit_export_dir = Path("/Users/mathias/Development/community-radar/data/reddit-exports")
+    reddit_export_dir = Path("/Users/mathias/Development/Projects/community-radar/data/reddit-exports")
     for jf in reddit_export_dir.glob("*-full.json"):
         with open(jf) as f:
             data = json.load(f)

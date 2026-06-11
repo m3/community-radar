@@ -12,8 +12,8 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
-DB_PATH = Path("/Users/mathias/Development/community-radar/data/community_radar.db")
-REPORT_PATH = Path("/Users/mathias/Development/community-radar/docs/community-sentiment-analysis.json")
+DB_PATH = Path("/Users/mathias/Development/Projects/community-radar/data/community_radar.db")
+REPORT_PATH = Path("/Users/mathias/Development/Projects/community-radar/docs/community-sentiment-analysis.json")
 
 
 def get_db():

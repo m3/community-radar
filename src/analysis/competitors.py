@@ -15,8 +15,8 @@ from pathlib import Path
 from datetime import datetime
 from collections import Counter, defaultdict
 
-DB_PATH = Path("/Users/mathias/Development/community-radar/data/community_radar.db")
-OUTPUT_PATH = Path("/Users/mathias/Development/community-radar/docs/competitor-opportunities.md")
+DB_PATH = Path("/Users/mathias/Development/Projects/community-radar/data/community_radar.db")
+OUTPUT_PATH = Path("/Users/mathias/Development/Projects/community-radar/docs/competitor-opportunities.md")
 
 # Brand & product names to track (multi-word phrases first to avoid false matches)
 BRAND_KEYWORDS = {

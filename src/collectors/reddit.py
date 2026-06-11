@@ -13,12 +13,12 @@ import yaml
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
 # Load config
-CONFIG_PATH = Path("/Users/mathias/Development/community-radar/config.yaml")
+CONFIG_PATH = Path("/Users/mathias/Development/Projects/community-radar/config.yaml")
 with open(CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
 REDDIT_SKILLS_DIR = Path(CONFIG["reddit"]["skills_dir"])
-DATA_DIR = Path("/Users/mathias/Development/community-radar/data")
+DATA_DIR = Path("/Users/mathias/Development/Projects/community-radar/data")
 SUBREDDITS = CONFIG["reddit"]["subreddits"]
 
 

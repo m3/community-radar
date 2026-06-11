@@ -4,7 +4,7 @@
 
 set -e
 
-PROJECT_DIR="/Users/mathias/Development/community-radar"
+PROJECT_DIR="/Users/mathias/Development/Projects/community-radar"
 cd "$PROJECT_DIR"
 
 # Activate venv

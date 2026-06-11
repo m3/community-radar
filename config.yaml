@@ -34,7 +34,7 @@ discord:
 
 reddit:
   # Path to reddit-skills directory (Chrome extension bridge)
-  skills_dir: "/Users/mathias/Development/community-radar/scripts"
+  skills_dir: "/Users/mathias/Development/Projects/community-radar/scripts"
 
   # Tracked subreddits and sort methods
   # Add new subreddits to monitor for opportunities, sentiment, mentions, and competitors

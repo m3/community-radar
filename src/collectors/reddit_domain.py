@@ -6,13 +6,13 @@ import yaml
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
 # Load config
-CONFIG_PATH = Path("/Users/mathias/Development/Projects/community-radar/config.yaml")
+CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
 with open(CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
 REDDIT_SKILLS_DIR = Path(CONFIG["reddit"]["skills_dir"])
-DATA_DIR = Path("/Users/mathias/Development/Projects/community-radar/data")
-DOMAINS = CONFIG["reddit"].get("domain_monitoring", [])
+DATA_DIR = Path(__file__).parent.parent.parent / "data"
+DOMAINS = CONFIG["reddit"].get("domain_monitoring", {}).get("domains", [])
 
 def build_domain_json_url(domain: str, sort: str = "new", limit: int = 100, after: str = None) -> str:
     url = f"https://www.reddit.com/domain/{domain}/{sort}.json?limit={limit}"
@@ -114,7 +114,10 @@ def export_domain(domain, sort="new", max_pages=3):
         ))
         msg_count += 1
 
-    db.execute("UPDATE channels SET message_count=?, last_scan=datetime('now') WHERE id=?", (msg_count, channel_id))
+    db.execute("UPDATE channels SET message_count=(SELECT COUNT(*) FROM messages WHERE channel_id=?), last_scan=datetime('now') WHERE id=?", (channel_id, channel_id))
+    db.execute("UPDATE servers SET total_messages=total_messages+?, last_scan=datetime('now') WHERE id=?", (msg_count, server_id))
+    
+    log_export(db, server_id, channel_id, msg_count, new_users, 0, "imported")
     db.commit()
     db.close()
     

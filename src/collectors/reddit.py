@@ -13,12 +13,12 @@ import yaml
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 
 # Load config
-CONFIG_PATH = Path("/Users/mathias/Development/Projects/community-radar/config.yaml")
+CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
 with open(CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
 REDDIT_SKILLS_DIR = Path(CONFIG["reddit"]["skills_dir"])
-DATA_DIR = Path("/Users/mathias/Development/Projects/community-radar/data")
+DATA_DIR = Path(__file__).parent.parent.parent / "data"
 SUBREDDITS = CONFIG["reddit"]["subreddits"]
 
 
@@ -211,8 +211,8 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
                 raise
             msg_count += 1
 
-    db.execute("UPDATE channels SET message_count=?, last_scan=datetime('now') WHERE id=?",
-               (msg_count, channel_id))
+    db.execute("UPDATE channels SET message_count=(SELECT COUNT(*) FROM messages WHERE channel_id=?), last_scan=datetime('now') WHERE id=?",
+               (channel_id, channel_id))
     db.execute("UPDATE servers SET total_messages=total_messages+?, last_scan=datetime('now') WHERE id=?",
                (msg_count, server_id))
 

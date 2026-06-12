@@ -1,8 +1,8 @@
 # Community Sentiment & Classification Analysis
 
-*Generated: 2026-06-11 03:01*
+*Generated: 2026-06-12 03:00*
 
-*Generated from 58041 Discord messages + 37707 Reddit messages (DB) + 3446 Reddit posts (JSON)*
+*Generated from 58041 Discord messages + 37707 Reddit messages (DB) + 3438 Reddit posts (JSON)*
 *Deduplicated: 33857 unique messages (24184 cross-post duplicates removed)*
 *Data date range: 2017-07-21 → 2026-06-10*
 
@@ -11,8 +11,8 @@
 | Platform | Messages |
 |----------|----------|
 | Discord | 58041 |
-| Reddit | 41153 |
-| **Total (raw)** | **99194** |
+| Reddit | 41145 |
+| **Total (raw)** | **99186** |
 | **Total (deduped)** | **33857** |
 
 

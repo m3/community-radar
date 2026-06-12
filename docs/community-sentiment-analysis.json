@@ -8,9 +8,9 @@
       "from": "2017-07-21",
       "to": "2026-06-10"
     },
-    "reddit_posts_analyzed": 41153,
+    "reddit_posts_analyzed": 41145,
     "reddit_messages_in_db": 37707,
-    "reddit_posts_in_json": 3446
+    "reddit_posts_in_json": 3438
   },
   "sentiment": {
     "overall": {

@@ -57,17 +57,43 @@ def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3):
             print(f"  ✗ No response from json-url at page {page_num + 1}")
             break
 
-        posts = result.get("posts", [])
-        if not posts:
+        # result is the raw Reddit JSON
+        data = result
+        children = data.get("data", {}).get("children", [])
+        if not children:
             print(f"  No more posts at page {page_num + 1}")
             break
 
+        posts = []
+        for c in children:
+            d = c.get("data", {})
+            post = {
+                "id": d.get("id", ""),
+                "title": d.get("title", ""),
+                "subreddit": d.get("subreddit", ""),
+                "author": {"name": d.get("author", "[deleted]")},
+                "permalink": d.get("permalink", ""),
+                "postType": "text" if d.get("is_self") else "link",
+                "selftext": d.get("selftext", ""),
+                "createdUtc": d.get("created_utc", 0),
+                "stats": {
+                    "score": d.get("score", 0),
+                    "numComments": d.get("num_comments", 0),
+                    "upvoteRatio": d.get("upvote_ratio", 0),
+                },
+                "flair": d.get("link_flair_text", ""),
+                "domain": d.get("domain", ""),
+                "url": d.get("url", ""),
+            }
+            posts.append(post)
+
         all_posts.extend(posts)
-        after = result.get("after", "")
+        after = data.get("data", {}).get("after")
+        
+        print(f"  Page {page_num + 1}: {len(posts)} posts (total: {len(all_posts)})")
         if not after:
             break
-
-        print(f"  Page {page_num + 1}: {len(posts)} posts (total: {len(all_posts)})")
+        
         time.sleep(1)
 
     return all_posts
@@ -125,9 +151,17 @@ def export_domain(domain, sort="new", max_pages=3):
     return msg_count
 
 def export_all_domains():
+    domain_cfg = CONFIG["reddit"].get("domain_monitoring", {})
+    if not domain_cfg.get("enabled", False):
+        print("  ⚠ Domain monitoring is disabled in config.yaml")
+        return
+
+    sort = domain_cfg.get("sort", "new")
+    max_pages = domain_cfg.get("max_pages", 3)
+    
     total_msgs = 0
     for domain in DOMAINS:
-        total_msgs += export_domain(domain)
+        total_msgs += export_domain(domain, sort=sort, max_pages=max_pages)
     print(f"\n✅ Total Domain Messages: {total_msgs}")
 
 if __name__ == "__main__":

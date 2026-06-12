@@ -10,10 +10,16 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DB_PATH = DATA_DIR / "community_radar.db"
 
 
-def get_db():
+def get_db(client_name=None):
     """Get database connection, creating schema if needed"""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(str(DB_PATH))
+    if client_name:
+        db_path = DATA_DIR / "clients" / f"{client_name}.db"
+    else:
+        # Fallback for now, but should eventually be deprecated
+        db_path = DATA_DIR / "community_radar.db"
+    
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(str(db_path))
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA foreign_keys=ON")

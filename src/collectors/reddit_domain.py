@@ -49,12 +49,12 @@ def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3):
 
     for page_num in range(max_pages):
         result = run_cli([
-            "json-feed",
+            "json-url",
             "--url", build_domain_json_url(domain, sort, limit, after if after else None),
         ], timeout=30)
 
         if not result:
-            print(f"  ✗ No response from json-feed at page {page_num + 1}")
+            print(f"  ✗ No response from json-url at page {page_num + 1}")
             break
 
         posts = result.get("posts", [])

@@ -176,7 +176,6 @@ def cmd_subreddit_feed(args: argparse.Namespace) -> None:
 
 def cmd_json_feed(args: argparse.Namespace) -> None:
     """Fetch Reddit's .json API for bulk post extraction with timestamps."""
-    from reddit.bridge import BridgePage
     from reddit.human import sleep_random
 
     browser, page = _connect(args)
@@ -202,8 +201,7 @@ def cmd_json_feed(args: argparse.Namespace) -> None:
             if not text:
                 break
 
-            import json as _json
-            data = _json.loads(text)
+            data = json.loads(text)
             children = data.get("data", {}).get("children", [])
 
             if not children:
@@ -244,24 +242,22 @@ def cmd_json_feed(args: argparse.Namespace) -> None:
 
 def cmd_json_url(args: argparse.Namespace) -> None:
     """Fetch any URL as JSON via bridge."""
-    from reddit.bridge import BridgePage
-    from reddit.human import sleep_random
-    import json as _json
-
     browser, page = _connect(args)
     try:
         page.navigate(args.url)
         page.wait_for_load()
         sleep_random(500, 1000)
         text = page.evaluate("document.body.innerText")
-        if text:
-            try:
-                data = _json.loads(text)
-                _output(data)
-            except _json.JSONDecodeError:
-                # Some browsers might wrap JSON in <pre> or similar
-                # Attempt to extract text content
-                _output({"error": "Failed to parse JSON from body", "raw": text[:200]}, exit_code=2)
+        if not text or not text.strip():
+            _output({"error": "Empty response from browser", "url": args.url}, exit_code=2)
+        
+        try:
+            data = json.loads(text.strip())
+            _output(data)
+        except json.JSONDecodeError:
+            # Some browsers might wrap JSON in <pre> or similar
+            # Attempt to extract text content
+            _output({"error": "Failed to parse JSON from body", "raw": text[:200]}, exit_code=2)
     finally:
         browser.close()
 

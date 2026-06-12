@@ -12,4 +12,6 @@ dependencies = [
 community-radar = "src.main:cli"
 
 [tool.uv]
-dev-dependencies = []
+dev-dependencies = [
+    "pytest>=9.0.3",
+]

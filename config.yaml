@@ -36,6 +36,13 @@ reddit:
   # Path to reddit-skills directory (Chrome extension bridge)
   skills_dir: "/Users/mathias/Development/Projects/community-radar/scripts"
 
+  domain_monitoring:
+    enabled: true
+    domains:
+      - "purepoolpro.com"
+    max_pages: 3
+    sort: "new"
+
   # Tracked subreddits and sort methods
   # Add new subreddits to monitor for opportunities, sentiment, mentions, and competitors
   subreddits:

@@ -2,6 +2,7 @@
 
 import sqlite3
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from .schema import SCHEMA_SQL
@@ -10,14 +11,24 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DB_PATH = DATA_DIR / "community_radar.db"
 
 
+def sanitize_client_name(name):
+    """Sanitize client name to prevent path injection"""
+    if not name:
+        return None
+    # Only allow alpha-numeric, hyphen, underscore
+    clean = re.sub(r"[^a-zA-Z0-9_-]", "", name)
+    return clean if clean else None
+
+
 def get_db(client_name=None):
     """Get database connection, creating schema if needed"""
-    if client_name:
-        db_path = DATA_DIR / "clients" / f"{client_name}.db"
+    clean_name = sanitize_client_name(client_name)
+    if clean_name:
+        db_path = DATA_DIR / "clients" / f"{clean_name}.db"
     else:
         # Fallback for now, but should eventually be deprecated
         db_path = DATA_DIR / "community_radar.db"
-    
+
     db_path.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(str(db_path))
     db.row_factory = sqlite3.Row

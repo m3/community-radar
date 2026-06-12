@@ -17,17 +17,38 @@ CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
 with open(CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
-REDDIT_SKILLS_DIR = Path(CONFIG["reddit"]["skills_dir"])
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
-SUBREDDITS = CONFIG["reddit"]["subreddits"]
+def get_config_value(client_cfg, key, default=None):
+    """Helper to get config value from client_cfg or global CONFIG"""
+    # Check client-specific reddit section first
+    if client_cfg and "reddit" in client_cfg:
+        if key in client_cfg["reddit"]:
+            return client_cfg["reddit"][key]
+    
+    # Check global reddit_global section
+    if "reddit_global" in CONFIG:
+        if key in CONFIG["reddit_global"]:
+            return CONFIG["reddit_global"][key]
+            
+    # Fallback to old global reddit section if it exists
+    if "reddit" in CONFIG:
+        if key in CONFIG["reddit"]:
+            return CONFIG["reddit"][key]
+            
+    return default
+
+DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
 
 
-def run_cli(args, timeout=60):
+def run_cli(args, timeout=60, client_cfg=None):
     """Run reddit-skills CLI and return parsed output"""
     import subprocess
+    reddit_skills_dir = get_config_value(client_cfg, "skills_dir")
+    if not reddit_skills_dir:
+        raise ValueError("reddit.skills_dir not found in config")
+        
     full_args = [
         "uv", "run",
-        "--directory", str(REDDIT_SKILLS_DIR),
+        "--directory", str(reddit_skills_dir),
         "python", "cli.py",
     ] + args
 
@@ -45,7 +66,7 @@ def run_cli(args, timeout=60):
         return None
 
 
-def fetch_posts_via_json(subreddit, sort="new", limit=100, max_pages=5):
+def fetch_posts_via_json(subreddit, sort="new", limit=100, max_pages=5, client_cfg=None):
     """Fetch posts using Reddit's .json API via the Chrome bridge CLI.
     
     This bypasses the DOM virtualization issue — the .json endpoint returns
@@ -63,7 +84,7 @@ def fetch_posts_via_json(subreddit, sort="new", limit=100, max_pages=5):
             "--limit", str(limit),
             "--max-pages", "1",
             "--after", after,
-        ], timeout=30)
+        ], timeout=30, client_cfg=client_cfg)
 
         if not result:
             print(f"  ✗ No response from json-feed at page {page_num + 1}")
@@ -86,22 +107,22 @@ def fetch_posts_via_json(subreddit, sort="new", limit=100, max_pages=5):
     return all_posts
 
 
-def fetch_comments_for_post(permalink):
+def fetch_comments_for_post(permalink, client_cfg=None):
     """Fetch comments for a post using the Chrome bridge."""
-    detail = run_cli(["get-post-detail", "--post-url", f"https://www.reddit.com{permalink}"], timeout=30)
+    detail = run_cli(["get-post-detail", "--post-url", f"https://www.reddit.com{permalink}"], timeout=30, client_cfg=client_cfg)
     if detail:
         return detail.get("comments", [])
     return []
 
 
-def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20, max_post_pages=5):
+def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20, max_post_pages=5, client_cfg=None):
     """Export posts + comments from a subreddit."""
     # Sanitize sort for use in channel ID and filename (remove ? and = from "top?t=month")
     sort_safe = sort.replace("?", "_").replace("=", "_").replace("&", "_")
     print(f"  📥 r/{subreddit} ({sort})...")
 
     # Fetch posts via .json API
-    posts = fetch_posts_via_json(subreddit, sort, limit=100, max_pages=max_post_pages)
+    posts = fetch_posts_via_json(subreddit, sort, limit=100, max_pages=max_post_pages, client_cfg=client_cfg)
     if not posts:
         print(f"  ✗ No posts fetched")
         return 0, 0
@@ -119,7 +140,7 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
         )
         for post in posts_with_comments[:comment_limit]:
             time.sleep(1.5)  # Rate limit
-            comments = fetch_comments_for_post(post["permalink"])
+            comments = fetch_comments_for_post(post["permalink"], client_cfg=client_cfg)
             if comments:
                 post["comments"] = comments
                 total_comments += len(comments)
@@ -224,14 +245,16 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
     return msg_count, total_comments
 
 
-def export_all():
+def export_all(client_cfg=None):
     """Export all configured subreddits"""
     total_msgs = 0
     total_comments = 0
-    for sub, config in SUBREDDITS.items():
+    subreddits = get_config_value(client_cfg, "subreddits", {})
+    
+    for sub, config in subreddits.items():
         print(f"\n📡 r/{sub}")
         for sort in config["sorts"]:
-            msgs, comments = export_subreddit(sub, sort, max_post_pages=config.get("max_pages", 3))
+            msgs, comments = export_subreddit(sub, sort, max_post_pages=config.get("max_pages", 3), client_cfg=client_cfg)
             total_msgs += msgs
             total_comments += comments
             time.sleep(2)

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import sys
 import yaml
+import functools
 
 app = Flask(__name__)
 
@@ -19,6 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.db.models import get_db as _get_db
 
+@functools.lru_cache()
 def load_config():
     """Load configuration from config.yaml."""
     config_path = ROOT / "config.yaml"

@@ -170,6 +170,10 @@ class BridgePage:
         abs_paths = [os.path.abspath(path) for path in files]
         self._call("set_file_input", {"selector": selector, "files": abs_paths})
 
+    def close(self) -> None:
+        """No-op for bridge as it uses short-lived connections."""
+        pass
+
     # ─── Compatibility helpers ──────────────────────────────────
 
     def is_server_running(self) -> bool:

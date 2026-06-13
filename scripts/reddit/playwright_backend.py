@@ -108,7 +108,7 @@ class PlaywrightPage:
         return len(self._page.query_selector_all(selector))
 
     def remove_element(self, selector: str) -> None:
-        self._page.evaluate(f"document.querySelector('{selector}')?.remove()")
+        self._page.evaluate("s => document.querySelector(s)?.remove()", selector)
 
     def hover_element(self, selector: str) -> None:
         self._page.hover(selector)
@@ -120,10 +120,10 @@ class PlaywrightPage:
     # ─── Scrolling ──────────────────────────────────────────────
 
     def scroll_by(self, x: int, y: int) -> None:
-        self._page.evaluate(f"window.scrollBy({x}, {y})")
+        self._page.evaluate("([x, y]) => window.scrollBy(x, y)", [x, y])
 
     def scroll_to(self, x: int, y: int) -> None:
-        self._page.evaluate(f"window.scrollTo({x}, {y})")
+        self._page.evaluate("([x, y]) => window.scrollTo(x, y)", [x, y])
 
     def scroll_to_bottom(self) -> None:
         self._page.evaluate("window.scrollTo(0, document.body.scrollHeight)")

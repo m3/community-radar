@@ -27,6 +27,16 @@ def load_config():
     with open(config_path) as f:
         return yaml.safe_load(f)
 
+def validate_client(client_name):
+    """Validate client name against config to prevent path traversal.
+    
+    Raises 404 if client not found.
+    """
+    config = load_config()
+    if client_name not in config.get("clients", {}):
+        from flask import abort
+        abort(404)
+
 def get_db(client_name):
     """Get database connection for a specific client."""
     return _get_db(client_name)
@@ -60,10 +70,7 @@ def hub():
 @app.route("/<client_name>/dashboard")
 def index(client_name):
     """Main dashboard page."""
-    config = load_config()
-    if client_name not in config.get("clients", {}):
-        from flask import abort
-        abort(404)
+    validate_client(client_name)
     report = load_report(client_name)
     return render_template("index.html", client_name=client_name, report=report)
 
@@ -71,6 +78,7 @@ def index(client_name):
 @app.route("/api/<client_name>/overview")
 def api_overview(client_name):
     """High-level stats for dashboard cards."""
+    validate_client(client_name)
     db = get_db(client_name)
 
     # Total messages by platform
@@ -106,6 +114,7 @@ def api_overview(client_name):
 @app.route("/api/<client_name>/sentiment/timeseries")
 def api_sentiment_timeseries(client_name):
     """Time-series sentiment data for charts."""
+    validate_client(client_name)
     db = get_db(client_name)
 
     # Get messages with sentiment - we'll compute on the fly
@@ -148,6 +157,7 @@ def api_sentiment_timeseries(client_name):
 @app.route("/api/<client_name>/sentiment/by_channel")
 def api_sentiment_by_channel(client_name):
     """Sentiment breakdown by channel."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("sentiment", {}).get("by_channel", {}))
 
@@ -155,6 +165,7 @@ def api_sentiment_by_channel(client_name):
 @app.route("/api/<client_name>/topics")
 def api_topics(client_name):
     """Topic-level sentiment."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("topic_sentiment", {}))
 
@@ -162,6 +173,7 @@ def api_topics(client_name):
 @app.route("/api/<client_name>/power_words")
 def api_power_words(client_name):
     """Community power words."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("power_words", {}))
 
@@ -169,6 +181,7 @@ def api_power_words(client_name):
 @app.route("/api/<client_name>/engagement")
 def api_engagement(client_name):
     """Engagement metrics."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("engagement", {}))
 
@@ -176,6 +189,7 @@ def api_engagement(client_name):
 @app.route("/api/<client_name>/contributors")
 def api_contributors(client_name):
     """Top contributors."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("top_contributors", []))
 
@@ -183,6 +197,7 @@ def api_contributors(client_name):
 @app.route("/api/<client_name>/negative_messages")
 def api_negative_messages(client_name):
     """Top negative messages."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("top_negative", []))
 
@@ -190,6 +205,7 @@ def api_negative_messages(client_name):
 @app.route("/api/<client_name>/positive_messages")
 def api_positive_messages(client_name):
     """Top positive messages."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("top_positive", []))
 
@@ -197,6 +213,7 @@ def api_positive_messages(client_name):
 @app.route("/api/<client_name>/purpose")
 def api_purpose(client_name):
     """Purpose classification."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("purpose", {}))
 
@@ -204,6 +221,7 @@ def api_purpose(client_name):
 @app.route("/api/<client_name>/reddit/comparison")
 def api_reddit_comparison(client_name):
     """Reddit vs Discord comparison."""
+    validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("sentiment", {}).get("reddit_comparison", {}))
 
@@ -211,6 +229,7 @@ def api_reddit_comparison(client_name):
 @app.route("/api/<client_name>/raw_messages")
 def api_raw_messages(client_name):
     """Raw messages for detailed view with filters."""
+    validate_client(client_name)
     db = get_db(client_name)
 
     platform = request.args.get("platform")
@@ -250,6 +269,7 @@ def api_raw_messages(client_name):
 @app.route("/api/<client_name>/channels")
 def api_channels(client_name):
     """List all channels with stats."""
+    validate_client(client_name)
     db = get_db(client_name)
 
     rows = db.execute("""
@@ -273,6 +293,7 @@ def api_cuebot_engagement_score(client_name):
     Returns a ranked list of users with composite engagement scores
     based on message count, reactions, replies, sentiment, and recency.
     """
+    validate_client(client_name)
     db = get_db(client_name)
 
     # Calculate engagement scores
@@ -353,6 +374,7 @@ def api_cuebot_engagement_score(client_name):
 @app.route("/api/<client_name>/cuebot/engagement/leaderboard")
 def api_cuebot_leaderboard(client_name):
     """Get top N users by engagement score."""
+    validate_client(client_name)
     limit = min(int(request.args.get("limit", 50)), 200)
     platform = request.args.get("platform")
 
@@ -427,6 +449,7 @@ def api_cuebot_leaderboard(client_name):
 @app.route("/api/<client_name>/cuebot/engagement/user/<user_id>")
 def api_cuebot_user_profile(client_name, user_id):
     """Get detailed engagement profile for a specific user."""
+    validate_client(client_name)
     db = get_db(client_name)
 
     user = db.execute("""
@@ -493,6 +516,7 @@ def api_cuebot_user_profile(client_name, user_id):
 @app.route("/api/<client_name>/cuebot/engagement/crossref")
 def api_cuebot_crossref(client_name):
     """Get cross-references between Discord and Reddit users."""
+    validate_client(client_name)
     db = get_db(client_name)
 
     rows = db.execute("""
@@ -511,6 +535,29 @@ def api_cuebot_crossref(client_name):
         "total": len(rows)
     })
 
+
+@app.route("/queue")
+def queue_view():
+    return render_template("queue.html", client_name=None)
+
+
+@app.route("/api/queue/status")
+def api_queue_status():
+    from src.db.queue import get_queue_db
+    db = get_queue_db()
+    tasks = db.execute("SELECT * FROM tasks ORDER BY id DESC LIMIT 50").fetchall()
+    db.close()
+    return jsonify([dict(t) for t in tasks])
+
+
+@app.route("/api/queue/retry/<int:task_id>", methods=["POST"])
+def api_queue_retry(task_id):
+    from src.db.queue import get_queue_db
+    db = get_queue_db()
+    db.execute("UPDATE tasks SET status='pending', error_log=NULL, started_at=NULL, finished_at=NULL WHERE id=?", (task_id,))
+    db.commit()
+    db.close()
+    return jsonify({"success": True})
 
 
 def run_dashboard():

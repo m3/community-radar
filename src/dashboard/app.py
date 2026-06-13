@@ -10,6 +10,7 @@ import json
 from datetime import datetime, timedelta
 from collections import defaultdict
 import sys
+import yaml
 
 app = Flask(__name__)
 
@@ -18,19 +19,19 @@ sys.path.insert(0, str(ROOT))
 
 from src.db.models import get_db as _get_db
 
-def get_db():
-    """Get database connection with row factory."""
-    client_name = current_app.config.get('CLIENT_NAME')
-    if not client_name:
-        raise ValueError("CLIENT_NAME is not set")
+def load_config():
+    """Load configuration from config.yaml."""
+    config_path = ROOT / "config.yaml"
+    with open(config_path) as f:
+        return yaml.safe_load(f)
+
+def get_db(client_name):
+    """Get database connection for a specific client."""
     return _get_db(client_name)
 
 
-def load_report():
-    """Load latest sentiment analysis report."""
-    client_name = current_app.config.get('CLIENT_NAME')
-    if not client_name:
-        raise ValueError("CLIENT_NAME is not set")
+def load_report(client_name):
+    """Load latest sentiment analysis report for a specific client."""
     report_path = ROOT / "data" / "clients" / client_name / "reports" / "community-sentiment-analysis.json"
     if report_path.exists():
         with open(report_path) as f:

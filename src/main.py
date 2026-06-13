@@ -184,8 +184,11 @@ def report(args):
 
 def dashboard(args):
     """Launch web dashboard"""
+    if not getattr(args, 'client', None):
+        print("Error: --client is required for 'dashboard'")
+        sys.exit(1)
     from src.dashboard.app import run_dashboard
-    run_dashboard()
+    run_dashboard(args.client)
 
 
 def import_data(args):

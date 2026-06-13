@@ -482,5 +482,14 @@ def api_cuebot_crossref():
     })
 
 
+def run_dashboard(client_name):
+    global CLIENT_NAME
+    CLIENT_NAME = client_name
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--client", required=True, help="Client name")
+    args = parser.parse_args()
+    run_dashboard(args.client)

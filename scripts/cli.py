@@ -15,6 +15,22 @@ import logging
 import os
 import sys
 
+def get_proxy_from_bws(secret_id: str) -> str | None:
+    import subprocess
+    import json
+    if not secret_id:
+        return None
+    try:
+        result = subprocess.run(
+            ["bws", "secret", "get", secret_id, "--output", "json"],
+            capture_output=True, text=True, check=True
+        )
+        data = json.loads(result.stdout)
+        return data.get("value")
+    except Exception as e:
+        print(f"Error fetching proxy from BWS: {e}")
+        return None
+
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 if sys.stderr and hasattr(sys.stderr, "reconfigure"):
@@ -109,11 +125,17 @@ def _open_chrome() -> None:
 
 
 def _connect(args: argparse.Namespace):
-    from reddit.bridge import BridgePage
-
-    bridge_url = getattr(args, "bridge_url", "ws://localhost:9334")
-    _ensure_bridge_ready(bridge_url)
-    return _DummyBrowser(), BridgePage(bridge_url)
+    backend = getattr(args, "backend", "bridge")
+    if backend == "playwright":
+        from reddit.playwright_backend import PlaywrightPage
+        proxy = get_proxy_from_bws(args.proxy_secret_id) if getattr(args, "proxy_secret_id", None) else None
+        page = PlaywrightPage(headless=not getattr(args, "headed", False), proxy=proxy)
+        return page, page
+    else:
+        from reddit.bridge import BridgePage
+        bridge_url = getattr(args, "bridge_url", "ws://localhost:9334")
+        _ensure_bridge_ready(bridge_url)
+        return _DummyBrowser(), BridgePage(bridge_url)
 
 
 # ─── Subcommand implementations ──────────────────────────────────
@@ -493,12 +515,27 @@ def cmd_submit_image(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reddit-cli",
-        description="Reddit Automation CLI (Extension Bridge)",
+        description="Reddit Automation CLI (Extension Bridge or Playwright)",
     )
     parser.add_argument(
         "--bridge-url",
         default="ws://localhost:9334",
         help="Bridge server WebSocket URL (default: ws://localhost:9334)",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=["bridge", "playwright"],
+        default="bridge",
+        help="Backend to use (default: bridge)",
+    )
+    parser.add_argument(
+        "--proxy-secret-id",
+        help="BWS Secret ID for proxy string (format: http://user:pass@host:port)",
+    )
+    parser.add_argument(
+        "--headed",
+        action="store_true",
+        help="Run browser in headed mode (Playwright only)",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)

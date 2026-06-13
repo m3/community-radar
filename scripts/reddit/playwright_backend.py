@@ -48,12 +48,12 @@ class PlaywrightPage:
     def wait_dom_stable(self, timeout: float = 10.0, interval: float = 0.5) -> None:
         """Wait until the DOM stops changing."""
         start_time = time.time()
-        last_html = ""
+        last_size = -1
         while time.time() - start_time < timeout:
-            current_html = self._page.content()
-            if current_html == last_html:
+            current_size = self._page.evaluate("() => document.body ? document.body.innerHTML.length : 0")
+            if current_size == last_size and current_size > 0:
                 return
-            last_html = current_html
+            last_size = current_size
             time.sleep(interval)
 
     # ─── JavaScript execution ───────────────────────────────────

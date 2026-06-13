@@ -236,6 +236,38 @@ def analyze(args):
         print("\nAnalysis complete.")
 
 
+def queue_mgmt(args):
+    """Manage execution queue"""
+    from src.db.queue import get_queue_db
+    db = get_queue_db()
+    
+    if args.action == "status":
+        rows = db.execute("SELECT status, COUNT(*) as count FROM tasks GROUP BY status").fetchall()
+        for r in rows:
+            print(f"{r['status'].capitalize()}: {r['count']}")
+            
+    elif args.action == "list":
+        rows = db.execute("SELECT id, client_name, command, status, created_at FROM tasks ORDER BY id DESC LIMIT 20").fetchall()
+        print(f"{'ID':<4} {'Client':<20} {'Command':<10} {'Status':<10} {'Created'}")
+        for r in rows:
+            print(f"{r['id']:<4} {str(r['client_name']):<20} {r['command']:<10} {r['status']:<10} {r['created_at']}")
+            
+    elif args.action == "retry":
+        if not args.task_id:
+            print("Error: task_id required for retry")
+            return
+        db.execute("UPDATE tasks SET status='pending', error_log=NULL WHERE id=?", (args.task_id,))
+        db.commit()
+        print(f"Task {args.task_id} reset to pending.")
+        
+    elif args.action == "clear":
+        db.execute("DELETE FROM tasks WHERE status IN ('completed', 'failed')")
+        db.commit()
+        print("Cleared completed/failed tasks.")
+        
+    db.close()
+
+
 commands = {
     "status": status,
     "collect": collect,
@@ -250,6 +282,7 @@ commands = {
     "report": report,
     "dashboard": dashboard,
     "migrate": migrate_dbs,
+    "queue": queue_mgmt,
 }
 
 
@@ -277,6 +310,10 @@ def cli():
     subparsers.add_parser("report", help="Generate HTML report")
     subparsers.add_parser("dashboard", help="Launch web dashboard")
     subparsers.add_parser("migrate", help="Run database migrations (can be scoped with --client)")
+
+    q_parser = subparsers.add_parser("queue", help="Manage execution queue")
+    q_parser.add_argument("action", choices=["status", "list", "retry", "clear"])
+    q_parser.add_argument("--task-id", type=int, help="Task ID for retry action")
 
     args = parser.parse_args()
 

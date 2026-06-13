@@ -8,9 +8,7 @@
       "from": "2017-07-21",
       "to": "2026-06-10"
     },
-    "reddit_posts_analyzed": 41145,
-    "reddit_messages_in_db": 37707,
-    "reddit_posts_in_json": 3438
+    "reddit_messages_in_db": 37707
   },
   "sentiment": {
     "overall": {
@@ -247,11 +245,11 @@
       }
     },
     "reddit_comparison": {
-      "positive": 7697,
-      "negative": 1708,
-      "neutral": 31740,
-      "pos_pct": 18.7,
-      "neg_pct": 4.2,
+      "positive": 6843,
+      "negative": 1479,
+      "neutral": 29385,
+      "pos_pct": 18.1,
+      "neg_pct": 3.9,
       "reddit_by_channel": {
         "reddit-PurePoolPro-new": {
           "neutral": 1852,

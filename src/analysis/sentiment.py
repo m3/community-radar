@@ -687,8 +687,12 @@ def generate_markdown_report(r):
     ds = a["sentiment"]["overall"]
     lines.append(f"\n| Platform | Positive | Negative | Neutral |")
     lines.append(f"|----------|----------|----------|---------|")
-    lines.append(f"| Discord | {round((ds['positive']['count']-rs['positive'])/(ds['count']-total_reddit)*100,1) if ds['count']-total_reddit else 0}% | {round((ds['negative']['count']-rs['negative'])/(ds['count']-total_reddit)*100,1) if ds['count']-total_reddit else 0}% | ... |")
-    # Actually just use the simple pct already calculated
+    total_reddit = a["meta"]["reddit_messages_in_db"]
+    ds_total = ds['positive']['count'] + ds['negative']['count'] + ds['neutral']['count']
+    disc_pos = round((ds['positive']['count']-rs['positive'])/(ds_total-total_reddit)*100,1) if ds_total-total_reddit else 0
+    disc_neg = round((ds['negative']['count']-rs['negative'])/(ds_total-total_reddit)*100,1) if ds_total-total_reddit else 0
+    disc_neu = round(100 - disc_pos - disc_neg, 1)
+    lines.append(f"| Discord | {disc_pos}% | {disc_neg}% | {disc_neu}% |")
     lines.append(f"| Reddit | {rs['pos_pct']}% | {rs['neg_pct']}% | {round(100 - rs['pos_pct'] - rs['neg_pct'], 1)}% |")
 
     # ── Purpose Analysis ──

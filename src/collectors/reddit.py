@@ -46,11 +46,24 @@ def run_cli(args, timeout=60, client_cfg=None):
     if not reddit_skills_dir:
         raise ValueError("reddit.skills_dir not found in config")
         
+    backend = get_config_value(client_cfg, "backend")
+    proxy_secret_id = get_config_value(client_cfg, "proxy_secret_id")
+    headless = get_config_value(client_cfg, "headless", True)
+
     full_args = [
         "uv", "run",
         "--directory", str(reddit_skills_dir),
         "python", "cli.py",
-    ] + args
+    ]
+    
+    if backend:
+        full_args += ["--backend", backend]
+    if proxy_secret_id:
+        full_args += ["--proxy-secret-id", proxy_secret_id]
+    if not headless:
+        full_args += ["--headed"]
+        
+    full_args += args
 
     result = subprocess.run(full_args, capture_output=True, text=True, timeout=timeout)
     if result.returncode != 0:

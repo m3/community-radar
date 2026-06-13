@@ -6,6 +6,9 @@ export:
   batch_size: 500
 
 reddit_global:
+  backend: "playwright" # 'bridge' or 'playwright'
+  headless: true
+  proxy_secret_id: "7890-global-proxy-uuid"
   skills_dir: "/Users/mathias/Development/Projects/community-radar/scripts"
 
 discord_global:

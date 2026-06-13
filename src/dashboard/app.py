@@ -3,7 +3,7 @@ CommunityRadar Flask Dashboard
 Real-time community intelligence with time-series sentiment charts.
 """
 
-from flask import Flask, render_template, jsonify, request, current_app
+from flask import Flask, render_template, jsonify, request, current_app, abort
 import sqlite3
 from pathlib import Path
 import json
@@ -34,7 +34,6 @@ def validate_client(client_name):
     """
     config = load_config()
     if client_name not in config.get("clients", {}):
-        from flask import abort
         abort(404)
 
 def get_db(client_name):
@@ -552,12 +551,15 @@ def api_queue_status():
 
 @app.route("/api/queue/retry/<int:task_id>", methods=["POST"])
 def api_queue_retry(task_id):
-    from src.db.queue import get_queue_db
-    db = get_queue_db()
-    db.execute("UPDATE tasks SET status='pending', error_log=NULL, started_at=NULL, finished_at=NULL WHERE id=?", (task_id,))
-    db.commit()
-    db.close()
-    return jsonify({"success": True})
+    try:
+        from src.db.queue import get_queue_db
+        db = get_queue_db()
+        db.execute("UPDATE tasks SET status='pending', error_log=NULL, started_at=NULL, finished_at=NULL WHERE id=?", (task_id,))
+        db.commit()
+        db.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 def run_dashboard():

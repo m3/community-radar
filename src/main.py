@@ -191,6 +191,21 @@ def dashboard(args):
     run_dashboard(args.client)
 
 
+def migrate_dbs(args):
+    """Run database migrations for all clients or a specific client"""
+    from src.db.models import get_db
+    config = load_config()
+    
+    clients_to_migrate = [args.client] if args.client else get_available_clients(config)
+    
+    for client in clients_to_migrate:
+        print(f"\nMigrating database for {client}...")
+        # get_db automatically applies migrations
+        db = get_db(client)
+        db.close()
+        print(f"✅ {client} migration complete.")
+
+
 def import_data(args):
     """Import data from cuebot research JSON files"""
     from src.collectors.importer import import_all
@@ -243,6 +258,7 @@ def cli():
     subparsers.add_parser("config", help="Show current configuration")
     subparsers.add_parser("report", help="Generate HTML report")
     subparsers.add_parser("dashboard", help="Launch web dashboard")
+    subparsers.add_parser("migrate", help="Run database migrations (can be scoped with --client)")
 
     args = parser.parse_args()
 
@@ -272,6 +288,7 @@ def cli():
         "analyze": analyze,
         "report": report,
         "dashboard": dashboard,
+        "migrate": migrate_dbs,
     }
 
     if args.command in commands:

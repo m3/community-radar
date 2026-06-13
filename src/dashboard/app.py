@@ -3,7 +3,7 @@ CommunityRadar Flask Dashboard
 Real-time community intelligence with time-series sentiment charts.
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, current_app
 import sqlite3
 from pathlib import Path
 import json
@@ -18,22 +18,20 @@ sys.path.insert(0, str(ROOT))
 
 from src.db.models import get_db as _get_db
 
-CLIENT_NAME = None
-
 def get_db():
     """Get database connection with row factory."""
-    global CLIENT_NAME
-    if not CLIENT_NAME:
+    client_name = current_app.config.get('CLIENT_NAME')
+    if not client_name:
         raise ValueError("CLIENT_NAME is not set")
-    return _get_db(CLIENT_NAME)
+    return _get_db(client_name)
 
 
 def load_report():
     """Load latest sentiment analysis report."""
-    global CLIENT_NAME
-    if not CLIENT_NAME:
+    client_name = current_app.config.get('CLIENT_NAME')
+    if not client_name:
         raise ValueError("CLIENT_NAME is not set")
-    report_path = ROOT / "data" / "clients" / CLIENT_NAME / "reports" / "community-sentiment-analysis.json"
+    report_path = ROOT / "data" / "clients" / client_name / "reports" / "community-sentiment-analysis.json"
     if report_path.exists():
         with open(report_path) as f:
             return json.load(f)
@@ -492,8 +490,7 @@ def api_cuebot_crossref():
 
 
 def run_dashboard(client_name):
-    global CLIENT_NAME
-    CLIENT_NAME = client_name
+    app.config['CLIENT_NAME'] = client_name
     app.run(host="0.0.0.0", port=5000, debug=True)
 
 if __name__ == "__main__":

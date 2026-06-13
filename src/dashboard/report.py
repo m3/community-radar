@@ -14,6 +14,7 @@ DATA_DIR = ROOT / "data"
 
 def generate_report(client_name=None, output_path=None):
     """Generate HTML report from current DB state and analysis data"""
+    analysis_path = None
     if output_path is None:
         if client_name:
             output_dir = DATA_DIR / "clients" / client_name / "reports"
@@ -26,7 +27,7 @@ def generate_report(client_name=None, output_path=None):
 
     # Load rich analysis if available
     analysis = None
-    if analysis_path.exists():
+    if analysis_path and analysis_path.exists():
         with open(analysis_path) as f:
             analysis = json.load(f)
 
@@ -39,8 +40,8 @@ def generate_report(client_name=None, output_path=None):
     
     # Use accurate counts from analysis meta if available
     if analysis:
-        total_msgs = analysis["meta"]["total_messages_analyzed"]
-        total_channels = analysis["meta"]["channels"]
+        total_msgs = analysis.get("meta", {}).get("total_messages_analyzed", total_msgs)
+        total_channels = analysis.get("meta", {}).get("channels", len(servers))
     else:
         total_channels = len(servers)
 
@@ -58,7 +59,7 @@ def generate_report(client_name=None, output_path=None):
     ).fetchall()
 
     # Sentiment distribution
-    overall_sent = analysis["sentiment"]["overall"] if analysis else None
+    overall_sent = analysis.get("sentiment", {}).get("overall") if analysis else None
 
     # Build HTML
     html = f"""<!DOCTYPE html>
@@ -124,7 +125,7 @@ def generate_report(client_name=None, output_path=None):
   <div class="stat-card">
     <div class="stat-value">{total_msgs}</div>
     <div class="stat-label">Total Messages</div>
-    {f'<div class="stat-sub">{analysis["meta"]["deduped_messages"]} unique</div>' if analysis else ''}
+    {f'<div class="stat-sub">{analysis.get("meta", {}).get("deduped_messages", "")} unique</div>' if analysis else ''}
   </div>
   <div class="stat-card">
     <div class="stat-value">{total_channels}</div>

@@ -8,75 +8,10 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import yaml
-
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
-
-# Load config
-CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
-with open(CONFIG_PATH) as f:
-    CONFIG = yaml.safe_load(f)
-
-def get_config_value(client_cfg, key, default=None):
-    """Helper to get config value from client_cfg or global CONFIG"""
-    # Check client-specific reddit section first
-    if client_cfg and "reddit" in client_cfg:
-        if key in client_cfg["reddit"]:
-            return client_cfg["reddit"][key]
-    
-    # Check global reddit_global section
-    if "reddit_global" in CONFIG:
-        if key in CONFIG["reddit_global"]:
-            return CONFIG["reddit_global"][key]
-            
-    # Fallback to old global reddit section if it exists
-    if "reddit" in CONFIG:
-        if key in CONFIG["reddit"]:
-            return CONFIG["reddit"][key]
-            
-    return default
+from src.collectors.utils import get_config_value, run_cli, CONFIG
 
 DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
-
-
-def run_cli(args, timeout=60, client_cfg=None):
-    """Run reddit-skills CLI and return parsed output"""
-    import subprocess
-    reddit_skills_dir = get_config_value(client_cfg, "skills_dir")
-    if not reddit_skills_dir:
-        raise ValueError("reddit.skills_dir not found in config")
-        
-    backend = get_config_value(client_cfg, "backend")
-    proxy_secret_id = get_config_value(client_cfg, "proxy_secret_id")
-    headless = get_config_value(client_cfg, "headless", True)
-
-    full_args = [
-        "uv", "run",
-        "--directory", str(reddit_skills_dir),
-        "python", "cli.py",
-    ]
-    
-    if backend:
-        full_args += ["--backend", backend]
-    if proxy_secret_id:
-        full_args += ["--proxy-secret-id", proxy_secret_id]
-    if not headless:
-        full_args += ["--headed"]
-        
-    full_args += args
-
-    result = subprocess.run(full_args, capture_output=True, text=True, timeout=timeout)
-    if result.returncode != 0:
-        print(f"  ✗ reddit-skills error: {result.stderr[:200]}")
-        return None
-
-    try:
-        if result.stdout.strip():
-            return json.loads(result.stdout)
-        return None
-    except json.JSONDecodeError:
-        print(f"  ⚠ Could not parse output: {result.stdout[:200]}")
-        return None
 
 
 def fetch_posts_via_json(subreddit, sort="new", limit=100, max_pages=5, client_cfg=None):
@@ -263,7 +198,7 @@ def export_all(client_cfg=None):
     """Export all configured subreddits"""
     total_msgs = 0
     total_comments = 0
-    subreddits = get_config_value(client_cfg, "subreddits", {})
+    subreddits = get_config_value(client_cfg, "reddit", "subreddits", {})
     
     for sub, config in subreddits.items():
         print(f"\n📡 r/{sub}")

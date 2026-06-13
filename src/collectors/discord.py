@@ -3,42 +3,16 @@
 import subprocess
 import json
 import time
-import os
 from pathlib import Path
 
-import yaml
-
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
-
-# Load config
-CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
-with open(CONFIG_PATH) as f:
-    CONFIG = yaml.safe_load(f)
+from src.collectors.utils import get_config_value, CONFIG
 
 DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
 
-def get_config_value(client_cfg, key, default=None):
-    """Helper to get config value from client_cfg or global CONFIG"""
-    # Check client-specific discord section first
-    if client_cfg and "discord" in client_cfg:
-        if key in client_cfg["discord"]:
-            return client_cfg["discord"][key]
-    
-    # Check global discord_global section
-    if "discord_global" in CONFIG:
-        if key in CONFIG["discord_global"]:
-            return CONFIG["discord_global"][key]
-            
-    # Fallback to old global discord section if it exists
-    if "discord" in CONFIG:
-        if key in CONFIG["discord"]:
-            return CONFIG["discord"][key]
-            
-    return default
-
 def get_token(client_cfg=None):
     """Get Discord token from BWS"""
-    bws_secret_id = get_config_value(client_cfg, "bws_secret_id")
+    bws_secret_id = get_config_value(client_cfg, "discord", "bws_secret_id")
     if not bws_secret_id:
         raise ValueError("discord.bws_secret_id not found in config")
 
@@ -165,7 +139,7 @@ def export_channel(server_id, server_name, channel_id, channel_name, client_cfg=
 
     # Build DCE command
     token = get_token(client_cfg)
-    dce_bin = get_config_value(client_cfg, "dce_bin")
+    dce_bin = get_config_value(client_cfg, "discord", "dce_bin")
     if not dce_bin:
         raise ValueError("discord.dce_bin not found in config")
 
@@ -184,7 +158,7 @@ def export_channel(server_id, server_name, channel_id, channel_name, client_cfg=
         print(f"  Full export (no prior scan data)")
 
     t0 = time.time()
-    dce_timeout = get_config_value(client_cfg, "dce_timeout", 1200)
+    dce_timeout = get_config_value(client_cfg, "discord", "dce_timeout", 1200)
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=dce_timeout)
     duration = time.time() - t0
 
@@ -207,7 +181,7 @@ def export_channel(server_id, server_name, channel_id, channel_name, client_cfg=
 
 def export_all_channels(client_cfg=None):
     """Export all configured Discord channels"""
-    servers = get_config_value(client_cfg, "servers", {})
+    servers = get_config_value(client_cfg, "discord", "servers", {})
     
     for server_id, server_info in servers.items():
         print(f"\n📡 {server_info['name']}")

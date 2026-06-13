@@ -251,7 +251,7 @@ def cli():
         return
 
     # Commands that require --client
-    client_required_cmds = ["status", "collect", "export", "reddit", "search", "topics", "xref", "analyze", "report"]
+    client_required_cmds = ["status", "collect", "export", "reddit", "search", "topics", "xref", "analyze", "report", "dashboard"]
     if args.command in client_required_cmds and not args.client:
         config = load_config()
         available = get_available_clients(config)

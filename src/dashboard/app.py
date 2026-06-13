@@ -9,24 +9,33 @@ from pathlib import Path
 import json
 from datetime import datetime, timedelta
 from collections import defaultdict
+import sys
 
 app = Flask(__name__)
 
-DB_PATH = Path("/Users/mathias/Development/Projects/community-radar/data/community_radar.db")
-REPORT_PATH = Path("/Users/mathias/Development/Projects/community-radar/docs/community-sentiment-analysis.json")
+ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(ROOT))
 
+from src.db.models import get_db as _get_db
+
+CLIENT_NAME = None
 
 def get_db():
     """Get database connection with row factory."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    global CLIENT_NAME
+    if not CLIENT_NAME:
+        raise ValueError("CLIENT_NAME is not set")
+    return _get_db(CLIENT_NAME)
 
 
 def load_report():
     """Load latest sentiment analysis report."""
-    if REPORT_PATH.exists():
-        with open(REPORT_PATH) as f:
+    global CLIENT_NAME
+    if not CLIENT_NAME:
+        raise ValueError("CLIENT_NAME is not set")
+    report_path = ROOT / "data" / "clients" / CLIENT_NAME / "reports" / "community-sentiment-analysis.json"
+    if report_path.exists():
+        with open(report_path) as f:
             return json.load(f)
     return {}
 

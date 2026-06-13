@@ -19,19 +19,23 @@ class PlaywrightPage:
 
     def __init__(self, headless: bool = True, proxy: str | None = None) -> None:
         self._pw = sync_playwright().start()
-        browser_args: dict[str, Any] = {}
-        if proxy:
-            # Format: http://user:pass@host:port
-            browser_args["proxy"] = {"server": proxy}
+        try:
+            browser_args: dict[str, Any] = {}
+            if proxy:
+                # Format: http://user:pass@host:port
+                browser_args["proxy"] = {"server": proxy}
 
-        self._browser = self._pw.chromium.launch(headless=headless, **browser_args)
-        self._context = self._browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            self._browser = self._pw.chromium.launch(headless=headless, **browser_args)
+            self._context = self._browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
             )
-        )
-        self._page = self._context.new_page()
+            self._page = self._context.new_page()
+        except Exception:
+            self._pw.stop()
+            raise
 
     # ─── Navigation ─────────────────────────────────────────────
 

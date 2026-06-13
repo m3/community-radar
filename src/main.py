@@ -236,6 +236,23 @@ def analyze(args):
         print("\nAnalysis complete.")
 
 
+commands = {
+    "status": status,
+    "collect": collect,
+    "export": export_discord,
+    "reddit": export_reddit,
+    "import": import_data,
+    "search": search,
+    "topics": topics,
+    "xref": xref,
+    "config": show_config,
+    "analyze": analyze,
+    "report": report,
+    "dashboard": dashboard,
+    "migrate": migrate_dbs,
+}
+
+
 def cli():
     """Main CLI dispatcher"""
     parser = argparse.ArgumentParser(description="CommunityRadar — Community Intelligence Tool")
@@ -275,22 +292,6 @@ def cli():
         print(f"Error: --client is required for '{args.command}'")
         print(f"Available clients: {', '.join(available)}")
         sys.exit(1)
-
-    commands = {
-        "status": status,
-        "collect": collect,
-        "export": export_discord,
-        "reddit": export_reddit,
-        "import": import_data,
-        "search": search,
-        "topics": topics,
-        "xref": xref,
-        "config": show_config,
-        "analyze": analyze,
-        "report": report,
-        "dashboard": dashboard,
-        "migrate": migrate_dbs,
-    }
 
     if args.command in commands:
         if getattr(args, "async_mode", False):

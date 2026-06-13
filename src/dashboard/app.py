@@ -491,7 +491,7 @@ def api_cuebot_crossref():
 
 def run_dashboard(client_name):
     app.config['CLIENT_NAME'] = client_name
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
 
 if __name__ == "__main__":
     import argparse

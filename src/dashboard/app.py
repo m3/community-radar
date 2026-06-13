@@ -40,10 +40,22 @@ def load_report(client_name):
 
 
 @app.route("/")
-def index():
+def hub():
+    """Client selection hub."""
+    config = load_config()
+    clients = config.get("clients", {})
+    return render_template("hub.html", clients=clients)
+
+
+@app.route("/<client_name>/dashboard")
+def index(client_name):
     """Main dashboard page."""
-    report = load_report()
-    return render_template("index.html", report=report)
+    config = load_config()
+    if client_name not in config.get("clients", {}):
+        from flask import abort
+        abort(404)
+    report = load_report(client_name)
+    return render_template("index.html", client_name=client_name, report=report)
 
 
 @app.route("/api/overview")

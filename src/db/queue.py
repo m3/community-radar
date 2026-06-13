@@ -15,7 +15,7 @@ def get_queue_db():
     db.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            client_name TEXT NOT NULL,
+            client_name TEXT,
             command     TEXT NOT NULL,
             args_json   TEXT,
             status      TEXT DEFAULT 'pending',
@@ -29,9 +29,7 @@ def get_queue_db():
     return db
 
 def enqueue_task(client_name, command, args_dict=None):
-    clean_name = sanitize_client_name(client_name)
-    if not clean_name:
-        raise ValueError(f"Invalid client name: {client_name}")
+    clean_name = sanitize_client_name(client_name) if client_name else None
 
     db = get_queue_db()
     args_json = json.dumps(args_dict) if args_dict else None

@@ -30,9 +30,18 @@ def test_enqueue_task_success(clean_db):
     assert row["status"] == "pending"
     conn.close()
 
-def test_enqueue_task_invalid_name():
-    with pytest.raises(ValueError, match="Invalid client name"):
-        enqueue_task("!!!", "cmd")
+def test_enqueue_task_none_client(clean_db):
+    cmd = "migrate"
+    
+    enqueue_task(None, cmd)
+    
+    conn = sqlite3.connect(str(QUEUE_DB_PATH))
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM tasks").fetchone()
+    
+    assert row["client_name"] is None
+    assert row["command"] == cmd
+    conn.close()
 
 def test_wal_mode(clean_db):
     enqueue_task("client", "cmd")

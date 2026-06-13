@@ -302,7 +302,8 @@ def cli():
             task_args.pop("client", None)
             
             enqueue_task(args.client, args.command, task_args)
-            print(f"✅ Task '{args.command}' for client '{args.client}' enqueued.")
+            target = f"client '{args.client}'" if args.client else "global"
+            print(f"✅ Task '{args.command}' for {target} enqueued.")
             return
             
         commands[args.command](args)

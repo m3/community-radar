@@ -5,7 +5,7 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from .schema import SCHEMA_SQL
+from .migrate import apply_migrations
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DB_PATH = DATA_DIR / "community_radar.db"
@@ -34,9 +34,8 @@ def get_db(client_name=None):
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA foreign_keys=ON")
-    # Create tables
-    db.executescript(SCHEMA_SQL)
-    db.commit()
+    # Auto-migrate
+    apply_migrations(db)
     return db
 
 

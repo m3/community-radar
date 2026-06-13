@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}Client Hub - CommunityRadar{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-12">
+        <h1 class="text-4xl font-bold text-white mb-2 neon-glow">Mission Control Hub</h1>
+        <p class="text-slate-400">Select a community sector to monitor real-time intelligence.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for c_id, c_data in clients.items() %}
+        <a href="/{{ c_id }}/dashboard" class="radar-card p-8 group hover:border-sky-500 transition-all cursor-pointer">
+            <div class="flex items-start justify-between mb-6">
+                <div class="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center group-hover:bg-sky-500 transition-colors">
+                    <i class="fas fa-users text-sky-500 group-hover:text-white text-xl"></i>
+                </div>
+                <span class="text-xs font-bold text-sky-500 uppercase tracking-widest bg-sky-500/10 px-3 py-1 rounded-full">Active</span>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-sky-400 transition-colors">{{ c_data.name }}</h2>
+            <p class="text-slate-400 text-sm mb-6">{{ c_data.get('description', 'Monitoring Discord and Reddit community sentiment.') }}</p>
+            
+            <div class="pt-6 border-t border-slate-700 flex items-center justify-between">
+                <div class="flex -space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center border-2 border-slate-800" title="Discord">
+                        <i class="fab fa-discord text-white text-xs"></i>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center border-2 border-slate-800" title="Reddit">
+                        <i class="fab fa-reddit-alien text-white text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex items-center text-sky-500 font-semibold text-sm">
+                    Enter Dashboard
+                    <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </div>
+        </a>
+        {% else %}
+        <div class="col-span-full py-24 text-center">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-slate-800 text-slate-500 mb-6">
+                <i class="fas fa-search text-3xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">No clients found</h2>
+            <p class="text-slate-400">Add clients to your config.yaml to begin monitoring.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

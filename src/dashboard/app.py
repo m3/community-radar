@@ -39,12 +39,20 @@ def load_report(client_name):
     return {}
 
 
+@app.context_processor
+def inject_clients():
+    """Inject available clients into all templates."""
+    try:
+        config = load_config()
+        return dict(clients=config.get("clients", {}))
+    except Exception:
+        return dict(clients={})
+
+
 @app.route("/")
 def hub():
     """Client selection hub."""
-    config = load_config()
-    clients = config.get("clients", {})
-    return render_template("hub.html", clients=clients)
+    return render_template("hub.html")
 
 
 @app.route("/<client_name>/dashboard")
@@ -58,10 +66,10 @@ def index(client_name):
     return render_template("index.html", client_name=client_name, report=report)
 
 
-@app.route("/api/overview")
-def api_overview():
+@app.route("/api/<client_name>/overview")
+def api_overview(client_name):
     """High-level stats for dashboard cards."""
-    db = get_db()
+    db = get_db(client_name)
 
     # Total messages by platform
     platform_stats = db.execute("""
@@ -89,14 +97,14 @@ def api_overview():
                        "to": date_range["max_ts"][:10] if date_range["max_ts"] else "N/A"},
         "channels": channels,
         "users": users,
-        "report_meta": report.get("meta", {}) if (report := load_report()) else {}
+        "report_meta": report.get("meta", {}) if (report := load_report(client_name)) else {}
     })
 
 
-@app.route("/api/sentiment/timeseries")
-def api_sentiment_timeseries():
+@app.route("/api/<client_name>/sentiment/timeseries")
+def api_sentiment_timeseries(client_name):
     """Time-series sentiment data for charts."""
-    db = get_db()
+    db = get_db(client_name)
 
     # Get messages with sentiment - we'll compute on the fly
     # For performance, we use pre-computed daily aggregates
@@ -114,7 +122,7 @@ def api_sentiment_timeseries():
     db.close()
 
     # Also get actual sentiment from report if available
-    report = load_report()
+    report = load_report(client_name)
 
     # Build time series by platform
     series = defaultdict(lambda: defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0, "total": 0}))
@@ -135,73 +143,73 @@ def api_sentiment_timeseries():
     })
 
 
-@app.route("/api/sentiment/by_channel")
-def api_sentiment_by_channel():
+@app.route("/api/<client_name>/sentiment/by_channel")
+def api_sentiment_by_channel(client_name):
     """Sentiment breakdown by channel."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("sentiment", {}).get("by_channel", {}))
 
 
-@app.route("/api/topics")
-def api_topics():
+@app.route("/api/<client_name>/topics")
+def api_topics(client_name):
     """Topic-level sentiment."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("topic_sentiment", {}))
 
 
-@app.route("/api/power_words")
-def api_power_words():
+@app.route("/api/<client_name>/power_words")
+def api_power_words(client_name):
     """Community power words."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("power_words", {}))
 
 
-@app.route("/api/engagement")
-def api_engagement():
+@app.route("/api/<client_name>/engagement")
+def api_engagement(client_name):
     """Engagement metrics."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("engagement", {}))
 
 
-@app.route("/api/contributors")
-def api_contributors():
+@app.route("/api/<client_name>/contributors")
+def api_contributors(client_name):
     """Top contributors."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("top_contributors", []))
 
 
-@app.route("/api/negative_messages")
-def api_negative_messages():
+@app.route("/api/<client_name>/negative_messages")
+def api_negative_messages(client_name):
     """Top negative messages."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("top_negative", []))
 
 
-@app.route("/api/positive_messages")
-def api_positive_messages():
+@app.route("/api/<client_name>/positive_messages")
+def api_positive_messages(client_name):
     """Top positive messages."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("top_positive", []))
 
 
-@app.route("/api/purpose")
-def api_purpose():
+@app.route("/api/<client_name>/purpose")
+def api_purpose(client_name):
     """Purpose classification."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("purpose", {}))
 
 
-@app.route("/api/reddit/comparison")
-def api_reddit_comparison():
+@app.route("/api/<client_name>/reddit/comparison")
+def api_reddit_comparison(client_name):
     """Reddit vs Discord comparison."""
-    report = load_report()
+    report = load_report(client_name)
     return jsonify(report.get("sentiment", {}).get("reddit_comparison", {}))
 
 
-@app.route("/api/raw_messages")
-def api_raw_messages():
+@app.route("/api/<client_name>/raw_messages")
+def api_raw_messages(client_name):
     """Raw messages for detailed view with filters."""
-    db = get_db()
+    db = get_db(client_name)
 
     platform = request.args.get("platform")
     channel = request.args.get("channel")
@@ -237,10 +245,10 @@ def api_raw_messages():
     return jsonify([dict(r) for r in rows])
 
 
-@app.route("/api/channels")
-def api_channels():
+@app.route("/api/<client_name>/channels")
+def api_channels(client_name):
     """List all channels with stats."""
-    db = get_db()
+    db = get_db(client_name)
 
     rows = db.execute("""
         SELECT c.id, c.name, c.server_id, c.message_count, c.last_scan,
@@ -256,14 +264,14 @@ def api_channels():
 
 # ─── Cuebot Engagement Scoring API ──────────────────────────────────────
 
-@app.route("/api/cuebot/engagement/score")
-def api_cuebot_engagement_score():
+@app.route("/api/<client_name>/cuebot/engagement/score")
+def api_cuebot_engagement_score(client_name):
     """Get engagement scores for all users across platforms.
     
     Returns a ranked list of users with composite engagement scores
     based on message count, reactions, replies, sentiment, and recency.
     """
-    db = get_db()
+    db = get_db(client_name)
 
     # Calculate engagement scores
     # Components: message_count, reactions_received, reply_count, sentiment_score, recency
@@ -340,13 +348,13 @@ def api_cuebot_engagement_score():
     })
 
 
-@app.route("/api/cuebot/engagement/leaderboard")
-def api_cuebot_leaderboard():
+@app.route("/api/<client_name>/cuebot/engagement/leaderboard")
+def api_cuebot_leaderboard(client_name):
     """Get top N users by engagement score."""
     limit = min(int(request.args.get("limit", 50)), 200)
     platform = request.args.get("platform")
 
-    db = get_db()
+    db = get_db(client_name)
 
     query = """
         SELECT 
@@ -414,10 +422,10 @@ def api_cuebot_leaderboard():
     })
 
 
-@app.route("/api/cuebot/engagement/user/<user_id>")
-def api_cuebot_user_profile(user_id):
+@app.route("/api/<client_name>/cuebot/engagement/user/<user_id>")
+def api_cuebot_user_profile(client_name, user_id):
     """Get detailed engagement profile for a specific user."""
-    db = get_db()
+    db = get_db(client_name)
 
     user = db.execute("""
         SELECT u.*, 
@@ -480,10 +488,10 @@ def api_cuebot_user_profile(user_id):
     })
 
 
-@app.route("/api/cuebot/engagement/crossref")
-def api_cuebot_crossref():
+@app.route("/api/<client_name>/cuebot/engagement/crossref")
+def api_cuebot_crossref(client_name):
     """Get cross-references between Discord and Reddit users."""
-    db = get_db()
+    db = get_db(client_name)
 
     rows = db.execute("""
         SELECT cr.*, 
@@ -502,13 +510,9 @@ def api_cuebot_crossref():
     })
 
 
-def run_dashboard(client_name):
-    app.config['CLIENT_NAME'] = client_name
+
+def run_dashboard():
     app.run(host="0.0.0.0", port=5001, debug=True)
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--client", required=True, help="Client name")
-    args = parser.parse_args()
-    run_dashboard(args.client)
+    run_dashboard()

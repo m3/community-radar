@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CommunityRadar{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --sidebar-dark: #1e293b;
+            --accent-neon: #38bdf8;
+            --accent-radar: #22d3ee;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+        }
+        .sidebar {
+            background-color: var(--sidebar-dark);
+            border-right: 1px solid #334155;
+        }
+        .nav-link {
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background-color: #334155;
+            color: var(--accent-neon);
+        }
+        .nav-link.active {
+            background-color: #334155;
+            color: var(--accent-neon);
+            border-left: 4px solid var(--accent-neon);
+        }
+        .radar-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+        }
+        .neon-glow {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="sidebar w-64 fixed inset-y-0 left-0 z-50 flex flex-col">
+        <div class="p-6">
+            <a href="/" class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-satellite-dish text-white"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-white neon-glow">Radar</span>
+            </a>
+        </div>
+
+        <!-- Client Switcher -->
+        <div class="px-6 mb-8">
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Client Context</label>
+            <div class="relative">
+                <select onchange="window.location.href='/' + this.value + '/dashboard'" 
+                        class="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block p-2.5 appearance-none cursor-pointer">
+                    <option value="" disabled selected>{{ client_name if client_name else 'Select Client' }}</option>
+                    {% for c_id, c_data in clients.items() %}
+                    <option value="{{ c_id }}" {% if c_id == client_name %}selected{% endif %}>{{ c_data.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 space-y-1">
+            <a href="/{{ client_name }}/dashboard" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path.endswith('/dashboard') %}active{% endif %}">
+                <i class="fas fa-chart-line w-6"></i>
+                Mission Control
+            </a>
+            <a href="#" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-400">
+                <i class="fas fa-tasks w-6"></i>
+                Execution Queue
+            </a>
+            <a href="#" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-400">
+                <i class="fas fa-cog w-6"></i>
+                Client Configs
+            </a>
+            <div class="pt-4 mt-4 border-t border-slate-700">
+                <a href="/" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                    <i class="fas fa-th-large w-6"></i>
+                    Back to Hub
+                </a>
+            </div>
+        </nav>
+
+        <!-- Footer -->
+        <div class="p-6 border-t border-slate-700">
+            <div class="flex items-center space-x-3 text-xs text-slate-400">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>Radar Engine Active</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 p-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -248,15 +248,16 @@ def queue_mgmt(args):
             
     elif args.action == "list":
         rows = db.execute("SELECT id, client_name, command, status, created_at FROM tasks ORDER BY id DESC LIMIT 20").fetchall()
-        print(f"{'ID':<4} {'Client':<20} {'Command':<10} {'Status':<10} {'Created'}")
+        print(f"{'ID':<4} {'Client':<20} {'Command':<15} {'Status':<10} {'Created'}")
         for r in rows:
-            print(f"{r['id']:<4} {str(r['client_name']):<20} {r['command']:<10} {r['status']:<10} {r['created_at']}")
+            client = r['client_name'] or 'global'
+            print(f"{r['id']:<4} {client:<20} {r['command']:<15} {r['status']:<10} {r['created_at']}")
             
     elif args.action == "retry":
         if not args.task_id:
             print("Error: task_id required for retry")
             return
-        db.execute("UPDATE tasks SET status='pending', error_log=NULL WHERE id=?", (args.task_id,))
+        db.execute("UPDATE tasks SET status='pending', error_log=NULL, started_at=NULL, finished_at=NULL WHERE id=?", (args.task_id,))
         db.commit()
         print(f"Task {args.task_id} reset to pending.")
         

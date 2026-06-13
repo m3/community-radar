@@ -10,9 +10,24 @@ CONFIG_PATH = Path(__file__).parent.parent.parent / "config.yaml"
 with open(CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
-REDDIT_SKILLS_DIR = Path(CONFIG["reddit"]["skills_dir"])
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
-DOMAINS = CONFIG["reddit"].get("domain_monitoring", {}).get("domains", [])
+def get_config_value(client_cfg, key, default=None):
+    """Helper to get config value from client_cfg or global CONFIG"""
+    # Check client-specific reddit section first
+    if client_cfg and "reddit" in client_cfg:
+        if key in client_cfg["reddit"]:
+            return client_cfg["reddit"][key]
+    
+    # Check global reddit_global section
+    if "reddit_global" in CONFIG:
+        if key in CONFIG["reddit_global"]:
+            return CONFIG["reddit_global"][key]
+            
+    # Fallback to old global reddit section if it exists
+    if "reddit" in CONFIG:
+        if key in CONFIG["reddit"]:
+            return CONFIG["reddit"][key]
+            
+    return default
 
 def build_domain_json_url(domain: str, sort: str = "new", limit: int = 100, after: str = None) -> str:
     url = f"https://www.reddit.com/domain/{domain}/{sort}.json?limit={limit}"
@@ -20,12 +35,17 @@ def build_domain_json_url(domain: str, sort: str = "new", limit: int = 100, afte
         url += f"&after={after}"
     return url
 
-def run_cli(args, timeout=60):
+def run_cli(args, timeout=60, client_cfg=None):
     """Run reddit-skills CLI and return parsed output"""
     import subprocess
+    reddit_skills_dir = get_config_value(client_cfg, "skills_dir")
+    if not reddit_skills_dir:
+        # Fallback to old path if not in global/client config
+        reddit_skills_dir = Path(__file__).parent.parent.parent / "scripts"
+        
     full_args = [
         "uv", "run",
-        "--directory", str(REDDIT_SKILLS_DIR),
+        "--directory", str(reddit_skills_dir),
         "python", "cli.py",
     ] + args
 
@@ -42,7 +62,7 @@ def run_cli(args, timeout=60):
         print(f"  ⚠ Could not parse output: {result.stdout[:200]}")
         return None
 
-def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3):
+def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3, client_cfg=None):
     """Fetch posts for a domain using the Chrome bridge CLI."""
     all_posts = []
     after = ""
@@ -51,7 +71,7 @@ def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3):
         result = run_cli([
             "json-url",
             "--url", build_domain_json_url(domain, sort, limit, after if after else None),
-        ], timeout=30)
+        ], timeout=30, client_cfg=client_cfg)
 
         if not result:
             print(f"  ✗ No response from json-url at page {page_num + 1}")
@@ -98,16 +118,17 @@ def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3):
 
     return all_posts
 
-def export_domain(domain, sort="new", max_pages=3):
+def export_domain(domain, sort="new", max_pages=3, client_cfg=None):
     """Fetch and store domain posts in DB."""
     print(f"  📥 domain/{domain} ({sort})...")
-    posts = fetch_domain_posts_via_json(domain, sort, limit=100, max_pages=max_pages)
+    posts = fetch_domain_posts_via_json(domain, sort, limit=100, max_pages=max_pages, client_cfg=client_cfg)
     
     if not posts:
         print(f"  ✗ No posts fetched")
         return 0
 
-    db = get_db()
+    client_name = client_cfg.get("_client_name") if client_cfg else None
+    db = get_db(client_name=client_name)
     server_id = "reddit_domain_monitoring"
     upsert_server(db, server_id, "Reddit Domain Monitoring")
 
@@ -150,18 +171,19 @@ def export_domain(domain, sort="new", max_pages=3):
     print(f"  ✅ {msg_count} messages, {new_users} new users")
     return msg_count
 
-def export_all_domains():
-    domain_cfg = CONFIG["reddit"].get("domain_monitoring", {})
+def export_all_domains(client_cfg=None):
+    domain_cfg = get_config_value(client_cfg, "domain_monitoring", {})
     if not domain_cfg.get("enabled", False):
-        print("  ⚠ Domain monitoring is disabled in config.yaml")
+        print("  ⚠ Domain monitoring is disabled for this client")
         return
 
+    domains = domain_cfg.get("domains", [])
     sort = domain_cfg.get("sort", "new")
     max_pages = domain_cfg.get("max_pages", 3)
     
     total_msgs = 0
-    for domain in DOMAINS:
-        total_msgs += export_domain(domain, sort=sort, max_pages=max_pages)
+    for domain in domains:
+        total_msgs += export_domain(domain, sort=sort, max_pages=max_pages, client_cfg=client_cfg)
     print(f"\n✅ Total Domain Messages: {total_msgs}")
 
 if __name__ == "__main__":

@@ -150,7 +150,8 @@ def process_export_file(channel_id, channel_name, db, server_id):
 
 def export_channel(server_id, server_name, channel_id, channel_name, client_cfg=None):
     """Export a single Discord channel incrementally"""
-    db = get_db()
+    client_name = client_cfg.get("_client_name") if client_cfg else None
+    db = get_db(client_name=client_name)
 
     # Ensure server + channel exist
     upsert_server(db, server_id, server_name)

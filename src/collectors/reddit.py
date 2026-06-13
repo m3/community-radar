@@ -155,7 +155,8 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
     print(f"  Saved to {out_path.name}")
 
     # Store in DB
-    db = get_db()
+    client_name = client_cfg.get("_client_name") if client_cfg else None
+    db = get_db(client_name=client_name)
     server_id = f"reddit_{subreddit.lower()}"
     upsert_server(db, server_id, f"Reddit r/{subreddit}")
 

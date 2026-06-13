@@ -102,6 +102,7 @@ def collect(args):
         return
 
     client_cfg = config["clients"][args.client]
+    client_cfg["_client_name"] = args.client
     
     # Run Discord export if configured
     if "discord" in client_cfg:
@@ -115,6 +116,12 @@ def collect(args):
         print(f"Running Reddit collector for {args.client}...")
         export_all(client_cfg=client_cfg)
 
+        # Run Reddit Domain Monitoring if enabled
+        if "domain_monitoring" in client_cfg["reddit"]:
+            from src.collectors.reddit_domain import export_all_domains
+            print(f"Running Reddit Domain Monitoring for {args.client}...")
+            export_all_domains(client_cfg=client_cfg)
+
 
 def export_discord(args):
     """Run Discord export for a specific client"""
@@ -123,6 +130,7 @@ def export_discord(args):
     if not client_cfg or "discord" not in client_cfg:
         print(f"Error: Discord config not found for client '{args.client}'")
         return
+    client_cfg["_client_name"] = args.client
     from src.collectors.discord import export_all_channels
     export_all_channels(client_cfg=client_cfg)
 
@@ -134,8 +142,16 @@ def export_reddit(args):
     if not client_cfg or "reddit" not in client_cfg:
         print(f"Error: Reddit config not found for client '{args.client}'")
         return
+    client_cfg["_client_name"] = args.client
     from src.collectors.reddit import export_all
+    print(f"Running Reddit collector for {args.client}...")
     export_all(client_cfg=client_cfg)
+
+    # Run Reddit Domain Monitoring if enabled
+    if "domain_monitoring" in client_cfg["reddit"]:
+        from src.collectors.reddit_domain import export_all_domains
+        print(f"Running Reddit Domain Monitoring for {args.client}...")
+        export_all_domains(client_cfg=client_cfg)
 
 
 def search(args):

@@ -22,7 +22,7 @@ def get_available_clients(config):
 def status(args):
     """Show current scan status"""
     from src.db.models import get_db
-    db = get_db()
+    db = get_db(args.client)
     row = db.execute("SELECT id, name, last_scan, total_messages, total_users FROM servers ORDER BY id").fetchall()
     if not row:
         print("No servers scanned yet.")
@@ -62,7 +62,7 @@ def status(args):
 def topics(args):
     """Show top topics from message analysis"""
     from src.db.models import get_db
-    db = get_db()
+    db = get_db(args.client)
     rows = db.execute("""
         SELECT name, category, mention_count, first_seen, last_seen
         FROM topics ORDER BY mention_count DESC LIMIT 30
@@ -79,7 +79,7 @@ def topics(args):
 def xref(args):
     """Show cross-platform user matches"""
     from src.db.models import get_db
-    db = get_db()
+    db = get_db(args.client)
     rows = db.execute("""
         SELECT platform1, username1, platform2, username2, match_type, confidence
         FROM cross_references ORDER BY confidence DESC
@@ -158,7 +158,7 @@ def search(args):
     """Search message content"""
     term = args.term
     from src.db.models import get_db
-    db = get_db()
+    db = get_db(args.client)
     rows = db.execute("""
         SELECT m.timestamp, m.content, u.display_name, c.name as channel
         FROM messages m
@@ -248,7 +248,7 @@ def cli():
         return
 
     # Commands that require --client
-    client_required_cmds = ["collect", "export", "reddit", "analyze"]
+    client_required_cmds = ["status", "collect", "export", "reddit", "search", "topics", "xref", "analyze", "report"]
     if args.command in client_required_cmds and not args.client:
         config = load_config()
         available = get_available_clients(config)

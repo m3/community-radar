@@ -240,6 +240,7 @@ def cli():
     """Main CLI dispatcher"""
     parser = argparse.ArgumentParser(description="CommunityRadar — Community Intelligence Tool")
     parser.add_argument("-c", "--client", help="Client name to work on")
+    parser.add_argument("--async", dest="async_mode", action="store_true", help="Run command asynchronously via queue")
     
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -292,6 +293,18 @@ def cli():
     }
 
     if args.command in commands:
+        if getattr(args, "async_mode", False):
+            from src.db.queue import enqueue_task
+            # Strip internal argparse fields
+            task_args = vars(args).copy()
+            task_args.pop("async_mode", None)
+            task_args.pop("command", None)
+            task_args.pop("client", None)
+            
+            enqueue_task(args.client, args.command, task_args)
+            print(f"✅ Task '{args.command}' for client '{args.client}' enqueued.")
+            return
+            
         commands[args.command](args)
     else:
         print(f"Unknown command: {args.command}")

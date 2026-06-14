@@ -1,0 +1,181 @@
+{% extends "layout.html" %}
+
+{% block title %}Client Management - CommunityRadar{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-12 flex justify-between items-end">
+        <div>
+            <h1 class="text-4xl font-bold text-white mb-2 neon-glow">Client Hub</h1>
+            <p class="text-slate-400">Manage community sectors and monitor intelligence feeds.</p>
+        </div>
+        <div class="flex items-center gap-4 text-xs text-slate-500">
+            <span><span class="kbd">N</span> New Client</span>
+            <span><span class="kbd">R</span> Refresh</span>
+        </div>
+    </div>
+
+    <!-- Client Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="clientGrid">
+        <!-- Client cards will be injected here -->
+        <div class="col-span-full py-12 flex justify-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Client Modal -->
+<div id="addClientModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"></div>
+        </div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-slate-800 border border-slate-700 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form id="addClientForm">
+                <div class="bg-slate-800 px-6 py-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-white">Add New Client</h3>
+                        <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-white">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="clientName" class="block text-sm font-medium text-slate-400 mb-1">Display Name</label>
+                            <input type="text" id="clientName" name="name" required placeholder="e.g. Pure Pool Pro"
+                                   class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label for="clientId" class="block text-sm font-medium text-slate-400 mb-1">Client ID (Slug)</label>
+                            <input type="text" id="clientId" name="client_id" required placeholder="e.g. pure-pool-pro"
+                                   class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                            <p class="text-[10px] text-slate-500 mt-1">Alphanumeric, dashes, and underscores only.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-800/50 px-6 py-4 border-t border-slate-700 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()"
+                            class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors">
+                        Create Client
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function fetchClients() {
+        const grid = document.getElementById('clientGrid');
+        try {
+            const res = await fetch('/api/clients');
+            const data = await res.json();
+            const clients = data.clients || {};
+            
+            renderGrid(clients);
+        } catch (e) {
+            grid.innerHTML = errorState('Failed to load clients', 'fetchClients()');
+        }
+    }
+
+    function renderGrid(clients) {
+        const grid = document.getElementById('clientGrid');
+        let html = '';
+
+        Object.entries(clients).forEach(([id, client]) => {
+            html += `
+            <div class="radar-card p-8 group hover:border-sky-500 transition-all">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center group-hover:bg-sky-500 transition-colors">
+                        <i class="fas fa-users text-sky-500 group-hover:text-white text-xl"></i>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500">ID: ${id}</span>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-sky-400 transition-colors">${client.name}</h2>
+                <p class="text-slate-400 text-sm mb-8">Client configuration active. Monitoring community engagement and sentiment.</p>
+                
+                <div class="pt-6 border-t border-slate-700">
+                    <a href="/${id}/dashboard" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition-all">
+                        <i class="fas fa-chart-pie"></i>
+                        Manage
+                    </a>
+                </div>
+            </div>
+            `;
+        });
+
+        // Add Client Card
+        html += `
+        <button onclick="openModal()" class="radar-card p-8 group border-dashed border-2 border-slate-700 hover:border-sky-500 hover:bg-sky-500/5 transition-all flex flex-col items-center justify-center text-center">
+            <div class="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-sky-500 flex items-center justify-center mb-4 transition-colors">
+                <i class="fas fa-plus text-2xl text-slate-500 group-hover:text-white"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-1 group-hover:text-sky-400 transition-colors">Add Client</h3>
+            <p class="text-slate-500 text-sm">Expand the radar to new sectors</p>
+        </button>
+        `;
+
+        grid.innerHTML = html;
+    }
+
+    function openModal() {
+        document.getElementById('addClientModal').classList.remove('hidden');
+        document.getElementById('clientName').focus();
+    }
+
+    function closeModal() {
+        document.getElementById('addClientModal').classList.add('hidden');
+        document.getElementById('addClientForm').reset();
+    }
+
+    // Modal form submission
+    document.getElementById('addClientForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/api/clients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                closeModal();
+                fetchClients(); // Refresh grid
+            } else {
+                alert(result.error || 'Failed to create client');
+            }
+        } catch (e) {
+            alert('Network error');
+        }
+    };
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+            e.preventDefault();
+            openModal();
+        }
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    // Initial load
+    fetchClients();
+</script>
+{% endblock %}

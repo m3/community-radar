@@ -5,6 +5,7 @@ Real-time community intelligence with time-series sentiment charts.
 
 from flask import Flask, render_template, jsonify, request, current_app, abort
 import sqlite3
+import os
 from pathlib import Path
 import json
 from datetime import datetime, timedelta
@@ -21,14 +22,13 @@ sys.path.insert(0, str(ROOT))
 from src.db.models import get_db as _get_db
 from src.dashboard.config_manager import ConfigManager
 
-config_mgr = ConfigManager(ROOT / "config.yaml")
+# Allow overriding config path for tests
+CONFIG_PATH = os.environ.get("COMMUNITY_RADAR_CONFIG", str(ROOT / "config.yaml"))
+config_mgr = ConfigManager(CONFIG_PATH)
 
-@functools.lru_cache()
 def load_config():
-    """Load configuration from config.yaml."""
-    config_path = ROOT / "config.yaml"
-    with open(config_path) as f:
-        return yaml.safe_load(f)
+    """Load configuration via config_mgr."""
+    return config_mgr.load()
 
 def validate_client(client_name):
     """Validate client name against config to prevent path traversal.
@@ -67,6 +67,12 @@ def inject_clients():
 def hub():
     """Client selection hub."""
     return render_template("hub.html")
+
+
+@app.route("/clients")
+def clients_hub():
+    """Client management overview."""
+    return render_template("clients.html")
 
 
 @app.route("/<client_name>/dashboard")
@@ -261,7 +267,6 @@ def api_create_client():
         "discord": {"servers": {}}
     }
     config_mgr.save(config)
-    load_config.cache_clear()
     return jsonify({"success": True})
 
 
@@ -274,7 +279,6 @@ def api_update_client_config(client_name):
     config = config_mgr.load()
     config["clients"][client_name] = new_client_config
     config_mgr.save(config)
-    load_config.cache_clear()
     return jsonify({"success": True})
 
 

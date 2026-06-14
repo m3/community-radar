@@ -13,6 +13,8 @@
             --sidebar-dark: #1e293b;
             --accent-neon: #38bdf8;
             --accent-radar: #22d3ee;
+            --sidebar-width: 256px;
+            --sidebar-collapsed: 72px;
         }
         body {
             background-color: var(--bg-dark);
@@ -21,6 +23,40 @@
         .sidebar {
             background-color: var(--sidebar-dark);
             border-right: 1px solid #334155;
+            width: var(--sidebar-width);
+            transition: width 0.25s cubic-bezier(.4,0,.2,1);
+        }
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+        .sidebar.collapsed .nav-text,
+        .sidebar.collapsed .sidebar-label,
+        .sidebar.collapsed .sidebar-brand-text,
+        .sidebar.collapsed .sidebar-footer-text,
+        .sidebar.collapsed .client-switcher {
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            overflow: hidden;
+        }
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .sidebar.collapsed .nav-link i {
+            width: auto;
+            margin: 0;
+        }
+        .sidebar.collapsed .sidebar-brand {
+            justify-content: center;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.25s cubic-bezier(.4,0,.2,1);
+        }
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed);
         }
         .nav-link {
             transition: all 0.2s;
@@ -42,6 +78,31 @@
         .neon-glow {
             text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
         }
+
+        /* Loading Skeletons */
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+            border-radius: 0.5rem;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-text {
+            height: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .skeleton-stat {
+            height: 2.25rem;
+            width: 5rem;
+        }
+        .skeleton-row {
+            height: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -56,24 +117,72 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #475569;
         }
+
+        /* Mobile overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 40;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Keyboard shortcut hint */
+        .kbd {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.65rem;
+            font-family: ui-monospace, monospace;
+            color: #94a3b8;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                z-index: 50;
+                transform: translateX(-100%);
+                width: var(--sidebar-width) !important;
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="flex min-h-screen">
+    <!-- Mobile overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Mobile hamburger -->
+    <button id="mobileMenuBtn" class="fixed top-4 left-4 z-50 md:hidden bg-slate-800 border border-slate-700 text-white p-2 rounded-lg" onclick="toggleMobileSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
     <!-- Sidebar -->
-    <aside class="sidebar w-64 fixed inset-y-0 left-0 z-50 flex flex-col">
+    <aside class="sidebar fixed inset-y-0 left-0 z-50 flex flex-col" id="sidebar">
         <div class="p-6">
-            <a href="/" class="flex items-center space-x-3">
-                <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center">
+            <a href="/" class="sidebar-brand flex items-center space-x-3">
+                <div class="w-8 h-8 bg-sky-500 rounded-lg flex items-center justify-center flex-shrink-0">
                     <i class="fas fa-satellite-dish text-white"></i>
                 </div>
-                <span class="text-xl font-bold tracking-tight text-white neon-glow">Radar</span>
+                <span class="sidebar-brand-text text-xl font-bold tracking-tight text-white neon-glow transition-opacity duration-200">Radar</span>
             </a>
         </div>
 
         <!-- Client Switcher -->
-        <div class="px-6 mb-8">
-            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Client Context</label>
+        <div class="px-6 mb-8 client-switcher transition-opacity duration-200">
+            <label class="sidebar-label block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Client Context</label>
             <div class="relative">
                 <select onchange="window.location.href='/' + this.value + '/dashboard'" 
                         class="w-full bg-slate-800 border border-slate-700 text-white text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block p-2.5 appearance-none cursor-pointer">
@@ -90,39 +199,161 @@
 
         <!-- Navigation -->
         <nav class="flex-1 px-4 space-y-1">
+            {% if client_name %}
             <a href="/{{ client_name }}/dashboard" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path.endswith('/dashboard') %}active{% endif %}">
                 <i class="fas fa-chart-line w-6"></i>
-                Mission Control
+                <span class="nav-text transition-opacity duration-200">Mission Control</span>
+            </a>
+            <a href="/{{ client_name }}/leaderboard" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path.endswith('/leaderboard') %}active{% endif %} {% if not request.path.endswith('/leaderboard') %}text-slate-400{% endif %}">
+                <i class="fas fa-trophy w-6"></i>
+                <span class="nav-text transition-opacity duration-200">Leaderboard</span>
+            </a>
+            {% else %}
+            <a href="#" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-500 cursor-default">
+                <i class="fas fa-chart-line w-6"></i>
+                <span class="nav-text transition-opacity duration-200">Mission Control</span>
+            </a>
+            {% endif %}
+            <a href="/clients" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path == '/clients' %}active{% endif %} {% if request.path != '/clients' %}text-slate-400{% endif %}">
+                <i class="fas fa-users w-6"></i>
+                <span class="nav-text transition-opacity duration-200">Client Hub</span>
             </a>
             <a href="/queue" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path == '/queue' %}active{% endif %} {% if request.path != '/queue' %}text-slate-400{% endif %}">
                 <i class="fas fa-tasks w-6"></i>
-                Execution Queue
-            </a>
-            <a href="#" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-400">
-                <i class="fas fa-cog w-6"></i>
-                Client Configs
+                <span class="nav-text transition-opacity duration-200">Execution Queue</span>
             </a>
             <div class="pt-4 mt-4 border-t border-slate-700">
-                <a href="/" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                <a href="/clients" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg">
                     <i class="fas fa-th-large w-6"></i>
-                    Back to Hub
+                    <span class="nav-text transition-opacity duration-200">Back to Hub</span>
                 </a>
             </div>
         </nav>
 
-        <!-- Footer -->
-        <div class="p-6 border-t border-slate-700">
+        <!-- Collapse Toggle + Footer -->
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="toggleSidebar()" class="w-full flex items-center justify-center p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors" title="Toggle sidebar (Ctrl+B)">
+                <i class="fas fa-angles-left text-sm" id="collapseIcon"></i>
+            </button>
+        </div>
+        <div class="px-6 pb-6">
             <div class="flex items-center space-x-3 text-xs text-slate-400">
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Radar Engine Active</span>
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0"></div>
+                <span class="sidebar-footer-text transition-opacity duration-200">Radar Engine Active</span>
             </div>
         </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 ml-64 p-8">
+    <main class="main-content flex-1 p-8" id="mainContent">
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Global Keyboard Shortcuts -->
+    <script>
+        // Sidebar collapse
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('mainContent');
+            const icon = document.getElementById('collapseIcon');
+            sidebar.classList.toggle('collapsed');
+            main.classList.toggle('expanded');
+            icon.classList.toggle('fa-angles-left');
+            icon.classList.toggle('fa-angles-right');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+
+        // Mobile sidebar
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        // Restore sidebar state
+        if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+            document.getElementById('sidebar').classList.add('collapsed');
+            document.getElementById('mainContent').classList.add('expanded');
+            document.getElementById('collapseIcon').classList.replace('fa-angles-left', 'fa-angles-right');
+        }
+
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ignore when typing in input/textarea
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+            if (e.ctrlKey && e.key === 'b') {
+                e.preventDefault();
+                toggleSidebar();
+            }
+            if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                if (typeof init === 'function') init();
+                if (typeof fetchQueueStatus === 'function') fetchQueueStatus();
+            }
+            if (e.key === 'q' && !e.ctrlKey && !e.metaKey) {
+                window.location.href = '/queue';
+            }
+            if (e.key === 'h' && !e.ctrlKey && !e.metaKey) {
+                window.location.href = '/';
+            }
+        });
+
+        // Utility: relative time
+        function timeAgo(dateStr) {
+            if (!dateStr) return 'Never';
+            const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            const diffHrs = Math.floor(diffMins / 60);
+            if (diffHrs < 24) return `${diffHrs}h ago`;
+            const diffDays = Math.floor(diffHrs / 24);
+            if (diffDays < 30) return `${diffDays}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Utility: number formatting
+        function fmt(n) {
+            if (n === null || n === undefined) return '—';
+            return Number(n).toLocaleString();
+        }
+
+        // Utility: create skeleton rows
+        function skeletonRows(count, cols) {
+            let html = '';
+            for (let i = 0; i < count; i++) {
+                html += '<tr class="border-b border-slate-700/50"><td colspan="' + cols + '" class="px-6 py-4"><div class="skeleton skeleton-row"></div></td></tr>';
+            }
+            return html;
+        }
+
+        // Utility: empty state
+        function emptyState(icon, message) {
+            return `<div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+                    <i class="fas ${icon} text-2xl text-slate-500"></i>
+                </div>
+                <p class="text-slate-400 text-sm">${message}</p>
+            </div>`;
+        }
+
+        // Utility: error state
+        function errorState(message, retryFn) {
+            return `<div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-xl text-red-400"></i>
+                </div>
+                <p class="text-red-400 text-sm font-medium mb-3">${message}</p>
+                <button onclick="${retryFn}" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-redo mr-2"></i>Retry
+                </button>
+            </div>`;
+        }
+    </script>
 
     {% block extra_scripts %}{% endblock %}
 </body>

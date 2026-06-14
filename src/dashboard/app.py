@@ -19,6 +19,9 @@ ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.db.models import get_db as _get_db
+from src.dashboard.config_manager import ConfigManager
+
+config_mgr = ConfigManager(ROOT / "config.yaml")
 
 @functools.lru_cache()
 def load_config():
@@ -72,6 +75,20 @@ def index(client_name):
     validate_client(client_name)
     report = load_report(client_name)
     return render_template("index.html", client_name=client_name, report=report)
+
+
+@app.route("/<client_name>/leaderboard")
+def leaderboard(client_name):
+    """Engagement leaderboard page."""
+    validate_client(client_name)
+    return render_template("leaderboard.html", client_name=client_name)
+
+
+@app.route("/<client_name>/user/<user_id>")
+def user_profile(client_name, user_id):
+    """User profile page."""
+    validate_client(client_name)
+    return render_template("user_profile.html", client_name=client_name, user_id=user_id)
 
 
 @app.route("/api/<client_name>/overview")
@@ -215,6 +232,50 @@ def api_purpose(client_name):
     validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("purpose", {}))
+
+
+@app.route("/api/clients")
+def api_get_clients():
+    """Return all clients."""
+    config = config_mgr.load()
+    return jsonify({"clients": config.get("clients", {})})
+
+
+@app.route("/api/clients", methods=["POST"])
+def api_create_client():
+    """Create a new client."""
+    data = request.json
+    client_id = data.get("client_id")
+    name = data.get("name")
+
+    if not client_id or not all(c.isalnum() or c in "-_" for c in client_id):
+        return jsonify({"success": False, "error": "Invalid client_id"}), 400
+
+    config = config_mgr.load()
+    if client_id in config.get("clients", {}):
+        return jsonify({"success": False, "error": "Client already exists"}), 400
+
+    config.setdefault("clients", {})[client_id] = {
+        "name": name,
+        "reddit": {"subreddits": {}},
+        "discord": {"servers": {}}
+    }
+    config_mgr.save(config)
+    load_config.cache_clear()
+    return jsonify({"success": True})
+
+
+@app.route("/api/clients/<client_name>/update", methods=["POST"])
+def api_update_client_config(client_name):
+    """Update an existing client's configuration."""
+    validate_client(client_name)
+    new_client_config = request.json
+
+    config = config_mgr.load()
+    config["clients"][client_name] = new_client_config
+    config_mgr.save(config)
+    load_config.cache_clear()
+    return jsonify({"success": True})
 
 
 @app.route("/api/<client_name>/reddit/comparison")
@@ -535,6 +596,19 @@ def api_cuebot_crossref(client_name):
     })
 
 
+@app.route("/api/<client_name>/trigger/<command>", methods=["POST"])
+def api_trigger_task(client_name, command):
+    """Trigger a background task for a client."""
+    validate_client(client_name)
+    if command not in ["collect", "analyze", "report"]:
+        return jsonify({"success": False, "error": "Invalid command"}), 400
+
+    from src.db.queue import enqueue_task
+    # Enqueue with standard args
+    enqueue_task(client_name, command, {"client": client_name})
+    return jsonify({"success": True})
+
+
 @app.route("/queue")
 def queue_view():
     return render_template("queue.html", client_name=None)
@@ -562,7 +636,7 @@ def api_queue_retry(task_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-def run_dashboard():
+def run_dashboard(client_name=None):
     app.run(host="0.0.0.0", port=5001, debug=True)
 
 if __name__ == "__main__":

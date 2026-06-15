@@ -349,7 +349,7 @@
             const tbody = document.getElementById('leaderboardBody');
             tbody.innerHTML = leaderboard.map((user, i) => {
                 const rank = i + 1;
-                const displayName = user.display_name || user.username || user.user_id;
+                const displayName = user.display_name || user.username || user.user_id || '?';
 
                 return `<tr class="leaderboard-row" onclick="window.location.href='/${clientName}/user/${user.user_id}'">
                     <td class="px-6 py-4 text-center">${getRankDisplay(rank)}</td>

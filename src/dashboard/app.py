@@ -278,12 +278,31 @@ def api_create_client():
 
 @app.route("/api/clients/<client_name>/update", methods=["POST"])
 def api_update_client_config(client_name):
-    """Update an existing client's configuration."""
+    """Update an existing client's configuration with basic validation."""
     validate_client(client_name)
-    new_client_config = request.json
+    data = request.json
+    
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "Invalid payload format"}), 400
+        
+    # Basic structure check
+    if "name" not in data or not data["name"]:
+        return jsonify({"success": False, "error": "Client name is required"}), 400
+        
+    if "reddit" not in data or not isinstance(data["reddit"], dict):
+        return jsonify({"success": False, "error": "Missing or invalid reddit config"}), 400
+        
+    if "discord" not in data or not isinstance(data["discord"], dict):
+        return jsonify({"success": False, "error": "Missing or invalid discord config"}), 400
+
+    # Ensure subreddits and servers are dicts
+    if not isinstance(data["reddit"].get("subreddits"), dict):
+        return jsonify({"success": False, "error": "Invalid subreddits format"}), 400
+    if not isinstance(data["discord"].get("servers"), dict):
+        return jsonify({"success": False, "error": "Invalid discord servers format"}), 400
 
     config = config_mgr.load()
-    config["clients"][client_name] = new_client_config
+    config["clients"][client_name] = data
     config_mgr.save(config)
     return jsonify({"success": True})
 

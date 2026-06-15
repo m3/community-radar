@@ -372,6 +372,72 @@ def api_channels(client_name):
     return jsonify([dict(r) for r in rows])
 
 
+@app.route("/api/<client_name>/market/awareness")
+def api_market_awareness(client_name):
+    """Calculate Market Penetration and volume stats."""
+    validate_client(client_name)
+    config = config_mgr.load()
+    client_config = config.get("clients", {}).get(client_name, {})
+    
+    # 1. Gather keywords and identify external subreddits
+    keywords = []
+    subreddits_config = client_config.get("reddit", {}).get("subreddits", {})
+    external_channels = []
+    for sub, sub_conf in subreddits_config.items():
+        if "track_keywords" in sub_conf and sub_conf["track_keywords"]:
+            keywords.extend(sub_conf["track_keywords"])
+            # Channel name format in DB is like reddit_billiards_hot
+            external_channels.append(f"reddit_{sub.lower()}_%")
+    
+    keywords = list(set(keywords)) # Deduplicate
+    db = get_db(client_name)
+    
+    total_external = 0
+    external_mentions = 0
+    
+    if external_channels:
+        channel_filters = " OR ".join(["c.name LIKE ?" for _ in external_channels])
+        
+        # Total External Volume
+        total_external = db.execute(f"""
+            SELECT COUNT(*) FROM messages m
+            JOIN channels c ON m.channel_id = c.id
+            WHERE {channel_filters}
+        """, external_channels).fetchone()[0]
+        
+        # External Mentions (Brand Blips)
+        if keywords:
+            kw_filters = " OR ".join(["m.content LIKE ?" for _ in keywords])
+            params = external_channels + [f"%{k}%" for k in keywords]
+            external_mentions = db.execute(f"""
+                SELECT COUNT(*) FROM messages m
+                JOIN channels c ON m.channel_id = c.id
+                WHERE ({channel_filters}) AND ({kw_filters})
+            """, params).fetchone()[0]
+
+    # 2. Total Owned Volume (Everything else)
+    if external_channels:
+        not_channel_filters = " AND ".join(["c.name NOT LIKE ?" for _ in external_channels])
+        total_owned = db.execute(f"""
+            SELECT COUNT(*) FROM messages m
+            JOIN channels c ON m.channel_id = c.id
+            WHERE {not_channel_filters}
+        """, external_channels).fetchone()[0]
+    else:
+        total_owned = db.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+
+    db.close()
+    
+    penetration_score = (external_mentions / max(total_external, 1)) * 100
+    
+    return jsonify({
+        "market_volume": total_external,
+        "external_mentions": external_mentions,
+        "penetration_score": round(penetration_score, 2),
+        "owned_volume": total_owned
+    })
+
+
 # ─── Cuebot Engagement Scoring Logic ────────────────────────────────────
 
 def _calculate_engagement_score(row, now):

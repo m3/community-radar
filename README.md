@@ -8,9 +8,12 @@ Scrapes Discord and Reddit, profiles users across platforms, tracks engagement p
 
 - **Discord export** (DiscordChatExporter) — full channel history, unlimited messages
 - **Reddit scraping** (reddit-skills) — posts, comments, scores via your browser session
+- **Multi-tenant Dashboard** — dynamic routing and client-specific intelligence
+- **Client Management** — browser-based onboarding and form-based configuration editor
+- **Execution Queue** — background task processing for large-scale data collection
 - **User profiling** — cross-reference users across platforms, engagement scoring, role classification
 - **Incremental scans** — only fetches new data since last scan
-- **Web dashboard** — query community health, find prospects, generate reports
+- **Database Migrations** — automatic schema updates across all tenant databases
 
 ## Quick Start
 
@@ -18,17 +21,16 @@ Scrapes Discord and Reddit, profiles users across platforms, tracks engagement p
 # Setup
 uv sync
 
-# Export new Discord data since last scan
-python src/main.py export
+# Run database migrations for all clients
+python src/main.py migrate
 
-# Generate HTML report
-python src/main.py report
+# Launch background task worker (separate terminal)
+python src/queue_worker.py
 
 # Launch dashboard
+python src/main.py dashboard --client <client_name>
+# OR launch the Client Hub to select a client
 python src/main.py dashboard
-
-# Status
-python src/main.py status
 ```
 
 ## Architecture

@@ -184,9 +184,6 @@ def report(args):
 
 def dashboard(args):
     """Launch web dashboard"""
-    if not getattr(args, 'client', None):
-        print("Error: --client is required for 'dashboard'")
-        sys.exit(1)
     from src.dashboard.app import run_dashboard
     run_dashboard(args.client)
 
@@ -323,7 +320,7 @@ def cli():
         return
 
     # Commands that require --client
-    client_required_cmds = ["status", "collect", "export", "reddit", "search", "topics", "xref", "analyze", "report", "dashboard"]
+    client_required_cmds = ["status", "collect", "export", "reddit", "search", "topics", "xref", "analyze", "report"]
     if args.command in client_required_cmds and not args.client:
         config = load_config()
         available = get_available_clients(config)

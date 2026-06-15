@@ -685,6 +685,14 @@ def api_cuebot_user_profile(client_name, user_id):
         SELECT DISTINCT platform FROM messages WHERE user_id = ?
     """, (user_id,)).fetchall()
 
+    # Linked identities (Heuristic Engine)
+    linked = db.execute("""
+        SELECT cr.*, u2.display_name as other_name
+        FROM cross_references cr
+        LEFT JOIN users u2 ON (cr.user_id != ? AND (cr.username1 = u2.username OR cr.username2 = u2.username))
+        WHERE cr.user_id = ? OR cr.username1 = ? OR cr.username2 = ?
+    """, (user_id, user_id, user["username"], user["username"], user["username"])).fetchall()
+
     db.close()
 
     return jsonify({
@@ -698,7 +706,8 @@ def api_cuebot_user_profile(client_name, user_id):
         "last_active": user["last_seen"],
         "platforms": [p["platform"] for p in platforms],
         "channel_activity": [dict(c) for c in channel_activity],
-        "recent_messages": [dict(m) for m in messages]
+        "recent_messages": [dict(m) for m in messages],
+        "linked_identities": [dict(l) for l in linked]
     })
 
 

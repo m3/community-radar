@@ -233,6 +233,18 @@ def analyze(args):
         print("\nAnalysis complete.")
 
 
+def sync_identities(args):
+    """Sync cross-platform identities"""
+    from src.db.models import get_db
+    from src.analysis.identity import run_identity_sync
+    
+    db = get_db(args.client)
+    print(f"Syncing identities for client '{args.client}'...")
+    run_identity_sync(db)
+    db.close()
+    print("Identity sync complete.")
+
+
 def queue_mgmt(args):
     """Manage execution queue"""
     from src.db.queue import get_queue_db
@@ -277,6 +289,7 @@ commands = {
     "xref": xref,
     "config": show_config,
     "analyze": analyze,
+    "identity": sync_identities,
     "report": report,
     "dashboard": dashboard,
     "migrate": migrate_dbs,
@@ -304,6 +317,7 @@ def cli():
     subparsers.add_parser("topics", help="Show top topics from message analysis")
     subparsers.add_parser("xref", help="Show cross-platform user matches")
     subparsers.add_parser("analyze", help="Run sentiment + community analysis")
+    subparsers.add_parser("identity", help="Sync cross-platform identities")
     subparsers.add_parser("config", help="Show current configuration")
     subparsers.add_parser("report", help="Generate HTML report")
     subparsers.add_parser("dashboard", help="Launch web dashboard")
@@ -320,7 +334,7 @@ def cli():
         return
 
     # Commands that require --client
-    client_required_cmds = ["status", "collect", "export", "reddit", "search", "topics", "xref", "analyze", "report"]
+    client_required_cmds = ["status", "collect", "export", "reddit", "search", "topics", "xref", "analyze", "identity", "report"]
     if args.command in client_required_cmds and not args.client:
         config = load_config()
         available = get_available_clients(config)

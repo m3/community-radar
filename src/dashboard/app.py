@@ -563,33 +563,48 @@ def api_cuebot_engagement_score(client_name):
 
 @app.route("/api/<client_name>/cuebot/engagement/leaderboard")
 def api_cuebot_leaderboard(client_name):
-    """Get top N users by engagement score."""
+    """Get top N users by engagement score with optimized aggregation."""
     validate_client(client_name)
     limit = min(int(request.args.get("limit", 50)), 200)
     platform = request.args.get("platform")
 
     db = get_db(client_name)
 
+    # 1. Aggregate message stats first to avoid slow subqueries
     query = """
+        WITH user_stats AS (
+            SELECT 
+                user_id,
+                COUNT(*) as msg_count,
+                platform
+            FROM messages
+            GROUP BY user_id
+        ),
+        reply_counts AS (
+            SELECT m1.user_id, COUNT(*) as count
+            FROM messages m1
+            JOIN messages m2 ON m1.message_id = m2.reply_to
+            GROUP BY m1.user_id
+        )
         SELECT 
             u.id as user_id,
             u.display_name,
             u.username,
-            u.messages as total_messages,
+            us.msg_count as total_messages,
             u.reactions_received,
             u.last_seen,
             COALESCE(u.sentiment, 0) as sentiment_score,
-            (SELECT platform FROM messages WHERE user_id = u.id LIMIT 1) as platform,
-            (SELECT COUNT(*) FROM messages WHERE reply_to IN 
-                (SELECT message_id FROM messages WHERE user_id = u.id)
-            ) as reply_count
+            us.platform,
+            COALESCE(rc.count, 0) as reply_count
         FROM users u
-        WHERE u.messages > 0
+        JOIN user_stats us ON u.id = us.user_id
+        LEFT JOIN reply_counts rc ON u.id = rc.user_id
+        WHERE us.msg_count > 0
     """
     params = []
 
     if platform:
-        query += " AND (SELECT platform FROM messages WHERE user_id = u.id LIMIT 1) = ?"
+        query += " AND us.platform = ?"
         params.append(platform)
 
     rows = db.execute(query, params).fetchall()

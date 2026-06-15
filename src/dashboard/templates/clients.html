@@ -51,7 +51,9 @@
                         </div>
                         <div>
                             <label for="clientId" class="block text-sm font-medium text-slate-400 mb-1">Client ID (Slug)</label>
-                            <input type="text" id="clientId" name="client_id" required placeholder="e.g. pure-pool-pro"
+                            <input type="text" id="clientId" name="client_id" required 
+                                   pattern="^[a-zA-Z0-9-_]+$"
+                                   placeholder="e.g. pure-pool-pro"
                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                             <p class="text-[10px] text-slate-500 mt-1">Alphanumeric, dashes, and underscores only.</p>
                         </div>
@@ -79,12 +81,19 @@
         const grid = document.getElementById('clientGrid');
         try {
             const res = await fetch('/api/clients');
-            const data = await res.json();
-            const clients = data.clients || {};
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             
+            let data;
+            try {
+                data = await res.json();
+            } catch (e) {
+                throw new Error('Failed to parse server response');
+            }
+            
+            const clients = data.clients || {};
             renderGrid(clients);
         } catch (e) {
-            grid.innerHTML = errorState('Failed to load clients', 'fetchClients()');
+            grid.innerHTML = errorState(e.message || 'Failed to load clients', 'fetchClients()');
         }
     }
 
@@ -151,16 +160,23 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            const result = await res.json();
             
-            if (result.success) {
+            let result;
+            try {
+                result = await res.json();
+            } catch (err) {
+                alert('Server returned an invalid response');
+                return;
+            }
+            
+            if (res.ok && result.success) {
                 closeModal();
                 fetchClients(); // Refresh grid
             } else {
                 alert(result.error || 'Failed to create client');
             }
         } catch (e) {
-            alert('Network error');
+            alert('Network error: ' + e.message);
         }
     };
 

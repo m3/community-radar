@@ -3,16 +3,13 @@ CommunityRadar Flask Dashboard
 Real-time community intelligence with time-series sentiment charts.
 """
 
-from flask import Flask, render_template, jsonify, request, current_app, abort
-import sqlite3
+from flask import Flask, render_template, jsonify, request, abort
 import os
 from pathlib import Path
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
 import sys
-import yaml
-import functools
 
 app = Flask(__name__)
 
@@ -298,7 +295,6 @@ def api_raw_messages(client_name):
 
     platform = request.args.get("platform")
     channel = request.args.get("channel")
-    sentiment = request.args.get("sentiment")  # positive, negative, neutral
     limit = min(int(request.args.get("limit", 100)), 500)
     offset = int(request.args.get("offset", 0))
 
@@ -348,7 +344,42 @@ def api_channels(client_name):
     return jsonify([dict(r) for r in rows])
 
 
-# ─── Cuebot Engagement Scoring API ──────────────────────────────────────
+# ─── Cuebot Engagement Scoring Logic ────────────────────────────────────
+
+def _calculate_engagement_score(row, now):
+    """Internal helper to calculate engagement score for a user row.
+    
+    Weights: messages 30%, reactions 25%, replies 20%, sentiment 15%, recency 10%
+    """
+    last_active = row["last_seen"]
+    recency = 0
+    if last_active:
+        try:
+            last_dt = datetime.fromisoformat(last_active.replace("Z", "+00:00"))
+            days_ago = (now - last_dt).days
+            recency = max(0, 1 - days_ago / 90)  # Decay over 90 days
+        except Exception:
+            recency = 0
+
+    msg_score = min(row["total_messages"] / 500, 1) * 30  # Cap at 500 messages
+    reaction_score = min(row["reactions_received"] / 200, 1) * 25  # Cap at 200 reactions
+    reply_score = min(row["reply_count"] / 100, 1) * 20  # Cap at 100 replies
+    sent_score = (row["sentiment_score"] + 1) / 2 * 15  # -1 to 1 → 0 to 15
+    recency_score = recency * 10
+
+    total_score = msg_score + reaction_score + reply_score + sent_score + recency_score
+    
+    return {
+        "engagement_score": round(total_score, 2),
+        "score_breakdown": {
+            "messages": round(msg_score, 2),
+            "reactions": round(reaction_score, 2),
+            "replies": round(reply_score, 2),
+            "sentiment": round(sent_score, 2),
+            "recency": round(recency_score, 2)
+        }
+    }
+
 
 @app.route("/api/<client_name>/cuebot/engagement/score")
 def api_cuebot_engagement_score(client_name):
@@ -382,27 +413,8 @@ def api_cuebot_engagement_score(client_name):
     scores = []
     now = datetime.now()
     for r in rows:
-        # Recency score (0-1, 1 = active today)
-        last_active = r["last_seen"]
-        recency = 0
-        if last_active:
-            try:
-                last_dt = datetime.fromisoformat(last_active.replace("Z", "+00:00"))
-                days_ago = (now - last_dt).days
-                recency = max(0, 1 - days_ago / 90)  # Decay over 90 days
-            except:
-                recency = 0
-
-        # Composite engagement score
-        # Weights: messages 30%, reactions 25%, replies 20%, sentiment 15%, recency 10%
-        msg_score = min(r["total_messages"] / 500, 1) * 30  # Cap at 500 messages
-        reaction_score = min(r["reactions_received"] / 200, 1) * 25  # Cap at 200 reactions
-        reply_score = min(r["reply_count"] / 100, 1) * 20  # Cap at 100 replies
-        sent_score = (r["sentiment_score"] + 1) / 2 * 15  # -1 to 1 → 0 to 15
-        recency_score = recency * 10
-
-        total_score = msg_score + reaction_score + reply_score + sent_score + recency_score
-
+        calc = _calculate_engagement_score(r, now)
+        
         scores.append({
             "user_id": r["user_id"],
             "display_name": r["display_name"],
@@ -413,14 +425,8 @@ def api_cuebot_engagement_score(client_name):
             "reply_count": r["reply_count"],
             "sentiment_score": round(r["sentiment_score"], 3),
             "last_active": r["last_seen"],
-            "engagement_score": round(total_score, 2),
-            "score_breakdown": {
-                "messages": round(msg_score, 2),
-                "reactions": round(reaction_score, 2),
-                "replies": round(reply_score, 2),
-                "sentiment": round(sent_score, 2),
-                "recency": round(recency_score, 2)
-            }
+            "engagement_score": calc["engagement_score"],
+            "score_breakdown": calc["score_breakdown"]
         })
 
     # Sort by engagement score descending
@@ -471,30 +477,14 @@ def api_cuebot_leaderboard(client_name):
     now = datetime.now()
     scores = []
     for r in rows:
-        last_active = r["last_seen"]
-        recency = 0
-        if last_active:
-            try:
-                last_dt = datetime.fromisoformat(last_active.replace("Z", "+00:00"))
-                days_ago = (now - last_dt).days
-                recency = max(0, 1 - days_ago / 90)
-            except:
-                recency = 0
-
-        msg_score = min(r["total_messages"] / 500, 1) * 30
-        reaction_score = min(r["reactions_received"] / 200, 1) * 25
-        reply_score = min(r["reply_count"] / 100, 1) * 20
-        sent_score = (r["sentiment_score"] + 1) / 2 * 15
-        recency_score = recency * 10
-
-        total_score = msg_score + reaction_score + reply_score + sent_score + recency_score
+        calc = _calculate_engagement_score(r, now)
 
         scores.append({
             "user_id": r["user_id"],
             "display_name": r["display_name"],
             "username": r["username"],
             "platform": r["platform"],
-            "engagement_score": round(total_score, 2),
+            "engagement_score": calc["engagement_score"],
             "total_messages": r["total_messages"],
             "reactions_received": r["reactions_received"],
             "reply_count": r["reply_count"]

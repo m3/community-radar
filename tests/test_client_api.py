@@ -1,29 +1,33 @@
 import pytest
 import json
-from src.dashboard.app import app
+from src.dashboard.app import app, config_mgr
 import os
 from pathlib import Path
 import yaml
 
 @pytest.fixture
-def client():
+def client(tmp_path):
     app.config['TESTING'] = True
-    # Save original config
-    config_path = Path("config.yaml")
-    original_content = None
-    if config_path.exists():
-        with open(config_path, "r") as f:
-            original_content = f.read()
+    
+    # Create a temporary config file
+    temp_config = tmp_path / "config.yaml"
+    initial_config = {"clients": {}}
+    with open(temp_config, "w") as f:
+        yaml.dump(initial_config, f)
+    
+    # Save old config_mgr state
+    old_path = config_mgr.config_path
+    
+    # Point config_mgr to temp file
+    config_mgr.config_path = temp_config
+    config_mgr.clear_cache()
     
     with app.test_client() as client:
         yield client
         
-    # Restore original config
-    if original_content:
-        with open(config_path, "w") as f:
-            f.write(original_content)
-    elif config_path.exists():
-        config_path.unlink()
+    # Restore config_mgr state
+    config_mgr.config_path = old_path
+    config_mgr.clear_cache()
 
 def test_get_clients(client):
     response = client.get('/api/clients')
@@ -47,8 +51,8 @@ def test_update_client(client):
     # Then update
     payload = {
         "name": "New Name",
-        "reddit": {"subreddits": ["test"]},
-        "discord": {"servers": ["123"]}
+        "reddit": {"subreddits": {"test": {"sorts": ["new"]}}},
+        "discord": {"servers": {"123": {"name": "Test Server", "channels": {}}}}
     }
     response = client.post('/api/clients/upd_client/update', json=payload)
     assert response.status_code == 200

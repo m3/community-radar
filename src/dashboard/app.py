@@ -351,7 +351,33 @@ def api_raw_messages(client_name):
     rows = db.execute(query, params).fetchall()
     db.close()
 
-    return jsonify([dict(r) for r in rows])
+    # Flag external mentions
+    config = config_mgr.load()
+    client_config = config.get("clients", {}).get(client_name, {})
+    keywords = []
+    external_prefixes = []
+    subreddits_config = client_config.get("reddit", {}).get("subreddits", {})
+    for sub, sub_conf in subreddits_config.items():
+        if "track_keywords" in sub_conf and sub_conf["track_keywords"]:
+            keywords.extend(sub_conf["track_keywords"])
+            external_prefixes.append(f"reddit_{sub.lower()}")
+            
+    keywords = list(set([k.lower() for k in keywords]))
+    
+    result_rows = []
+    for r in rows:
+        r_dict = dict(r)
+        r_dict["is_external_mention"] = False
+        
+        channel_name = (r_dict.get("channel_name") or "").lower()
+        if any(channel_name.startswith(p) for p in external_prefixes):
+            content_lower = (r_dict.get("content") or "").lower()
+            if any(kw in content_lower for kw in keywords):
+                r_dict["is_external_mention"] = True
+                
+        result_rows.append(r_dict)
+
+    return jsonify(result_rows)
 
 
 @app.route("/api/<client_name>/channels")

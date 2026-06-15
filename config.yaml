@@ -1,57 +1,80 @@
-# Global settings
-data_dir: "data"
-docs_dir: "docs"
+data_dir: data
+docs_dir: docs
 export:
   dce_timeout: 1200
   batch_size: 500
-
 reddit_global:
-  backend: "playwright" # 'bridge' or 'playwright'
+  backend: playwright
   headless: true
-  proxy_secret_id: "7890-global-proxy-uuid"
-  skills_dir: "/Users/mathias/Development/Projects/community-radar/scripts"
-
+  proxy_secret_id: 7890-global-proxy-uuid
+  skills_dir: /Users/mathias/Development/Projects/community-radar/scripts
 discord_global:
-  bws_secret_id: "70909217-9e02-452b-b933-b45f00c17fee"
-  dce_bin: "/Users/mathias/.hermes/profiles/glenn/home/tools/discordchatexporter/cli/DiscordChatExporter.Cli"
-
+  bws_secret_id: 70909217-9e02-452b-b933-b45f00c17fee
+  dce_bin: /Users/mathias/.hermes/profiles/glenn/home/tools/discordchatexporter/cli/DiscordChatExporter.Cli
 clients:
   pure-pool-pro:
-    name: "Pure Pool Pro"
+    name: Pure Pool Pro
     reddit:
       subreddits:
         PurePoolPro:
-          sorts: ["new", "hot", "top?t=month", "top?t=year", "top?t=all"]
+          sorts:
+          - new
+          - hot
+          - top?t=month
+          - top?t=year
+          - top?t=all
+          track_keywords:
+          - pure pool
+          - bug
+          - snooker
+          - pool
+          - ripstone
+          - feature
+          - connection
+          - issue
         billiards:
-          sorts: ["new", "hot", "top?t=month", "top?t=year"]
-          track_keywords: ["pure pool", "ripstone", "snooker", "8 ball", "9 ball", "10 ball", "physics", "simulation"]
+          sorts:
+          - new
+          - hot
+          - top?t=month
+          - top?t=year
+          track_keywords:
+          - pure pool
+          - ripstone
+          - snooker
+          - 8 ball
+          - 9 ball
+          - 10 ball
+          - physics
+          - simulation
         snooker:
-          sorts: ["new", "hot", "top?t=month", "top?t=year"]
-          track_keywords: ["pure pool", "ripstone", "billiards", "pool", "physics", "simulation"]
+          sorts:
+          - new
+          - hot
+          - top?t=month
+          - top?t=year
+          track_keywords:
+          - pure pool
+          - ripstone
+          - billiards
+          - pool
+          - physics
+          - simulation
       domain_monitoring:
         enabled: true
-        domains: ["purepoolpro.com"]
+        domains:
+        - https://ripstone.com/pure-pool-pro/
+        - ripstone.com
         max_pages: 3
-        sort: "new"
+        sort: new
     discord:
       servers:
-        "203428322082816001":
-          name: "Ripstone - Pure Pool Pro"
+        '203428322082816001':
+          name: Ripstone - Pure Pool Pro
           channels:
-            "1362333099089727488": "chat-pure-pool-pro"
-            "1427915258147766303": "questions-and-suggestions-pure-pool-pro"
-            "1470447996670971989": "find-a-game-pure-pool-pro"
-            "1504754355985846363": "play-of-the-month-submissions"
-            "1362333634622787584": "pool-and-snooker-talk"
-            "1336304493629014047": "announcements-ripstone"
-        "1494750941369335990":
-          name: "Pure Pool Pro Unofficial Community"
-          channels:
-            "1494957370047070309": "general"
-            "1495014540897812490": "looking-for-a-game"
-            "1494957533662806047": "pool-talk"
-            "1497451589437358170": "tetradome-season-2"
-            "1497452004228862112": "rackhaus-season-2"
-            "1498172120897683541": "8ball-focused-s2"
-            "1511841089466667210": "pro-killer-tournament"
-            "1494750942049079480": "pro-talk-general"
+            '1362333099089727488': chat-pure-pool-pro
+            '1427915258147766303': questions-and-suggestions-pure-pool-pro
+            '1470447996670971989': find-a-game-pure-pool-pro
+            '1504754355985846363': play-of-the-month-submissions
+            '1362333634622787584': pool-and-snooker-talk
+            '1336304493629014047': announcements-ripstone

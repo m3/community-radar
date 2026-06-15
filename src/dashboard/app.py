@@ -589,7 +589,7 @@ def api_cuebot_leaderboard(client_name):
     params = []
 
     if platform:
-        query += " AND u.platform = ?"
+        query += " AND (SELECT platform FROM messages WHERE user_id = u.id LIMIT 1) = ?"
         params.append(platform)
 
     rows = db.execute(query, params).fetchall()

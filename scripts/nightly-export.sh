@@ -14,14 +14,14 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting CommunityRadar export..."
 
 # Run Discord export (incremental)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Discord export..."
-python3 src/main.py export 2>&1
+python3 src/main.py -c pure-pool-pro export 2>&1
 
 # Run Reddit export
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Reddit export..."
-python3 src/main.py reddit 2>&1
+python3 src/main.py -c pure-pool-pro reddit 2>&1
 
 # Regenerate report
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Generating report..."
-python3 src/main.py report 2>&1
+python3 src/main.py -c pure-pool-pro report 2>&1
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Export complete."

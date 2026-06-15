@@ -4,48 +4,69 @@
 
 {% block content %}
 <header class="mb-10">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between flex-wrap gap-4">
         <div>
             <h1 class="text-3xl font-bold text-white mb-2 neon-glow">Mission Control: {{ clients[client_name].name if client_name in clients else client_name }}</h1>
-            <p class="text-slate-400">Cross-platform community intelligence: Discord + Reddit sentiment & engagement</p>
+            <p class="text-slate-400">Cross-platform community intelligence: Discord + Reddit sentiment &amp; engagement</p>
         </div>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-4 flex-wrap gap-2">
+            <!-- Data Freshness -->
+            <div class="radar-card px-4 py-2 flex items-center space-x-2" id="freshnessCard">
+                <i class="fas fa-clock text-sky-500"></i>
+                <span class="text-sm font-medium text-slate-400" id="freshnessText">Loading...</span>
+            </div>
+
             <div class="radar-card px-4 py-2 flex items-center space-x-2">
                 <i class="fas fa-calendar text-sky-500"></i>
-                <span class="text-sm font-medium" id="dateRange">Loading...</span>
+                <span class="text-sm font-medium" id="dateRange">
+                    <span class="skeleton" style="display:inline-block;width:140px;height:1rem;vertical-align:middle"></span>
+                </span>
             </div>
-            <button onclick="init()" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">
+            
+            <div class="flex items-center space-x-2 bg-slate-800/50 rounded-lg p-1 border border-slate-700">
+                <button onclick="triggerTask('collect')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center shadow-lg shadow-indigo-500/20" id="btnSync">
+                    <i class="fas fa-cloud-download-alt mr-2"></i> Sync
+                </button>
+                <button onclick="triggerTask('analyze')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center shadow-lg shadow-emerald-500/20" id="btnIntel">
+                    <i class="fas fa-microchip mr-2"></i> Intel
+                </button>
+            </div>
+
+            <button onclick="init()" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-sky-500/20" title="Refresh (R)">
                 <i class="fas fa-sync-alt mr-2"></i> Refresh
             </button>
         </div>
     </div>
 </header>
 
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed bottom-10 right-10 z-50 flex flex-col space-y-4"></div>
+
 <!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-10">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-10" id="statsGrid">
     <div class="radar-card p-6">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Total Messages</div>
-        <div class="text-3xl font-bold text-white" id="statTotal">—</div>
+        <div class="text-3xl font-bold text-white" id="statTotal"><span class="skeleton skeleton-stat"></span></div>
     </div>
     <div class="radar-card p-6">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Discord</div>
-        <div class="text-3xl font-bold text-indigo-400" id="statDiscord">—</div>
+        <div class="text-3xl font-bold text-indigo-400" id="statDiscord"><span class="skeleton skeleton-stat"></span></div>
     </div>
     <div class="radar-card p-6">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Reddit</div>
-        <div class="text-3xl font-bold text-orange-400" id="statReddit">—</div>
+        <div class="text-3xl font-bold text-orange-400" id="statReddit"><span class="skeleton skeleton-stat"></span></div>
     </div>
     <div class="radar-card p-6">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Channels</div>
-        <div class="text-3xl font-bold text-white" id="statChannels">—</div>
+        <div class="text-3xl font-bold text-white" id="statChannels"><span class="skeleton skeleton-stat"></span></div>
     </div>
     <div class="radar-card p-6">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Users</div>
-        <div class="text-3xl font-bold text-white" id="statUsers">—</div>
+        <div class="text-3xl font-bold text-white" id="statUsers"><span class="skeleton skeleton-stat"></span></div>
     </div>
     <div class="radar-card p-6">
         <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Sentiment Ratio</div>
-        <div class="text-3xl font-bold text-sky-400" id="statRatio">—</div>
+        <div class="text-3xl font-bold text-sky-400" id="statRatio"><span class="skeleton skeleton-stat"></span></div>
     </div>
 </div>
 
@@ -56,8 +77,9 @@
             <i class="fas fa-chart-line text-sky-500 mr-3"></i>
             Sentiment Over Time
         </h3>
-        <div class="h-[300px]">
+        <div class="h-[300px] relative" id="sentimentChartContainer">
             <canvas id="sentimentChart"></canvas>
+            <div class="absolute inset-0 flex items-center justify-center" id="sentimentChartEmpty" style="display:none"></div>
         </div>
     </div>
     <div class="radar-card p-6">
@@ -65,8 +87,9 @@
             <i class="fas fa-chart-bar text-sky-500 mr-3"></i>
             Message Volume by Platform
         </h3>
-        <div class="h-[300px]">
+        <div class="h-[300px] relative" id="volumeChartContainer">
             <canvas id="volumeChart"></canvas>
+            <div class="absolute inset-0 flex items-center justify-center" id="volumeChartEmpty" style="display:none"></div>
         </div>
     </div>
 </div>
@@ -75,51 +98,57 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <!-- Topics -->
     <div class="radar-card overflow-hidden">
-        <div class="p-6 border-b border-slate-700">
+        <div class="p-6 border-b border-slate-700 flex items-center justify-between">
             <h3 class="text-lg font-bold text-white flex items-center">
                 <i class="fas fa-tags text-sky-500 mr-3"></i>
                 Top Topics by Sentiment
             </h3>
+            <input type="text" placeholder="Search topics..." class="bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-1.5 w-36 focus:ring-sky-500 focus:border-sky-500 focus:outline-none" oninput="filterTable('topicsTable', this.value)">
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" id="topicsContainer">
             <table class="w-full text-left text-sm" id="topicsTable">
                 <thead class="bg-slate-800/50 text-slate-400 uppercase text-xs font-semibold">
                     <tr>
-                        <th class="px-6 py-4">Topic</th>
-                        <th class="px-6 py-4">Mentions</th>
-                        <th class="px-6 py-4">Pos%</th>
-                        <th class="px-6 py-4">Neg%</th>
-                        <th class="px-6 py-4">Net</th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('topicsTable', 0)">Topic <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('topicsTable', 1, true)">Mentions <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('topicsTable', 2, true)">Pos% <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('topicsTable', 3, true)">Neg% <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('topicsTable', 4, true)">Net <i class="fas fa-sort text-slate-600 ml-1"></i></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-700">
-                    <!-- Loaded via JS -->
+                    <!-- Skeleton rows -->
                 </tbody>
             </table>
+        </div>
+        <div class="p-4 border-t border-slate-700 text-center hidden" id="topicsShowMore">
+            <button onclick="toggleShowMore('topics')" class="text-xs text-sky-400 hover:text-sky-300 font-medium">
+                <span id="topicsShowMoreText">Show all</span> <i class="fas fa-chevron-down ml-1"></i>
+            </button>
         </div>
     </div>
 
     <!-- Channels -->
     <div class="radar-card overflow-hidden">
-        <div class="p-6 border-b border-slate-700">
+        <div class="p-6 border-b border-slate-700 flex items-center justify-between">
             <h3 class="text-lg font-bold text-white flex items-center">
                 <i class="fas fa-hashtag text-sky-500 mr-3"></i>
                 Channel Sentiment Breakdown
             </h3>
+            <input type="text" placeholder="Search channels..." class="bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-1.5 w-36 focus:ring-sky-500 focus:border-sky-500 focus:outline-none" oninput="filterTable('channelsTable', this.value)">
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" id="channelsContainer">
             <table class="w-full text-left text-sm" id="channelsTable">
                 <thead class="bg-slate-800/50 text-slate-400 uppercase text-xs font-semibold">
                     <tr>
-                        <th class="px-6 py-4">Channel</th>
-                        <th class="px-6 py-4">Platform</th>
-                        <th class="px-6 py-4">Messages</th>
-                        <th class="px-6 py-4">Pos%</th>
-                        <th class="px-6 py-4">Neg%</th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('channelsTable', 0)">Channel <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('channelsTable', 1)">Platform <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('channelsTable', 2, true)">Messages <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('channelsTable', 3, true)">Pos% <i class="fas fa-sort text-slate-600 ml-1"></i></th>
+                        <th class="px-6 py-4 cursor-pointer hover:text-white" onclick="sortTable('channelsTable', 4, true)">Neg% <i class="fas fa-sort text-slate-600 ml-1"></i></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-700">
-                    <!-- Loaded via JS -->
                 </tbody>
             </table>
         </div>
@@ -133,30 +162,38 @@
                 Power Words (Community Identity)
             </h3>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" id="powerWordsContainer">
             <table class="w-full text-left text-sm" id="powerWordsTable">
                 <thead class="bg-slate-800/50 text-slate-400 uppercase text-xs font-semibold">
                     <tr>
                         <th class="px-6 py-4">Term</th>
                         <th class="px-6 py-4">Mentions</th>
+                        <th class="px-6 py-4">Visual</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-700">
-                    <!-- Loaded via JS -->
                 </tbody>
             </table>
+        </div>
+        <div class="p-4 border-t border-slate-700 text-center hidden" id="powerShowMore">
+            <button onclick="toggleShowMore('power')" class="text-xs text-sky-400 hover:text-sky-300 font-medium">
+                <span id="powerShowMoreText">Show all</span> <i class="fas fa-chevron-down ml-1"></i>
+            </button>
         </div>
     </div>
 
     <!-- Contributors -->
     <div class="radar-card overflow-hidden">
-        <div class="p-6 border-b border-slate-700">
+        <div class="p-6 border-b border-slate-700 flex items-center justify-between">
             <h3 class="text-lg font-bold text-white flex items-center">
                 <i class="fas fa-medal text-sky-500 mr-3"></i>
                 Top Contributors
             </h3>
+            <a href="/{{ client_name }}/leaderboard" class="text-xs text-sky-400 hover:text-sky-300 font-medium flex items-center">
+                Full Leaderboard <i class="fas fa-arrow-right ml-2"></i>
+            </a>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" id="contributorsContainer">
             <table class="w-full text-left text-sm" id="contributorsTable">
                 <thead class="bg-slate-800/50 text-slate-400 uppercase text-xs font-semibold">
                     <tr>
@@ -166,9 +203,13 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-700">
-                    <!-- Loaded via JS -->
                 </tbody>
             </table>
+        </div>
+        <div class="p-4 border-t border-slate-700 text-center hidden" id="contribShowMore">
+            <button onclick="toggleShowMore('contrib')" class="text-xs text-sky-400 hover:text-sky-300 font-medium">
+                <span id="contribShowMoreText">Show all</span> <i class="fas fa-chevron-down ml-1"></i>
+            </button>
         </div>
     </div>
 </div>
@@ -179,156 +220,390 @@
     const clientName = '{{ client_name }}';
     let sentimentChart = null, volumeChart = null;
 
+    // Data caches for show-more
+    let allTopics = [], allPowerWords = [], allContributors = [];
+    let showMoreState = { topics: false, power: false, contrib: false };
+    const COLLAPSED_ROWS = 10;
+
+    // ─── LOADING SKELETONS ─────────────────────────────────────
+    function showTableSkeleton(tableId, cols) {
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        tbody.innerHTML = skeletonRows(5, cols);
+    }
+
+    // Initialize skeletons
+    showTableSkeleton('topicsTable', 5);
+    showTableSkeleton('channelsTable', 5);
+    showTableSkeleton('powerWordsTable', 3);
+    showTableSkeleton('contributorsTable', 3);
+
+    // ─── DATA LOADERS ──────────────────────────────────────────
     async function loadOverview() {
-        const res = await fetch(`/api/${clientName}/overview`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/api/${clientName}/overview`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
 
-        document.getElementById('statTotal').textContent =
-            (data.platforms.discord || 0) + (data.platforms.reddit || 0);
-        document.getElementById('statDiscord').textContent = (data.platforms.discord || 0).toLocaleString();
-        document.getElementById('statReddit').textContent = (data.platforms.reddit || 0).toLocaleString();
-        document.getElementById('statChannels').textContent = (data.channels || 0).toLocaleString();
-        document.getElementById('statUsers').textContent = (data.users || 0).toLocaleString();
-        document.getElementById('dateRange').textContent = `${data.date_range.from} — ${data.date_range.to}`;
+            const total = (data.platforms.discord || 0) + (data.platforms.reddit || 0);
+            document.getElementById('statTotal').textContent = fmt(total);
+            document.getElementById('statDiscord').textContent = fmt(data.platforms.discord || 0);
+            document.getElementById('statReddit').textContent = fmt(data.platforms.reddit || 0);
+            document.getElementById('statChannels').textContent = fmt(data.channels || 0);
+            document.getElementById('statUsers').textContent = fmt(data.users || 0);
+            document.getElementById('dateRange').textContent = `${data.date_range.from} — ${data.date_range.to}`;
 
-        const ratio = data.report_meta?.sentiment_ratio || 0;
-        document.getElementById('statRatio').textContent = ratio.toFixed(2);
+            const ratio = data.report_meta?.sentiment_ratio || 0;
+            document.getElementById('statRatio').textContent = ratio.toFixed(2);
+
+            // Data freshness
+            const analysisDate = data.report_meta?.generated_at;
+            if (analysisDate) {
+                document.getElementById('freshnessText').innerHTML = `Last analysis: <span class="text-white font-medium">${timeAgo(analysisDate)}</span>`;
+            } else {
+                document.getElementById('freshnessText').innerHTML = `<span class="text-yellow-400">No analysis run yet</span>`;
+            }
+        } catch (e) {
+            document.getElementById('statTotal').innerHTML = '<span class="text-red-400 text-sm">Error</span>';
+            document.getElementById('freshnessText').innerHTML = '<span class="text-red-400">Failed to load</span>';
+        }
     }
 
     async function loadSentimentTimeseries() {
-        const res = await fetch(`/api/${clientName}/sentiment/timeseries`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/api/${clientName}/sentiment/timeseries`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
 
-        const platforms = Object.keys(data.series);
-        const allDays = new Set();
-        platforms.forEach(p => Object.keys(data.series[p]).forEach(d => allDays.add(d)));
-        const sortedDays = Array.from(allDays).sort();
-
-        const datasets = platforms.map((platform, i) => {
-            const colors = platform === 'discord' ?
-                { pos: '#38bdf8', neg: '#f87171', neu: '#94a3b8' } :
-                { pos: '#fb923c', neg: '#f87171', neu: '#94a3b8' };
-
-            return [
-                { label: `${platform} Positive`, data: sortedDays.map(d => data.series[platform][d]?.positive || 0), borderColor: colors.pos, backgroundColor: colors.pos, fill: false, tension: 0.2, hidden: platform === 'reddit' },
-                { label: `${platform} Negative`, data: sortedDays.map(d => data.series[platform][d]?.negative || 0), borderColor: colors.neg, backgroundColor: colors.neg, fill: false, tension: 0.2, hidden: platform === 'reddit' }
-            ];
-        }).flat();
-
-        const ctx = document.getElementById('sentimentChart').getContext('2d');
-        if (sentimentChart) sentimentChart.destroy();
-        sentimentChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: sortedDays, datasets },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { display: true, labels: { color: '#94a3b8', boxWidth: 10, usePointStyle: true, pointStyle: 'circle' } } },
-                scales: {
-                    x: { grid: { color: '#334155' }, ticks: { color: '#64748b', maxTicksLimit: 10 } },
-                    y: { grid: { color: '#334155' }, ticks: { color: '#64748b' }, beginAtZero: true }
-                }
+            const platforms = Object.keys(data.series);
+            if (platforms.length === 0) {
+                document.getElementById('sentimentChartEmpty').style.display = 'flex';
+                document.getElementById('sentimentChartEmpty').innerHTML = emptyState('fa-chart-line', 'No sentiment data yet. Run a data sync first.');
+                return;
             }
-        });
+
+            const allDays = new Set();
+            platforms.forEach(p => Object.keys(data.series[p]).forEach(d => allDays.add(d)));
+            const sortedDays = Array.from(allDays).sort();
+
+            const datasets = platforms.map((platform, i) => {
+                const colors = platform === 'discord' ?
+                    { pos: '#38bdf8', neg: '#f87171', neu: '#94a3b8' } :
+                    { pos: '#fb923c', neg: '#f87171', neu: '#94a3b8' };
+
+                return [
+                    { label: `${platform} Positive`, data: sortedDays.map(d => data.series[platform][d]?.positive || 0), borderColor: colors.pos, backgroundColor: colors.pos + '20', fill: true, tension: 0.3, hidden: platform === 'reddit', pointRadius: 1, borderWidth: 2 },
+                    { label: `${platform} Negative`, data: sortedDays.map(d => data.series[platform][d]?.negative || 0), borderColor: colors.neg, backgroundColor: colors.neg + '20', fill: true, tension: 0.3, hidden: platform === 'reddit', pointRadius: 1, borderWidth: 2 }
+                ];
+            }).flat();
+
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            if (sentimentChart) sentimentChart.destroy();
+            sentimentChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: sortedDays, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: true, labels: { color: '#94a3b8', boxWidth: 10, usePointStyle: true, pointStyle: 'circle' } } },
+                    scales: {
+                        x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', maxTicksLimit: 10 } },
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' }, beginAtZero: true }
+                    }
+                }
+            });
+        } catch (e) {
+            document.getElementById('sentimentChartEmpty').style.display = 'flex';
+            document.getElementById('sentimentChartEmpty').innerHTML = errorState('Failed to load sentiment data', 'loadSentimentTimeseries()');
+        }
     }
 
     async function loadVolumeChart() {
-        const res = await fetch(`/api/${clientName}/sentiment/timeseries`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/api/${clientName}/sentiment/timeseries`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
 
-        const platforms = Object.keys(data.series);
-        const allDays = new Set();
-        platforms.forEach(p => Object.keys(data.series[p]).forEach(d => allDays.add(d)));
-        const sortedDays = Array.from(allDays).sort();
-
-        const datasets = platforms.map(platform => {
-            const color = platform === 'discord' ? '#6366f1' : '#f97316';
-            return {
-                label: platform.charAt(0).toUpperCase() + platform.slice(1),
-                data: sortedDays.map(d => data.series[platform][d]?.total || 0),
-                backgroundColor: color, borderRadius: 4
-            };
-        });
-
-        const ctx = document.getElementById('volumeChart').getContext('2d');
-        if (volumeChart) volumeChart.destroy();
-        volumeChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: sortedDays, datasets },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: true, labels: { color: '#94a3b8', boxWidth: 10, usePointStyle: true, pointStyle: 'circle' } } },
-                scales: {
-                    x: { grid: { color: '#334155' }, ticks: { color: '#64748b', maxTicksLimit: 10 } },
-                    y: { grid: { color: '#334155' }, ticks: { color: '#64748b' }, beginAtZero: true }
-                }
+            const platforms = Object.keys(data.series);
+            if (platforms.length === 0) {
+                document.getElementById('volumeChartEmpty').style.display = 'flex';
+                document.getElementById('volumeChartEmpty').innerHTML = emptyState('fa-chart-bar', 'No volume data yet.');
+                return;
             }
-        });
+
+            const allDays = new Set();
+            platforms.forEach(p => Object.keys(data.series[p]).forEach(d => allDays.add(d)));
+            const sortedDays = Array.from(allDays).sort();
+
+            const datasets = platforms.map(platform => {
+                const color = platform === 'discord' ? '#6366f1' : '#f97316';
+                return {
+                    label: platform.charAt(0).toUpperCase() + platform.slice(1),
+                    data: sortedDays.map(d => data.series[platform][d]?.total || 0),
+                    backgroundColor: color + 'cc', borderRadius: 4
+                };
+            });
+
+            const ctx = document.getElementById('volumeChart').getContext('2d');
+            if (volumeChart) volumeChart.destroy();
+            volumeChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: sortedDays, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#94a3b8', boxWidth: 10, usePointStyle: true, pointStyle: 'circle' } } },
+                    scales: {
+                        x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b', maxTicksLimit: 10 } },
+                        y: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b' }, beginAtZero: true }
+                    }
+                }
+            });
+        } catch (e) {
+            document.getElementById('volumeChartEmpty').style.display = 'flex';
+            document.getElementById('volumeChartEmpty').innerHTML = errorState('Failed to load volume data', 'loadVolumeChart()');
+        }
     }
 
     async function loadTopics() {
-        const res = await fetch(`/api/${clientName}/topics`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/api/${clientName}/topics`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+            allTopics = Object.entries(data);
+
+            if (allTopics.length === 0) {
+                document.getElementById('topicsContainer').innerHTML = emptyState('fa-tags', 'No topic data yet. Run an analysis first.');
+                return;
+            }
+
+            renderTopics(false);
+            if (allTopics.length > COLLAPSED_ROWS) {
+                document.getElementById('topicsShowMore').classList.remove('hidden');
+            }
+        } catch (e) {
+            document.getElementById('topicsContainer').innerHTML = errorState('Failed to load topics', 'loadTopics()');
+        }
+    }
+
+    function renderTopics(showAll) {
+        const items = showAll ? allTopics : allTopics.slice(0, COLLAPSED_ROWS);
         const tbody = document.querySelector('#topicsTable tbody');
-        tbody.innerHTML = Object.entries(data)
-            .slice(0, 10)
-            .map(([topic, d]) => {
-                const net = d.net_sentiment;
-                const cls = net > 10 ? 'text-green-400 bg-green-400/10' : (net < -10 ? 'text-red-400 bg-red-400/10' : 'text-slate-400 bg-slate-400/10');
-                return `<tr>
-                    <td class="px-6 py-4 font-medium text-white">${topic}</td>
-                    <td class="px-6 py-4 text-slate-400">${d.total}</td>
-                    <td class="px-6 py-4 text-green-400">${d.pos_pct}%</td>
-                    <td class="px-6 py-4 text-red-400">${d.neg_pct}%</td>
-                    <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-xs font-bold ${cls}">${net > 0 ? '+' : ''}${net}</span></td>
-                </tr>`;
-            }).join('');
+        tbody.innerHTML = items.map(([topic, d]) => {
+            const net = d.net_sentiment;
+            const cls = net > 10 ? 'text-green-400 bg-green-400/10' : (net < -10 ? 'text-red-400 bg-red-400/10' : 'text-slate-400 bg-slate-400/10');
+            return `<tr class="hover:bg-slate-800/30 transition-colors">
+                <td class="px-6 py-4 font-medium text-white">${topic}</td>
+                <td class="px-6 py-4 text-slate-400">${fmt(d.total)}</td>
+                <td class="px-6 py-4 text-green-400">${d.pos_pct}%</td>
+                <td class="px-6 py-4 text-red-400">${d.neg_pct}%</td>
+                <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-xs font-bold ${cls}">${net > 0 ? '+' : ''}${net}</span></td>
+            </tr>`;
+        }).join('');
     }
 
     async function loadChannels() {
-        const res = await fetch(`/api/${clientName}/sentiment/by_channel`);
-        const data = await res.json();
-        const tbody = document.querySelector('#channelsTable tbody');
-        tbody.innerHTML = Object.entries(data)
-            .sort((a, b) => b[1].total - a[1].total)
-            .slice(0, 10)
-            .map(([ch, d]) => {
+        try {
+            const res = await fetch(`/api/${clientName}/sentiment/by_channel`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+            const entries = Object.entries(data).sort((a, b) => b[1].total - a[1].total);
+
+            if (entries.length === 0) {
+                document.getElementById('channelsContainer').innerHTML = emptyState('fa-hashtag', 'No channel sentiment data yet.');
+                return;
+            }
+
+            const tbody = document.querySelector('#channelsTable tbody');
+            tbody.innerHTML = entries.map(([ch, d]) => {
                 const isReddit = ch.startsWith('reddit') || ch.includes('r/');
                 const platform = isReddit ? 'reddit' : 'discord';
                 const pCls = isReddit ? 'bg-orange-500/10 text-orange-500' : 'bg-indigo-500/10 text-indigo-500';
-                return `<tr>
+                return `<tr class="hover:bg-slate-800/30 transition-colors">
                     <td class="px-6 py-4 font-medium text-white">${ch}</td>
                     <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${pCls}">${platform}</span></td>
-                    <td class="px-6 py-4 text-slate-400">${d.total}</td>
+                    <td class="px-6 py-4 text-slate-400">${fmt(d.total)}</td>
                     <td class="px-6 py-4 text-green-400">${d.pos_pct}%</td>
                     <td class="px-6 py-4 text-red-400">${d.neg_pct}%</td>
                 </tr>`;
             }).join('');
+        } catch (e) {
+            document.getElementById('channelsContainer').innerHTML = errorState('Failed to load channels', 'loadChannels()');
+        }
     }
 
     async function loadPowerWords() {
-        const res = await fetch(`/api/${clientName}/power_words`);
-        const data = await res.json();
+        try {
+            const res = await fetch(`/api/${clientName}/power_words`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+            allPowerWords = Object.entries(data);
+
+            if (allPowerWords.length === 0) {
+                document.getElementById('powerWordsContainer').innerHTML = emptyState('fa-bolt', 'No power word data yet.');
+                return;
+            }
+
+            renderPowerWords(false);
+            if (allPowerWords.length > COLLAPSED_ROWS) {
+                document.getElementById('powerShowMore').classList.remove('hidden');
+            }
+        } catch (e) {
+            document.getElementById('powerWordsContainer').innerHTML = errorState('Failed to load power words', 'loadPowerWords()');
+        }
+    }
+
+    function renderPowerWords(showAll) {
+        const items = showAll ? allPowerWords : allPowerWords.slice(0, COLLAPSED_ROWS);
+        const maxCount = Math.max(...allPowerWords.map(([, c]) => c), 1);
         const tbody = document.querySelector('#powerWordsTable tbody');
-        tbody.innerHTML = Object.entries(data)
-            .slice(0, 10)
-            .map(([word, count]) => `<tr>
+        tbody.innerHTML = items.map(([word, count]) => {
+            const pct = Math.round((count / maxCount) * 100);
+            return `<tr class="hover:bg-slate-800/30 transition-colors">
                 <td class="px-6 py-4 font-medium text-white">${word}</td>
-                <td class="px-6 py-4 text-slate-400">${count}</td>
-            </tr>`).join('');
+                <td class="px-6 py-4 text-slate-400">${fmt(count)}</td>
+                <td class="px-6 py-4 w-32">
+                    <div class="w-full bg-slate-800 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-sky-500 to-cyan-400 h-2 rounded-full transition-all" style="width:${pct}%"></div>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
     }
 
     async function loadContributors() {
-        const res = await fetch(`/api/${clientName}/contributors`);
-        const data = await res.json();
-        const tbody = document.querySelector('#contributorsTable tbody');
-        tbody.innerHTML = data.slice(0, 10).map(u => `<tr>
-            <td class="px-6 py-4 font-medium text-white">${u.name}</td>
-            <td class="px-6 py-4 text-slate-400">${u.messages}</td>
-            <td class="px-6 py-4 text-sky-400 font-medium">${u.reactions_received}</td>
-        </tr>`).join('');
+        try {
+            const res = await fetch(`/api/${clientName}/contributors`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+            allContributors = data;
+
+            if (allContributors.length === 0) {
+                document.getElementById('contributorsContainer').innerHTML = emptyState('fa-medal', 'No contributor data yet.');
+                return;
+            }
+
+            renderContributors(false);
+            if (allContributors.length > COLLAPSED_ROWS) {
+                document.getElementById('contribShowMore').classList.remove('hidden');
+            }
+        } catch (e) {
+            document.getElementById('contributorsContainer').innerHTML = errorState('Failed to load contributors', 'loadContributors()');
+        }
     }
 
+    function renderContributors(showAll) {
+        const items = showAll ? allContributors : allContributors.slice(0, COLLAPSED_ROWS);
+        const tbody = document.querySelector('#contributorsTable tbody');
+        tbody.innerHTML = items.map((u, i) => {
+            const rank = i < 3 ? ['🥇', '🥈', '🥉'][i] : '';
+            return `<tr class="hover:bg-slate-800/30 transition-colors">
+                <td class="px-6 py-4 font-medium text-white">${rank} ${u.name}</td>
+                <td class="px-6 py-4 text-slate-400">${fmt(u.messages)}</td>
+                <td class="px-6 py-4 text-sky-400 font-medium">${fmt(u.reactions_received)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ─── SHOW MORE ─────────────────────────────────────────────
+    function toggleShowMore(section) {
+        showMoreState[section] = !showMoreState[section];
+        const showing = showMoreState[section];
+
+        if (section === 'topics') {
+            renderTopics(showing);
+            document.getElementById('topicsShowMoreText').textContent = showing ? 'Show less' : `Show all (${allTopics.length})`;
+        } else if (section === 'power') {
+            renderPowerWords(showing);
+            document.getElementById('powerShowMoreText').textContent = showing ? 'Show less' : `Show all (${allPowerWords.length})`;
+        } else if (section === 'contrib') {
+            renderContributors(showing);
+            document.getElementById('contribShowMoreText').textContent = showing ? 'Show less' : `Show all (${allContributors.length})`;
+        }
+    }
+
+    // ─── TABLE SORT ────────────────────────────────────────────
+    const sortState = {};
+    function sortTable(tableId, colIdx, numeric = false) {
+        const table = document.getElementById(tableId);
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        // Toggle sort direction
+        const key = `${tableId}-${colIdx}`;
+        sortState[key] = sortState[key] === 'asc' ? 'desc' : 'asc';
+        const dir = sortState[key] === 'asc' ? 1 : -1;
+
+        rows.sort((a, b) => {
+            const aText = a.cells[colIdx]?.textContent.trim().replace(/[,%+🥇🥈🥉]/g, '') || '';
+            const bText = b.cells[colIdx]?.textContent.trim().replace(/[,%+🥇🥈🥉]/g, '') || '';
+            if (numeric) {
+                return (parseFloat(aText) - parseFloat(bText)) * dir;
+            }
+            return aText.localeCompare(bText) * dir;
+        });
+
+        rows.forEach(r => tbody.appendChild(r));
+    }
+
+    // ─── TABLE FILTER ──────────────────────────────────────────
+    function filterTable(tableId, query) {
+        const table = document.getElementById(tableId);
+        const rows = table.querySelectorAll('tbody tr');
+        const q = query.toLowerCase();
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(q) ? '' : 'none';
+        });
+    }
+
+    // ─── TRIGGER TASKS ─────────────────────────────────────────
+    async function triggerTask(command) {
+        const btn = command === 'collect' ? document.getElementById('btnSync') : document.getElementById('btnIntel');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Queuing...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`/api/${clientName}/trigger/${command}`, { method: 'POST' });
+            const data = await res.json();
+            
+            if (data.success) {
+                showToast(`Task '${command}' enqueued successfully!`, 'success');
+            } else {
+                showToast(`Failed to enqueue task: ${data.error}`, 'error');
+            }
+        } catch (e) {
+            showToast(`Error: ${e.message}`, 'error');
+        } finally {
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }, 1000);
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        
+        const bgColor = type === 'success' ? 'bg-emerald-500' : (type === 'error' ? 'bg-red-500' : 'bg-sky-500');
+        const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle');
+        
+        toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-2xl flex items-center space-x-3 transform transition-all duration-300 translate-y-10 opacity-0`;
+        toast.innerHTML = `
+            <i class="fas ${icon}"></i>
+            <span class="font-bold text-sm">${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => { toast.classList.remove('translate-y-10', 'opacity-0'); }, 10);
+        setTimeout(() => {
+            toast.classList.add('translate-y-10', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    // ─── INIT ──────────────────────────────────────────────────
     async function init() {
         await Promise.all([
             loadOverview(),

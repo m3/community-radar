@@ -7,11 +7,17 @@
     <div class="mb-12">
         <h1 class="text-4xl font-bold text-white mb-2 neon-glow">Mission Control Hub</h1>
         <p class="text-slate-400">Select a community sector to monitor real-time intelligence.</p>
+        <div class="mt-3 flex items-center gap-4 text-xs text-slate-500">
+            <span><span class="kbd">H</span> Hub</span>
+            <span><span class="kbd">Q</span> Queue</span>
+            <span><span class="kbd">R</span> Refresh</span>
+            <span><span class="kbd">Ctrl+B</span> Toggle sidebar</span>
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="clientGrid">
         {% for c_id, c_data in clients.items() %}
-        <a href="/{{ c_id }}/dashboard" class="radar-card p-8 group hover:border-sky-500 transition-all cursor-pointer">
+        <a href="/{{ c_id }}/dashboard" class="radar-card p-8 group hover:border-sky-500 transition-all cursor-pointer" id="client-{{ c_id }}">
             <div class="flex items-start justify-between mb-6">
                 <div class="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center group-hover:bg-sky-500 transition-colors">
                     <i class="fas fa-users text-sky-500 group-hover:text-white text-xl"></i>
@@ -22,14 +28,39 @@
             <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-sky-400 transition-colors">{{ c_data.name }}</h2>
             <p class="text-slate-400 text-sm mb-6">{{ c_data.get('description', 'Monitoring Discord and Reddit community sentiment.') }}</p>
             
+            <!-- Live Stats -->
+            <div class="grid grid-cols-3 gap-3 mb-6" id="stats-{{ c_id }}">
+                <div class="text-center">
+                    <div class="skeleton skeleton-stat mx-auto mb-1" id="stat-msgs-{{ c_id }}"></div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wider">Messages</div>
+                </div>
+                <div class="text-center">
+                    <div class="skeleton skeleton-stat mx-auto mb-1" id="stat-users-{{ c_id }}"></div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wider">Users</div>
+                </div>
+                <div class="text-center">
+                    <div class="skeleton skeleton-stat mx-auto mb-1" id="stat-channels-{{ c_id }}"></div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wider">Channels</div>
+                </div>
+            </div>
+
+            <!-- Data Freshness -->
+            <div class="text-xs text-slate-500 mb-6" id="freshness-{{ c_id }}">
+                <div class="skeleton" style="height:0.75rem;width:60%"></div>
+            </div>
+
             <div class="pt-6 border-t border-slate-700 flex items-center justify-between">
                 <div class="flex -space-x-2">
+                    {% if c_data.get('discord') %}
                     <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center border-2 border-slate-800" title="Discord">
                         <i class="fab fa-discord text-white text-xs"></i>
                     </div>
+                    {% endif %}
+                    {% if c_data.get('reddit') %}
                     <div class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center border-2 border-slate-800" title="Reddit">
                         <i class="fab fa-reddit-alien text-white text-xs"></i>
                     </div>
+                    {% endif %}
                 </div>
                 <div class="flex items-center text-sky-500 font-semibold text-sm">
                     Enter Dashboard
@@ -48,4 +79,53 @@
         {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const clientIds = {{ clients.keys()|list|tojson }};
+
+    async function loadClientStats(clientId) {
+        try {
+            const res = await fetch(`/api/${clientId}/overview`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+
+            const totalMsgs = (data.platforms.discord || 0) + (data.platforms.reddit || 0);
+
+            // Replace skeletons with actual values
+            const msgsEl = document.getElementById(`stat-msgs-${clientId}`);
+            const usersEl = document.getElementById(`stat-users-${clientId}`);
+            const channelsEl = document.getElementById(`stat-channels-${clientId}`);
+            const freshnessEl = document.getElementById(`freshness-${clientId}`);
+
+            if (msgsEl) {
+                msgsEl.className = 'text-lg font-bold text-white';
+                msgsEl.textContent = fmt(totalMsgs);
+            }
+            if (usersEl) {
+                usersEl.className = 'text-lg font-bold text-white';
+                usersEl.textContent = fmt(data.users || 0);
+            }
+            if (channelsEl) {
+                channelsEl.className = 'text-lg font-bold text-white';
+                channelsEl.textContent = fmt(data.channels || 0);
+            }
+
+            if (freshnessEl) {
+                const dateInfo = data.date_range;
+                freshnessEl.innerHTML = `<i class="fas fa-clock mr-1"></i> Data: ${dateInfo.from} — ${dateInfo.to}`;
+            }
+        } catch (e) {
+            // Silently fail — show skeleton fallback
+            const freshnessEl = document.getElementById(`freshness-${clientId}`);
+            if (freshnessEl) {
+                freshnessEl.innerHTML = '<span class="text-red-400/60"><i class="fas fa-exclamation-circle mr-1"></i>Could not load stats</span>';
+            }
+        }
+    }
+
+    // Load stats for all clients
+    clientIds.forEach(loadClientStats);
+</script>
 {% endblock %}

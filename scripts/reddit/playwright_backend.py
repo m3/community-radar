@@ -6,8 +6,9 @@ Implements BrowserPage protocol using playwright.sync_api.
 from __future__ import annotations
 
 import os
+import sys
 import time
-from typing import Any
+from typing import Any, Literal, cast
 
 from playwright.sync_api import sync_playwright
 
@@ -36,6 +37,10 @@ class PlaywrightPage:
         except Exception:
             self._pw.stop()
             raise
+
+    def _get_modifier(self) -> str:
+        """Return the appropriate modifier key for the current platform."""
+        return "Meta" if sys.platform == "darwin" else "Control"
 
     # ─── Navigation ─────────────────────────────────────────────
 
@@ -91,8 +96,9 @@ class PlaywrightPage:
 
     def input_content_editable(self, selector: str, text: str) -> None:
         """Type text into a contenteditable element."""
+        mod = self._get_modifier()
         self._page.click(selector)
-        self._page.keyboard.press("Control+KeyA")
+        self._page.keyboard.press(f"{mod}+KeyA")
         self._page.keyboard.press("Backspace")
         self._page.keyboard.type(text)
 
@@ -114,8 +120,9 @@ class PlaywrightPage:
         self._page.hover(selector)
 
     def select_all_text(self, selector: str) -> None:
+        mod = self._get_modifier()
         self._page.click(selector)
-        self._page.keyboard.press("Control+KeyA")
+        self._page.keyboard.press(f"{mod}+KeyA")
 
     # ─── Scrolling ──────────────────────────────────────────────
 
@@ -157,7 +164,7 @@ class PlaywrightPage:
 
     def mouse_click(self, x: float, y: float, button: str = "left") -> None:
         # Playwright uses Literal["left", "right", "middle"]
-        self._page.mouse.click(x, y, button=button)  # type: ignore
+        self._page.mouse.click(x, y, button=cast(Literal["left", "right", "middle"], button))
 
     def dispatch_wheel_event(self, delta_y: float) -> None:
         # Playwright doesn't have a direct dispatch_wheel_event on mouse,

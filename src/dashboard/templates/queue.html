@@ -4,11 +4,25 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-3xl font-bold text-white neon-glow">Execution Queue</h1>
-        <div class="flex items-center space-x-2 text-sm text-slate-400">
-            <span id="last-updated">Updating...</span>
-            <div id="loading-spinner" class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin hidden"></div>
+    <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white neon-glow">Execution Queue</h1>
+            <p class="text-slate-400 text-sm mt-1">Monitor and manage background task execution</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <!-- Status summary pills -->
+            <div class="flex items-center space-x-2" id="statusSummary">
+                <span class="skeleton" style="width:120px;height:1.5rem;display:inline-block"></span>
+            </div>
+            <div class="flex items-center space-x-2 text-sm text-slate-400">
+                <span id="last-updated">Updating...</span>
+                <div id="loading-spinner" class="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin hidden"></div>
+            </div>
+            <!-- Auto-refresh toggle -->
+            <button onclick="toggleAutoRefresh()" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors flex items-center" id="autoRefreshBtn">
+                <i class="fas fa-sync-alt mr-2"></i>
+                <span id="autoRefreshText">Auto: ON</span>
+            </button>
         </div>
     </div>
 
@@ -21,14 +35,35 @@
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Client</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Command</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Created At</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Duration</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Created</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="queue-table-body">
-                    <!-- Tasks will be injected here -->
+                    <!-- Skeleton rows -->
                 </tbody>
             </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="queue-empty" class="hidden">
+        </div>
+    </div>
+
+    <!-- Error Details Drawer -->
+    <div id="errorDrawer" class="radar-card overflow-hidden hidden">
+        <div class="p-4 border-b border-slate-700 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-red-400 flex items-center">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                Error Log — Task #<span id="errorTaskId"></span>
+            </h3>
+            <button onclick="closeErrorDrawer()" class="text-slate-400 hover:text-white transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <pre class="text-xs text-red-300 bg-slate-900 p-4 rounded-lg overflow-x-auto max-h-64 overflow-y-auto font-mono" id="errorContent"></pre>
         </div>
     </div>
 </div>
@@ -36,44 +71,95 @@
 
 {% block extra_scripts %}
 <script>
+    let autoRefresh = true;
+    let refreshInterval = null;
+
+    // Show initial skeleton
+    document.getElementById('queue-table-body').innerHTML = skeletonRows(5, 7);
+
     async function fetchQueueStatus() {
         const spinner = document.getElementById('loading-spinner');
         spinner.classList.remove('hidden');
         
         try {
             const response = await fetch('/api/queue/status');
+            if (!response.ok) throw new Error('API error');
             const tasks = await response.json();
             renderTasks(tasks);
-            document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+            renderStatusSummary(tasks);
+            document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
         } catch (error) {
-            console.error('Error fetching queue status:', error);
+            document.getElementById('queue-table-body').innerHTML = `
+                <tr><td colspan="7">${errorState('Failed to load queue status', 'fetchQueueStatus()')}</td></tr>
+            `;
         } finally {
             spinner.classList.add('hidden');
         }
     }
 
+    function renderStatusSummary(tasks) {
+        const counts = { pending: 0, running: 0, completed: 0, failed: 0 };
+        tasks.forEach(t => { counts[t.status] = (counts[t.status] || 0) + 1; });
+
+        const el = document.getElementById('statusSummary');
+        let html = '';
+        if (counts.running > 0) html += `<span class="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full animate-pulse">${counts.running} Running</span>`;
+        if (counts.pending > 0) html += `<span class="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full">${counts.pending} Pending</span>`;
+        if (counts.failed > 0) html += `<span class="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-full">${counts.failed} Failed</span>`;
+        if (counts.completed > 0) html += `<span class="text-xs font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded-full">${counts.completed} Done</span>`;
+        if (tasks.length === 0) html = '<span class="text-xs text-slate-500">No tasks</span>';
+        el.innerHTML = html;
+    }
+
     function renderTasks(tasks) {
         const tbody = document.getElementById('queue-table-body');
-        tbody.innerHTML = tasks.map(task => `
+        const emptyEl = document.getElementById('queue-empty');
+
+        if (tasks.length === 0) {
+            tbody.innerHTML = '';
+            emptyEl.classList.remove('hidden');
+            emptyEl.innerHTML = emptyState('fa-inbox', 'No tasks in the queue yet. Trigger a sync or analysis from the dashboard.');
+            return;
+        }
+
+        emptyEl.classList.add('hidden');
+        tbody.innerHTML = tasks.map(task => {
+            const duration = computeDuration(task);
+            const hasError = task.status === 'failed' && task.error_log;
+            return `
             <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors">
-                <td class="px-6 py-4 text-sm text-slate-300">#${task.id}</td>
+                <td class="px-6 py-4 text-sm text-slate-300 font-mono">#${task.id}</td>
                 <td class="px-6 py-4 text-sm text-sky-400 font-medium">${task.client_name || 'System'}</td>
                 <td class="px-6 py-4 text-sm font-mono text-slate-300">
                     <span class="bg-slate-900 px-2 py-1 rounded border border-slate-700">${task.command}</span>
                 </td>
                 <td class="px-6 py-4">
                     <span class="px-2 py-1 text-xs font-bold rounded-full ${getStatusClass(task.status)}">
-                        ${task.status.toUpperCase()}
+                        ${getStatusIcon(task.status)} ${task.status.toUpperCase()}
                     </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-slate-400">${task.created_at}</td>
-                <td class="px-6 py-4 text-right">
+                <td class="px-6 py-4 text-sm text-slate-400 font-mono">${duration}</td>
+                <td class="px-6 py-4 text-sm text-slate-400" title="${task.created_at}">${timeAgo(task.created_at)}</td>
+                <td class="px-6 py-4 text-right space-x-2">
+                    ${hasError ? `<button onclick="showError(${task.id}, ${JSON.stringify(task.error_log).replace(/"/g, '&quot;')})" class="text-red-400 hover:text-red-300 transition-colors" title="View Error">
+                        <i class="fas fa-bug"></i>
+                    </button>` : ''}
                     <button onclick="retryTask(${task.id})" class="text-slate-400 hover:text-sky-400 transition-colors" title="Retry Task">
                         <i class="fas fa-redo-alt"></i>
                     </button>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
+    }
+
+    function computeDuration(task) {
+        if (!task.started_at) return '—';
+        const start = new Date(task.started_at);
+        const end = task.finished_at ? new Date(task.finished_at) : new Date();
+        const diffS = Math.round((end - start) / 1000);
+        if (diffS < 60) return `${diffS}s`;
+        if (diffS < 3600) return `${Math.floor(diffS / 60)}m ${diffS % 60}s`;
+        return `${Math.floor(diffS / 3600)}h ${Math.floor((diffS % 3600) / 60)}m`;
     }
 
     function getStatusClass(status) {
@@ -86,8 +172,29 @@
         }
     }
 
+    function getStatusIcon(status) {
+        switch (status) {
+            case 'pending': return '<i class="fas fa-clock"></i>';
+            case 'running': return '<i class="fas fa-spinner fa-spin"></i>';
+            case 'completed': return '<i class="fas fa-check"></i>';
+            case 'failed': return '<i class="fas fa-times"></i>';
+            default: return '';
+        }
+    }
+
+    function showError(taskId, errorLog) {
+        document.getElementById('errorDrawer').classList.remove('hidden');
+        document.getElementById('errorTaskId').textContent = taskId;
+        document.getElementById('errorContent').textContent = errorLog || 'No error details available.';
+        document.getElementById('errorDrawer').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closeErrorDrawer() {
+        document.getElementById('errorDrawer').classList.add('hidden');
+    }
+
     async function retryTask(taskId) {
-        if (!confirm('Are you sure you want to retry task #' + taskId + '?')) return;
+        if (!confirm('Retry task #' + taskId + '?')) return;
         
         try {
             const response = await fetch('/api/queue/retry/' + taskId, { method: 'POST' });
@@ -99,9 +206,27 @@
         }
     }
 
-    // Initial fetch
+    function toggleAutoRefresh() {
+        autoRefresh = !autoRefresh;
+        const btn = document.getElementById('autoRefreshBtn');
+        const text = document.getElementById('autoRefreshText');
+
+        if (autoRefresh) {
+            text.textContent = 'Auto: ON';
+            btn.classList.remove('text-slate-500');
+            btn.classList.add('text-sky-400');
+            refreshInterval = setInterval(fetchQueueStatus, 5000);
+        } else {
+            text.textContent = 'Auto: OFF';
+            btn.classList.add('text-slate-500');
+            btn.classList.remove('text-sky-400');
+            clearInterval(refreshInterval);
+        }
+    }
+
+    // Initial setup
     fetchQueueStatus();
-    // Poll every 5 seconds
-    setInterval(fetchQueueStatus, 5000);
+    refreshInterval = setInterval(fetchQueueStatus, 5000);
+    document.getElementById('autoRefreshBtn').classList.add('text-sky-400');
 </script>
 {% endblock %}

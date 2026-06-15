@@ -72,6 +72,15 @@ def clients_hub():
     return render_template("clients.html")
 
 
+@app.route("/clients/<client_name>/edit")
+def client_edit(client_name):
+    """Form-based configuration editor for a specific client."""
+    validate_client(client_name)
+    config = load_config()
+    client_config = config["clients"][client_name]
+    return render_template("client_edit.html", client_name=client_name, config=client_config)
+
+
 @app.route("/<client_name>/dashboard")
 def index(client_name):
     """Main dashboard page."""

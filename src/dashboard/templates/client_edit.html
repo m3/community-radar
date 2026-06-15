@@ -1,0 +1,400 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit {{ client_name }} - CommunityRadar{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2">Configure <span class="text-sky-400">{{ config.name }}</span></h1>
+            <p class="text-slate-400">Manage monitoring parameters and intelligence targets.</p>
+        </div>
+        <div class="flex gap-4">
+            <a href="/clients" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors border border-slate-700">
+                Cancel
+            </a>
+            <button onclick="saveConfig()" class="px-6 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg transition-all shadow-lg shadow-sky-900/20">
+                <i class="fas fa-save mr-2"></i>Save Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabbed Interface -->
+    <div class="mb-8 border-b border-slate-700">
+        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="configTabs">
+            <li class="mr-2">
+                <button onclick="switchTab('general')" id="tab-general" class="inline-block p-4 border-b-2 rounded-t-lg border-sky-500 text-sky-500 active-tab">General</button>
+            </li>
+            <li class="mr-2">
+                <button onclick="switchTab('reddit')" id="tab-reddit" class="inline-block p-4 border-b-2 border-transparent hover:text-slate-300 hover:border-slate-300 transition-colors">Reddit</button>
+            </li>
+            <li class="mr-2">
+                <button onclick="switchTab('discord')" id="tab-discord" class="inline-block p-4 border-b-2 border-transparent hover:text-slate-300 hover:border-slate-300 transition-colors">Discord</button>
+            </li>
+            <li class="mr-2">
+                <button onclick="switchTab('domains')" id="tab-domains" class="inline-block p-4 border-b-2 border-transparent hover:text-slate-300 hover:border-slate-300 transition-colors">Domains</button>
+            </li>
+        </ul>
+    </div>
+
+    <form id="configForm" onsubmit="return false;">
+        <!-- General Tab -->
+        <div id="panel-general" class="tab-panel">
+            <div class="radar-card p-8">
+                <h3 class="text-xl font-bold text-white mb-6">Client Identity</h3>
+                <div class="max-w-lg">
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Display Name</label>
+                    <input type="text" id="clientDisplayName" value="{{ config.name }}" 
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <p class="text-xs text-slate-500 mt-2">The public name used in reports and headers.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reddit Tab -->
+        <div id="panel-reddit" class="tab-panel hidden">
+            <div class="space-y-6">
+                <!-- Subreddits Section -->
+                <div class="radar-card p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-white">Target Subreddits</h3>
+                        <button onclick="addRedditTarget()" class="text-xs bg-sky-600/20 text-sky-400 hover:bg-sky-600 hover:text-white px-3 py-1.5 rounded-lg transition-all border border-sky-500/30">
+                            <i class="fas fa-plus mr-1"></i>Add Subreddit
+                        </button>
+                    </div>
+                    <div id="redditTargets" class="space-y-4">
+                        {% for sub_name, sub_conf in config.reddit.subreddits.items() %}
+                        <div class="reddit-target p-5 bg-slate-900/50 border border-slate-700 rounded-xl relative group">
+                            <button onclick="this.closest('.reddit-target').remove()" class="absolute top-4 right-4 text-slate-600 hover:text-red-400 transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Subreddit Name</label>
+                                    <input type="text" value="{{ sub_name }}" placeholder="e.g. snooker" 
+                                           class="sub-name w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Scrape Sorts</label>
+                                    <div class="flex flex-wrap gap-4 mt-1">
+                                        {% set sorts = sub_conf.sorts or [] %}
+                                        <label class="flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" value="new" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500" {% if 'new' in sorts %}checked{% endif %}>
+                                            <span class="text-sm text-slate-300">New</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" value="hot" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500" {% if 'hot' in sorts %}checked{% endif %}>
+                                            <span class="text-sm text-slate-300">Hot</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" value="top?t=month" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500" {% if 'top?t=month' in sorts %}checked{% endif %}>
+                                            <span class="text-sm text-slate-300">Top (Month)</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" value="top?t=year" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500" {% if 'top?t=year' in sorts %}checked{% endif %}>
+                                            <span class="text-sm text-slate-300">Top (Year)</span>
+                                        </label>
+                                        <label class="flex items-center space-x-2 cursor-pointer">
+                                            <input type="checkbox" value="top?t=all" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500" {% if 'top?t=all' in sorts %}checked{% endif %}>
+                                            <span class="text-sm text-slate-300">Top (All)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-span-full">
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Track Keywords (Comma separated)</label>
+                                    <input type="text" value="{{ sub_conf.track_keywords | join(', ') if sub_conf.track_keywords else '' }}" 
+                                           placeholder="e.g. physics, simulation, 8 ball" 
+                                           class="track-keywords w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discord Tab -->
+        <div id="panel-discord" class="tab-panel hidden">
+            <div class="space-y-6">
+                <div class="radar-card p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-white">Discord Servers</h3>
+                        <button onclick="addDiscordServer()" class="text-xs bg-sky-600/20 text-sky-400 hover:bg-sky-600 hover:text-white px-3 py-1.5 rounded-lg transition-all border border-sky-500/30">
+                            <i class="fas fa-plus mr-1"></i>Add Server
+                        </button>
+                    </div>
+                    <div id="discordServers" class="space-y-6">
+                        {% for server_id, server_conf in config.discord.servers.items() %}
+                        <div class="discord-server p-6 bg-slate-900/50 border border-slate-700 rounded-xl relative">
+                            <button onclick="this.closest('.discord-server').remove()" class="absolute top-4 right-4 text-slate-600 hover:text-red-400 transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Server ID</label>
+                                    <input type="text" value="{{ server_id }}" placeholder="e.g. 203428322082816001" 
+                                           class="server-id w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Friendly Name</label>
+                                    <input type="text" value="{{ server_conf.name }}" placeholder="e.g. Official Discord" 
+                                           class="server-name w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                                </div>
+                            </div>
+                            
+                            <div class="channels-container pl-6 border-l-2 border-slate-700 space-y-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Channels</h4>
+                                    <button onclick="addDiscordChannel(this)" class="text-[10px] bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white px-2 py-1 rounded transition-all">
+                                        <i class="fas fa-plus mr-1"></i>Add Channel
+                                    </button>
+                                </div>
+                                <div class="channels-list space-y-2">
+                                    {% for ch_id, ch_name in server_conf.channels.items() %}
+                                    <div class="channel-row flex gap-2">
+                                        <input type="text" value="{{ ch_id }}" placeholder="Channel ID" class="channel-id w-1/2 bg-slate-900 border border-slate-700 rounded py-1 px-2 text-xs text-white">
+                                        <input type="text" value="{{ ch_name }}" placeholder="Display Name" class="channel-name w-1/2 bg-slate-900 border border-slate-700 rounded py-1 px-2 text-xs text-white">
+                                        <button onclick="this.closest('.channel-row').remove()" class="text-slate-600 hover:text-red-400"><i class="fas fa-times"></i></button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Domains Tab -->
+        <div id="panel-domains" class="tab-panel hidden">
+            <div class="radar-card p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <h3 class="text-xl font-bold text-white">External Domain Monitoring</h3>
+                    <label class="flex items-center cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" id="domainEnabled" class="sr-only" {% if config.reddit.domain_monitoring.enabled %}checked{% endif %}>
+                            <div class="block bg-slate-700 w-14 h-8 rounded-full"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                        </div>
+                        <div class="ml-3 text-slate-300 font-medium">Monitoring Enabled</div>
+                    </label>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Domains to Track (one per line)</label>
+                        <textarea id="targetDomains" rows="4" 
+                                  class="w-full bg-slate-900 border border-slate-700 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-sky-500">{{ config.reddit.domain_monitoring.domains | join('\n') if config.reddit.domain_monitoring.domains else '' }}</textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-2">Max Pages to Crawl</label>
+                            <input type="number" id="domainMaxPages" value="{{ config.reddit.domain_monitoring.max_pages or 3 }}" 
+                                   class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-4 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400 mb-2">Crawl Sort</label>
+                            <select id="domainSort" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-4 text-white">
+                                <option value="new" {% if config.reddit.domain_monitoring.sort == 'new' %}selected{% endif %}>New</option>
+                                <option value="hot" {% if config.reddit.domain_monitoring.sort == 'hot' %}selected{% endif %}>Hot</option>
+                                <option value="relevance" {% if config.reddit.domain_monitoring.sort == 'relevance' %}selected{% endif %}>Relevance</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .active-tab {
+        border-bottom-color: var(--accent-neon) !important;
+        color: var(--accent-neon) !important;
+    }
+    input[type="checkbox"]:checked + div + .dot {
+        transform: translateX(100%);
+        background-color: var(--accent-neon);
+    }
+    textarea {
+        resize: vertical;
+    }
+</style>
+
+<script>
+    function switchTab(tabId) {
+        // Toggle Panels
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById('panel-' + tabId).classList.remove('hidden');
+
+        // Toggle Tab Buttons
+        document.querySelectorAll('#configTabs button').forEach(b => {
+            b.classList.remove('border-sky-500', 'text-sky-500', 'active-tab');
+            b.classList.add('border-transparent');
+        });
+        const btn = document.getElementById('tab-' + tabId);
+        btn.classList.add('border-sky-500', 'text-sky-500', 'active-tab');
+        btn.classList.remove('border-transparent');
+    }
+
+    function addRedditTarget() {
+        const container = document.getElementById('redditTargets');
+        const div = document.createElement('div');
+        div.className = 'reddit-target p-5 bg-slate-900/50 border border-slate-700 rounded-xl relative group';
+        div.innerHTML = `
+            <button onclick="this.closest('.reddit-target').remove()" class="absolute top-4 right-4 text-slate-600 hover:text-red-400 transition-colors">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Subreddit Name</label>
+                    <input type="text" placeholder="e.g. snooker" 
+                           class="sub-name w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Scrape Sorts</label>
+                    <div class="flex flex-wrap gap-4 mt-1">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" value="new" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500" checked>
+                            <span class="text-sm text-slate-300">New</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" value="hot" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500">
+                            <span class="text-sm text-slate-300">Hot</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" value="top?t=month" class="sort-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500">
+                            <span class="text-sm text-slate-300">Top (Month)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-span-full">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Track Keywords (Comma separated)</label>
+                    <input type="text" placeholder="e.g. physics, simulation, 8 ball" 
+                           class="track-keywords w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    function addDiscordServer() {
+        const container = document.getElementById('discordServers');
+        const div = document.createElement('div');
+        div.className = 'discord-server p-6 bg-slate-900/50 border border-slate-700 rounded-xl relative';
+        div.innerHTML = `
+            <button onclick="this.closest('.discord-server').remove()" class="absolute top-4 right-4 text-slate-600 hover:text-red-400 transition-colors">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Server ID</label>
+                    <input type="text" placeholder="e.g. 203428322082816001" 
+                           class="server-id w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Friendly Name</label>
+                    <input type="text" placeholder="e.g. Official Discord" 
+                           class="server-name w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-white focus:ring-1 focus:ring-sky-500">
+                </div>
+            </div>
+            <div class="channels-container pl-6 border-l-2 border-slate-700 space-y-3">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Channels</h4>
+                    <button onclick="addDiscordChannel(this)" class="text-[10px] bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white px-2 py-1 rounded transition-all">
+                        <i class="fas fa-plus mr-1"></i>Add Channel
+                    </button>
+                </div>
+                <div class="channels-list space-y-2">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    function addDiscordChannel(btn) {
+        const list = btn.closest('.channels-container').querySelector('.channels-list');
+        const div = document.createElement('div');
+        div.className = 'channel-row flex gap-2';
+        div.innerHTML = `
+            <input type="text" placeholder="Channel ID" class="channel-id w-1/2 bg-slate-900 border border-slate-700 rounded py-1 px-2 text-xs text-white">
+            <input type="text" placeholder="Display Name" class="channel-name w-1/2 bg-slate-900 border border-slate-700 rounded py-1 px-2 text-xs text-white">
+            <button onclick="this.closest('.channel-row').remove()" class="text-slate-600 hover:text-red-400"><i class="fas fa-times"></i></button>
+        `;
+        list.appendChild(div);
+    }
+
+    async function saveConfig() {
+        const client_id = "{{ client_name }}";
+        
+        // Build payload
+        const payload = {
+            name: document.getElementById('clientDisplayName').value,
+            reddit: {
+                subreddits: {},
+                domain_monitoring: {
+                    enabled: document.getElementById('domainEnabled').checked,
+                    domains: document.getElementById('targetDomains').value.split('\n').map(d => d.trim()).filter(d => d),
+                    max_pages: parseInt(document.getElementById('domainMaxPages').value) || 1,
+                    sort: document.getElementById('domainSort').value
+                }
+            },
+            discord: {
+                servers: {}
+            }
+        };
+
+        // Parse Reddit Subreddits
+        document.querySelectorAll('.reddit-target').forEach(el => {
+            const name = el.querySelector('.sub-name').value.trim();
+            if (!name) return;
+            
+            const sorts = Array.from(el.querySelectorAll('.sort-check:checked')).map(c => c.value);
+            const keywords = el.querySelector('.track-keywords').value.split(',').map(k => k.trim()).filter(k => k);
+            
+            payload.reddit.subreddits[name] = {
+                sorts: sorts,
+                track_keywords: keywords.length > 0 ? keywords : undefined
+            };
+        });
+
+        // Parse Discord Servers
+        document.querySelectorAll('.discord-server').forEach(el => {
+            const sid = el.querySelector('.server-id').value.trim();
+            const sname = el.querySelector('.server-name').value.trim();
+            if (!sid) return;
+
+            const channels = {};
+            el.querySelectorAll('.channel-row').forEach(ch => {
+                const chid = ch.querySelector('.channel-id').value.trim();
+                const chname = ch.querySelector('.channel-name').value.trim();
+                if (chid) channels[chid] = chname;
+            });
+
+            payload.discord.servers[sid] = {
+                name: sname,
+                channels: channels
+            };
+        });
+
+        try {
+            const res = await fetch(`/api/clients/${client_id}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Configuration updated successfully!');
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error occurred'));
+            }
+        } catch (e) {
+            alert('Network error: ' + e.message);
+        }
+    }
+</script>
+{% endblock %}

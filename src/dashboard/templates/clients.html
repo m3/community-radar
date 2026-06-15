@@ -114,9 +114,13 @@
                 <h2 class="text-2xl font-bold text-white mb-2 group-hover:text-sky-400 transition-colors">${client.name}</h2>
                 <p class="text-slate-400 text-sm mb-8">Client configuration active. Monitoring community engagement and sentiment.</p>
                 
-                <div class="pt-6 border-t border-slate-700">
-                    <a href="/${id}/dashboard" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition-all">
+                <div class="pt-6 border-t border-slate-700 flex gap-3">
+                    <a href="/${id}/dashboard" class="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition-all text-sm">
                         <i class="fas fa-chart-pie"></i>
+                        Dashboard
+                    </a>
+                    <a href="/clients/${id}/edit" class="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg transition-all text-sm">
+                        <i class="fas fa-edit"></i>
                         Manage
                     </a>
                 </div>

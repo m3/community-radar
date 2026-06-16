@@ -62,20 +62,21 @@ def run_identity_sync(db):
     """
     Load all users from the users table.
     Call match_identities(users).
-    UPSERT the results into the cross_references table. Use INSERT OR REPLACE or similar.
+    Clear existing cross-references for this client and insert new matches.
     """
     cursor = db.execute("SELECT id, username, display_name FROM users")
     users = [dict(row) for row in cursor.fetchall()]
     
     matches = match_identities(users)
     
+    # Clear existing matches for this client to avoid duplicates
+    db.execute("DELETE FROM cross_references WHERE client_id = :client_id")
+    
     for m in matches:
-        # We use INSERT OR REPLACE. For this to work as an UPSERT, 
-        # a UNIQUE constraint on the natural key is required.
         db.execute("""
-            INSERT OR REPLACE INTO cross_references (
-                user_id, platform1, username1, platform2, username2, match_type, confidence
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO cross_references (
+                client_id, user_id, platform1, username1, platform2, username2, match_type, confidence, created_at
+            ) VALUES (:client_id, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         """, (
             m["user_id"], m["platform1"], m["username1"],
             m["platform2"], m["username2"], m["match_type"], m["confidence"]

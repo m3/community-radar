@@ -129,13 +129,23 @@ def api_overview(client_name):
 
     db.close()
 
+    # Convert row objects to dictionaries for JSON serialization
+    p_stats = {r["platform"]: r["count"] for r in platform_stats}
+    
+    # Report metadata
+    report = load_report(client_name)
+    report_meta = report.get("meta", {})
+    if report.get("sentiment", {}).get("overall"):
+        report_meta["sentiment_ratio"] = report["sentiment"]["overall"].get("sentiment_ratio", 0)
+        report_meta["generated_at"] = report["meta"].get("generated_at")
+
     return jsonify({
-        "platforms": {r["platform"]: r["count"] for r in platform_stats},
-        "date_range": {"from": date_range["min_ts"][:10] if date_range["min_ts"] else "N/A",
-                       "to": date_range["max_ts"][:10] if date_range["max_ts"] else "N/A"},
+        "platforms": p_stats,
+        "date_range": {"from": str(date_range["min_ts"])[:10] if date_range and date_range["min_ts"] else "N/A",
+                       "to": str(date_range["max_ts"])[:10] if date_range and date_range["max_ts"] else "N/A"},
         "channels": channels,
         "users": users,
-        "report_meta": report.get("meta", {}) if (report := load_report(client_name)) else {}
+        "report_meta": report_meta
     })
 
 
@@ -167,7 +177,7 @@ def api_sentiment_timeseries(client_name):
     series = defaultdict(lambda: defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0, "total": 0}))
 
     for r in rows:
-        day = r["day"]
+        day = str(r["day"]) if r["day"] else "unknown"
         platform = r["platform"]
         series[platform][day] = {
             "positive": r["positive_proxy"],  # Using reactions as proxy
@@ -184,10 +194,35 @@ def api_sentiment_timeseries(client_name):
 
 @app.route("/api/<client_name>/sentiment/by_channel")
 def api_sentiment_by_channel(client_name):
-    """Sentiment breakdown by channel."""
+    """Sentiment breakdown by channel with ownership metadata."""
     validate_client(client_name)
     report = load_report(client_name)
-    return jsonify(report.get("sentiment", {}).get("by_channel", {}))
+    channel_data = report.get("sentiment", {}).get("by_channel", {})
+    
+    # Enrich with ownership info
+    config = load_config()
+    client_config = config.get("clients", {}).get(client_name, {})
+    reddit_config = client_config.get("reddit", {}).get("subreddits", {})
+    
+    # Subreddits are 'owned' if they DON'T have track_keywords (meaning we track everything)
+    # They are 'external' if they DO have track_keywords (meaning we only blip-monitor them)
+    owned_subreddits = [s.lower() for s, conf in reddit_config.items() if not conf.get("track_keywords")]
+    
+    enriched = {}
+    for ch, data in channel_data.items():
+        is_owned = False
+        if ch.startswith("reddit-"):
+            # Format: reddit-SubName-sort
+            parts = ch.split("-")
+            if len(parts) > 1 and parts[1].lower() in owned_subreddits:
+                is_owned = True
+        elif not ch.startswith("reddit"):
+            # Discord is always owned
+            is_owned = True
+            
+        enriched[ch] = {**data, "is_owned": is_owned}
+        
+    return jsonify(enriched)
 
 
 @app.route("/api/<client_name>/topics")
@@ -333,8 +368,8 @@ def api_raw_messages(client_name):
                u.display_name, u.role
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
-        LEFT JOIN users u ON m.user_id = u.id
-        WHERE m.content IS NOT NULL AND m.content != ''
+        LEFT JOIN users u ON (m.user_id = u.id AND m.client_id = u.client_id)
+        WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
     """
     params = []
 
@@ -425,32 +460,36 @@ def api_market_awareness(client_name):
         channel_filters = " OR ".join(["c.name LIKE ?" for _ in external_channels])
         
         # Total External Volume
-        total_external = db.execute(f"""
-            SELECT COUNT(*) FROM messages m
+        total_external_row = db.execute(f"""
+            SELECT COUNT(*) as count FROM messages m
             JOIN channels c ON m.channel_id = c.id
-            WHERE {channel_filters}
-        """, external_channels).fetchone()[0]
+            WHERE m.client_id = :client_id AND ({channel_filters})
+        """, external_channels).fetchone()
+        total_external = total_external_row["count"] if total_external_row else 0
         
         # External Mentions (Brand Blips)
         if keywords:
             kw_filters = " OR ".join(["m.content LIKE ?" for _ in keywords])
             params = external_channels + [f"%{k}%" for k in keywords]
-            external_mentions = db.execute(f"""
-                SELECT COUNT(*) FROM messages m
+            external_mentions_row = db.execute(f"""
+                SELECT COUNT(*) as count FROM messages m
                 JOIN channels c ON m.channel_id = c.id
-                WHERE ({channel_filters}) AND ({kw_filters})
-            """, params).fetchone()[0]
+                WHERE m.client_id = :client_id AND ({channel_filters}) AND ({kw_filters})
+            """, params).fetchone()
+            external_mentions = external_mentions_row["count"] if external_mentions_row else 0
 
     # 2. Total Owned Volume (Everything else)
     if external_channels:
         not_channel_filters = " AND ".join(["c.name NOT LIKE ?" for _ in external_channels])
-        total_owned = db.execute(f"""
-            SELECT COUNT(*) FROM messages m
+        total_owned_row = db.execute(f"""
+            SELECT COUNT(*) as count FROM messages m
             JOIN channels c ON m.channel_id = c.id
-            WHERE {not_channel_filters}
-        """, external_channels).fetchone()[0]
+            WHERE m.client_id = :client_id AND ({not_channel_filters})
+        """, external_channels).fetchone()
+        total_owned = total_owned_row["count"] if total_owned_row else 0
     else:
-        total_owned = db.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+        total_owned_row = db.execute("SELECT COUNT(*) as count FROM messages WHERE client_id = :client_id").fetchone()
+        total_owned = total_owned_row["count"] if total_owned_row else 0
 
     db.close()
     
@@ -665,7 +704,7 @@ def api_cuebot_user_profile(client_name, user_id):
                END as sentiment_proxy
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
-        WHERE m.user_id = ? AND m.content IS NOT NULL AND m.content != ''
+        WHERE m.client_id = :client_id AND m.user_id = ? AND m.content IS NOT NULL AND m.content != ''
         ORDER BY m.timestamp DESC
         LIMIT 100
     """, (user_id,)).fetchall()
@@ -675,8 +714,8 @@ def api_cuebot_user_profile(client_name, user_id):
         SELECT c.name as channel_name, m.platform, COUNT(*) as msg_count
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
-        WHERE m.user_id = ?
-        GROUP BY c.id, m.platform
+        WHERE m.client_id = :client_id AND m.user_id = ?
+        GROUP BY c.name, m.platform
         ORDER BY msg_count DESC
     """, (user_id,)).fetchall()
 
@@ -689,8 +728,8 @@ def api_cuebot_user_profile(client_name, user_id):
     linked = db.execute("""
         SELECT cr.*, u2.display_name as other_name
         FROM cross_references cr
-        LEFT JOIN users u2 ON (cr.user_id != ? AND (cr.username1 = u2.username OR cr.username2 = u2.username))
-        WHERE cr.user_id = ? OR cr.username1 = ? OR cr.username2 = ?
+        LEFT JOIN users u2 ON (u2.client_id = :client_id AND cr.user_id != ? AND (cr.username1 = u2.username OR cr.username2 = u2.username))
+        WHERE cr.client_id = :client_id AND (cr.user_id = ? OR cr.username1 = ? OR cr.username2 = ?)
     """, (user_id, user_id, user["username"], user["username"], user["username"])).fetchall()
 
     db.close()
@@ -722,8 +761,9 @@ def api_cuebot_crossref(client_name):
             u1.display_name as discord_name, u1.username as discord_username,
             u2.display_name as reddit_name, u2.username as reddit_username
         FROM cross_references cr
-        LEFT JOIN users u1 ON cr.username1 = u1.username
-        LEFT JOIN users u2 ON cr.username2 = u2.username
+        LEFT JOIN users u1 ON (cr.client_id = u1.client_id AND cr.username1 = u1.username)
+        LEFT JOIN users u2 ON (cr.client_id = u2.client_id AND cr.username2 = u2.username)
+        WHERE cr.client_id = :client_id
     """).fetchall()
 
     db.close()

@@ -344,8 +344,8 @@ def run_analysis(db, output_dir):
                c.name as channel_name, u.display_name, u.role
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
-        LEFT JOIN users u ON m.user_id = u.id
-        WHERE m.content IS NOT NULL AND m.content != ''
+        LEFT JOIN users u ON (m.user_id = u.id AND m.client_id = u.client_id)
+        WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
     """).fetchall()
     print(f"  {len(messages)} messages loaded")
 
@@ -369,7 +369,18 @@ def run_analysis(db, output_dir):
         sentiment_dist[label] += 1
         sentiment_by_channel[msg["channel_name"]][label] += 1
 
-        month = msg["timestamp"][:7] if msg["timestamp"] else "unknown"
+        ts = msg["timestamp"]
+        if ts:
+            if isinstance(ts, str):
+                month = ts[:7]
+                day = ts[:10]
+            else:
+                month = ts.strftime("%Y-%m")
+                day = ts.strftime("%Y-%m-%d")
+        else:
+            month = "unknown"
+            day = "unknown"
+
         sentiment_by_month[month][label] += 1
 
         if label == "negative" and score <= -2:
@@ -378,7 +389,7 @@ def run_analysis(db, output_dir):
                 "author": msg["display_name"] or "unknown",
                 "content": msg["content"][:200],
                 "score": score,
-                "timestamp": msg["timestamp"][:10],
+                "timestamp": day,
             })
         elif label == "positive" and score >= 2:
             positive_messages.append({
@@ -386,7 +397,7 @@ def run_analysis(db, output_dir):
                 "author": msg["display_name"] or "unknown",
                 "content": msg["content"][:200],
                 "score": score,
-                "timestamp": msg["timestamp"][:10],
+                "timestamp": day,
             })
 
         pw = extract_power_words(msg["content"])
@@ -443,7 +454,7 @@ def run_analysis(db, output_dir):
         SELECT m.content, m.reactions, m.timestamp, c.name as channel_name
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
-        WHERE m.platform = 'reddit' AND m.content IS NOT NULL AND m.content != ''
+        WHERE m.client_id = :client_id AND m.platform = 'reddit' AND m.content IS NOT NULL AND m.content != ''
     """).fetchall()
 
     reddit_sentiment = Counter()
@@ -479,11 +490,17 @@ def run_analysis(db, output_dir):
     neu_pct = sentiment_dist["neutral"] / total * 100
 
     date_range = db.execute("""
-        SELECT MIN(timestamp), MAX(timestamp) FROM messages
-        WHERE content IS NOT NULL AND content != ''
+        SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM messages
+        WHERE client_id = :client_id AND content IS NOT NULL AND content != ''
     """).fetchone()
-    true_from = date_range[0][:10] if date_range and date_range[0] else "N/A"
-    true_to = date_range[1][:10] if date_range and date_range[1] else "N/A"
+
+    def fmt_ts(ts):
+        if not ts: return "N/A"
+        if isinstance(ts, str): return ts[:10]
+        return ts.strftime("%Y-%m-%d")
+
+    true_from = fmt_ts(date_range["min_ts"])
+    true_to = fmt_ts(date_range["max_ts"])
 
     report = {
         "meta": {

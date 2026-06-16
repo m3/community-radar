@@ -32,6 +32,10 @@ clients:
           - feature
           - connection
           - issue
+          - matching
+          - matches
+          - match
+          - opponent
         billiards:
           sorts:
           - new
@@ -41,12 +45,7 @@ clients:
           track_keywords:
           - pure pool
           - ripstone
-          - snooker
-          - 8 ball
-          - 9 ball
-          - 10 ball
-          - physics
-          - simulation
+          - pure pool pro
         snooker:
           sorts:
           - new
@@ -56,10 +55,7 @@ clients:
           track_keywords:
           - pure pool
           - ripstone
-          - billiards
-          - pool
-          - physics
-          - simulation
+          - pure pool pro
       domain_monitoring:
         enabled: true
         domains:

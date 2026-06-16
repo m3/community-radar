@@ -1,43 +1,29 @@
-import sqlite3
 import json
-from pathlib import Path
 from datetime import datetime
-from src.db.models import sanitize_client_name
-
-QUEUE_DB_PATH = Path(__file__).parent.parent.parent / "data" / "queue.db"
+from src.db.models import sanitize_client_name, get_db
+from src.db.orm import Task
+from src.db.session import SessionLocal
 
 def get_queue_db():
-    QUEUE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(str(QUEUE_DB_PATH))
-    db.row_factory = sqlite3.Row
-    db.execute("PRAGMA journal_mode=WAL")
-    db.execute("PRAGMA foreign_keys=ON")
-    db.execute('''
-        CREATE TABLE IF NOT EXISTS tasks (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            client_name TEXT,
-            command     TEXT NOT NULL,
-            args_json   TEXT,
-            status      TEXT DEFAULT 'pending',
-            error_log   TEXT,
-            created_at  TEXT DEFAULT (datetime('now')),
-            started_at  TEXT,
-            finished_at TEXT
-        )
-    ''')
-    db.commit()
-    return db
+    """
+    Returns a LegacySessionWrapper for the global context (client_id=0)
+    to maintain compatibility with queue management code.
+    """
+    return get_db(None)
 
 def enqueue_task(client_name, command, args_dict=None):
     clean_name = sanitize_client_name(client_name) if client_name else None
-
-    db = get_queue_db()
     args_json = json.dumps(args_dict) if args_dict else None
+    
+    session = SessionLocal()
     try:
-        with db:
-            db.execute(
-                "INSERT INTO tasks (client_name, command, args_json) VALUES (?, ?, ?)",
-                (clean_name, command, args_json)
-            )
+        task = Task(
+            client_name=clean_name,
+            command=command,
+            args_json=args_json,
+            status='pending'
+        )
+        session.add(task)
+        session.commit()
     finally:
-        db.close()
+        session.close()

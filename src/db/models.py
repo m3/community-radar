@@ -1,15 +1,12 @@
 """Database connection and models for CommunityRadar"""
 
-import sqlite3
 import os
 import re
 from datetime import datetime
-from pathlib import Path
-from .migrate import apply_migrations
-
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
-DB_PATH = DATA_DIR / "community_radar.db"
-
+from typing import Optional
+from sqlalchemy import select, update, insert, func
+from .orm import Client, Server, Channel, User, Export, Topic
+from .session import SessionLocal, DATABASE_URL
 
 def sanitize_client_name(name):
     """Sanitize client name to prevent path injection"""
@@ -20,83 +17,154 @@ def sanitize_client_name(name):
     return clean if clean else None
 
 
-def get_db(client_name=None):
-    """Get database connection, creating schema if needed"""
-    clean_name = sanitize_client_name(client_name)
-    if clean_name:
-        db_path = DATA_DIR / "clients" / f"{clean_name}.db"
-    else:
-        # Fallback for now, but should eventually be deprecated
-        db_path = DATA_DIR / "community_radar.db"
+class LegacySessionWrapper:
+    """
+    Wraps an SQLAlchemy Session to provide a sqlite3-like interface
+    for legacy code using .execute() and .commit().
+    """
+    def __init__(self, session, client_id):
+        self.session = session
+        self.client_id = client_id
 
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(str(db_path))
-    db.row_factory = sqlite3.Row
-    db.execute("PRAGMA journal_mode=WAL")
-    db.execute("PRAGMA foreign_keys=ON")
-    # Auto-migrate
-    apply_migrations(db)
-    return db
+    def execute(self, sql, params=None):
+        from sqlalchemy import text
+        
+        # Convert ? placeholders to :param placeholders for SQLAlchemy
+        if isinstance(sql, str) and "?" in sql:
+            count = 1
+            while "?" in sql:
+                sql = sql.replace("?", f":p{count}", 1)
+                count += 1
+            
+            if params:
+                if isinstance(params, (list, tuple)):
+                    params = {f"p{i+1}": v for i, v in enumerate(params)}
+                elif not isinstance(params, dict):
+                    params = {"p1": params}
+        
+        if not params:
+            params = {}
+            
+        # Inject client_id if not present
+        if ":client_id" in sql or "client_id" in sql.lower():
+            if "client_id" not in params:
+                params["client_id"] = self.client_id
+        else:
+            # Try to inject client_id into WHERE clause
+            # This is very simplified but works for many of our queries
+            if " WHERE " in sql.upper():
+                sql = sql.replace(" WHERE ", f" WHERE client_id = {self.client_id} AND ", 1)
+            elif " GROUP BY " in sql.upper():
+                sql = sql.replace(" GROUP BY ", f" WHERE client_id = {self.client_id} GROUP BY ", 1)
+            elif " ORDER BY " in sql.upper():
+                sql = sql.replace(" ORDER BY ", f" WHERE client_id = {self.client_id} ORDER BY ", 1)
+            elif "SELECT " in sql.upper() and " FROM " in sql.upper():
+                # No WHERE/GROUP/ORDER, just append at end
+                sql = sql.strip()
+                if sql.endswith(";"):
+                    sql = sql[:-1] + f" WHERE client_id = {self.client_id};"
+                else:
+                    sql += f" WHERE client_id = {self.client_id}"
+
+        # Fix SQLite-specific functions
+        sql = sql.replace("datetime('now')", "func.now()") # text() doesn't understand func.now()
+        sql = sql.replace("date(timestamp)", "timestamp::date") # PG syntax
+
+        result = self.session.execute(text(sql), params)
+        if sql.strip().upper().startswith("SELECT"):
+            return result.mappings()
+        return result
+
+    def commit(self):
+        self.session.commit()
+
+    def close(self):
+        self.session.close()
+
+
+def get_db(client_name=None):
+    """Get database session, resolving client_id"""
+    clean_name = sanitize_client_name(client_name)
+    session = SessionLocal()
+    
+    if clean_name:
+        client = session.query(Client).filter_by(name=clean_name).first()
+        if not client:
+            # For now, auto-create client if it doesn't exist (to support easy onboarding)
+            client = Client(name=clean_name)
+            session.add(client)
+            session.commit()
+            session.refresh(client)
+        client_id = client.id
+    else:
+        # Default/system client
+        client_id = 0 
+
+    return LegacySessionWrapper(session, client_id)
 
 
 def upsert_server(db, server_id, name, **kwargs):
     """Insert or update a server record"""
-    existing = db.execute("SELECT id FROM servers WHERE id = ?", (server_id,)).fetchone()
+    session = db.session
+    client_id = db.client_id
+    
+    existing = session.query(Server).filter_by(id=server_id, client_id=client_id).first()
     if existing:
-        if kwargs:
-            fields = ", ".join(f"{k}=?" for k in kwargs)
-            vals = list(kwargs.values()) + [server_id]
-            db.execute(f"UPDATE servers SET {fields}, updated_at=datetime('now') WHERE id=?", vals)
-        else:
-            db.execute("UPDATE servers SET updated_at=datetime('now') WHERE id=?", (server_id,))
+        for k, v in kwargs.items():
+            setattr(existing, k, v)
+        existing.updated_at = func.now()
     else:
-        fields = ["id", "name"] + list(kwargs.keys())
-        placeholders = ["?", "?"] + ["?"] * len(kwargs)
-        vals = [server_id, name] + list(kwargs.values())
-        db.execute(f"INSERT INTO servers ({', '.join(fields)}) VALUES ({', '.join(placeholders)})", vals)
-    db.commit()
+        server = Server(id=server_id, client_id=client_id, name=name, **kwargs)
+        session.add(server)
+    session.commit()
 
 
 def upsert_channel(db, channel_id, server_id, name, **kwargs):
     """Insert or update a channel record"""
-    existing = db.execute("SELECT id FROM channels WHERE id = ?", (channel_id,)).fetchone()
+    session = db.session
+    client_id = db.client_id
+    
+    existing = session.query(Channel).filter_by(id=channel_id, client_id=client_id).first()
     if existing:
-        if kwargs:
-            fields = ", ".join(f"{k}=?" for k in kwargs)
-            vals = list(kwargs.values()) + [channel_id]
-            db.execute(f"UPDATE channels SET {fields}, updated_at=datetime('now') WHERE id=?", vals)
-        else:
-            db.execute("UPDATE channels SET updated_at=datetime('now') WHERE id=?", (channel_id,))
+        for k, v in kwargs.items():
+            setattr(existing, k, v)
+        existing.updated_at = func.now()
     else:
-        fields = ["id", "server_id", "name"] + list(kwargs.keys())
-        placeholders = ["?", "?", "?"] + ["?"] * len(kwargs)
-        vals = [channel_id, server_id, name] + list(kwargs.values())
-        db.execute(f"INSERT INTO channels ({', '.join(fields)}) VALUES ({', '.join(placeholders)})", vals)
-    db.commit()
+        channel = Channel(id=channel_id, client_id=client_id, server_id=server_id, name=name, **kwargs)
+        session.add(channel)
+    session.commit()
 
 
 def upsert_user(db, user_id, **kwargs):
     """Insert or update a user record"""
-    existing = db.execute("SELECT id FROM users WHERE id = ?", (user_id,)).fetchone()
+    session = db.session
+    client_id = db.client_id
+    
+    existing = session.query(User).filter_by(id=user_id, client_id=client_id).first()
     if existing:
-        if kwargs:
-            fields = ", ".join(f"{k}=?" for k in kwargs)
-            vals = list(kwargs.values()) + [user_id]
-            db.execute(f"UPDATE users SET {fields}, updated_at=datetime('now') WHERE id=?", vals)
-        else:
-            db.execute("UPDATE users SET updated_at=datetime('now') WHERE id=?", (user_id,))
+        for k, v in kwargs.items():
+            setattr(existing, k, v)
+        existing.updated_at = func.now()
     else:
-        fields = ["id"] + list(kwargs.keys())
-        placeholders = ["?"] + ["?"] * len(kwargs)
-        vals = [user_id] + list(kwargs.values())
-        db.execute(f"INSERT INTO users ({', '.join(fields)}) VALUES ({', '.join(placeholders)})", vals)
-    db.commit()
+        user = User(id=user_id, client_id=client_id, **kwargs)
+        session.add(user)
+    session.commit()
 
 
 def log_export(db, server_id, channel_id, messages, new_users, duration_s, status="completed", notes=None):
     """Record an export run"""
-    db.execute("""
-        INSERT INTO exports (server_id, channel_id, export_ts, messages, new_users, duration_s, status, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (server_id, channel_id, datetime.now().isoformat(), messages, new_users, duration_s, status, notes))
-    db.commit()
+    session = db.session
+    client_id = db.client_id
+    
+    export = Export(
+        client_id=client_id,
+        server_id=server_id,
+        channel_id=channel_id,
+        messages=messages,
+        new_users=new_users,
+        duration_s=duration_s,
+        status=status,
+        notes=notes
+    )
+    session.add(export)
+    session.commit()

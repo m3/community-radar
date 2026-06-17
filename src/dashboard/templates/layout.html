@@ -222,6 +222,12 @@
                 <i class="fas fa-tasks w-6"></i>
                 <span class="nav-text transition-opacity duration-200">Execution Queue</span>
             </a>
+            {% if client_name %}
+            <a href="/{{ client_name }}/help" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path.endswith('/help') %}active{% endif %} {% if not request.path.endswith('/help') %}text-slate-400{% endif %}">
+                <i class="fas fa-question-circle w-6"></i>
+                <span class="nav-text transition-opacity duration-200">Guide</span>
+            </a>
+            {% endif %}
             <div class="pt-4 mt-4 border-t border-slate-700">
                 <a href="/clients" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg">
                     <i class="fas fa-th-large w-6"></i>

@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block title %}Mission Control Guide - CommunityRadar{% endblock %}
+
+{% block extra_head %}
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+        startOnLoad: true, 
+        theme: 'dark',
+        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif'
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto mb-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">Mission Control Guide</h1>
+        <p class="text-slate-400">Understanding the CommunityRadar platform mechanics and metrics.</p>
+    </div>
+
+    <div class="space-y-10">
+        <!-- Engine Room -->
+        <section class="radar-card p-6">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+                    <i class="fas fa-cogs text-indigo-400"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">The Engine Room</h2>
+            </div>
+            <p class="text-slate-300 mb-6">CommunityRadar operates on a continuous extraction and analysis loop to process community data.</p>
+            
+            <div class="bg-slate-800 rounded-lg p-6 flex justify-center overflow-x-auto border border-slate-700">
+                <pre class="mermaid">
+                    graph LR
+                        A[Data Sync] -->|Raw Posts & Comments| B[Sentiment Analysis]
+                        B -->|AI-Scored Mentions| C[Identity Resolution]
+                        C -->|Linked Profiles| D[Mission Control Dash]
+                        
+                        style A fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#e2e8f0
+                        style B fill:#0f172a,stroke:#818cf8,stroke-width:2px,color:#e2e8f0
+                        style C fill:#0f172a,stroke:#c084fc,stroke-width:2px,color:#e2e8f0
+                        style D fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#e2e8f0
+                </pre>
+            </div>
+        </section>
+
+        <!-- Council Perspectives -->
+        <section>
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                    <i class="fas fa-users-cog text-emerald-400"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Council Perspectives</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Developer -->
+                <div class="radar-card p-6 border-t-4 border-t-sky-500 hover:bg-slate-800/50 transition-colors">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <i class="fas fa-code text-sky-400 text-xl"></i>
+                        <h3 class="text-lg font-bold text-white">Developer</h3>
+                    </div>
+                    <p class="text-slate-300 text-sm leading-relaxed">Focuses on technical feedback, bug reports, and API usage. Uses Radar to spot emerging technical issues before they become support tickets.</p>
+                </div>
+                
+                <!-- Community Manager -->
+                <div class="radar-card p-6 border-t-4 border-t-purple-500 hover:bg-slate-800/50 transition-colors">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <i class="fas fa-comments text-purple-400 text-xl"></i>
+                        <h3 class="text-lg font-bold text-white">Community Manager</h3>
+                    </div>
+                    <p class="text-slate-300 text-sm leading-relaxed">Tracks overall sentiment, top voices, and engagement levels. Uses Radar to measure the impact of recent announcements or events.</p>
+                </div>
+                
+                <!-- Studio Lead -->
+                <div class="radar-card p-6 border-t-4 border-t-amber-500 hover:bg-slate-800/50 transition-colors">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <i class="fas fa-chess-knight text-amber-400 text-xl"></i>
+                        <h3 class="text-lg font-bold text-white">Studio Lead</h3>
+                    </div>
+                    <p class="text-slate-300 text-sm leading-relaxed">Monitors brand health, competitor movement, and high-level trends. Uses Radar to make strategic resource allocation decisions.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Metric Lab -->
+        <section>
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
+                    <i class="fas fa-flask text-pink-400"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">The Metric Lab</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Sentiment Ratio -->
+                <div class="radar-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-2 flex items-center">
+                        <i class="fas fa-heart text-rose-400 mr-2"></i> Sentiment Ratio
+                    </h3>
+                    <p class="text-slate-300 text-sm mb-4 min-h-[40px]">A balanced view of positive versus negative mentions. Neutral comments are excluded to highlight polarizing topics.</p>
+                    <div class="bg-slate-800 rounded p-4 font-mono text-xs text-rose-300 border border-slate-700">
+                        Ratio = (Positive) / (Positive + Negative) * 100
+                    </div>
+                </div>
+
+                <!-- Engagement Score -->
+                <div class="radar-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-2 flex items-center">
+                        <i class="fas fa-fire text-orange-400 mr-2"></i> Engagement Score
+                    </h3>
+                    <p class="text-slate-300 text-sm mb-4 min-h-[40px]">Measures the virality and interaction depth of content, weighing comments heavier than simple upvotes.</p>
+                    <div class="bg-slate-800 rounded p-4 font-mono text-xs text-orange-300 border border-slate-700 overflow-x-auto">
+                        Score = (Upvotes * 1) + (Comments * 5) + (Shares * 10)
+                    </div>
+                </div>
+
+                <!-- Brand Blips -->
+                <div class="radar-card p-6 md:col-span-2">
+                    <h3 class="text-lg font-bold text-white mb-2 flex items-center">
+                        <i class="fas fa-satellite-dish text-sky-400 mr-2"></i> Brand Blips
+                    </h3>
+                    <p class="text-slate-300 text-sm leading-relaxed">Sudden spikes in mentions or sentiment shifts. Blips trigger alerts when velocity exceeds 3 standard deviations from the 7-day rolling average, acting as an early warning system for PR crises or viral successes.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

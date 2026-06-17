@@ -158,14 +158,22 @@ def api_sentiment_timeseries(client_name):
     # Get messages with sentiment - we'll compute on the fly
     # For performance, we use pre-computed daily aggregates
     rows = db.execute("""
-        SELECT date(timestamp) as day, platform,
-               SUM(CASE WHEN reactions > 0 THEN 1 ELSE 0 END) as positive_proxy,
-               SUM(CASE WHEN reactions < 0 THEN 1 ELSE 0 END) as negative_proxy,
+        SELECT m.timestamp::date as day, m.platform,
+               SUM(CASE 
+                   WHEN m.reactions > 0 THEN 1 
+                   WHEN m.content ILIKE '%good%' OR m.content ILIKE '%love%' OR m.content ILIKE '%great%' THEN 1
+                   ELSE 0 
+               END) as positive_proxy,
+               SUM(CASE 
+                   WHEN m.platform = 'reddit' AND m.reactions < 0 THEN 1
+                   WHEN m.content ILIKE '%bug%' OR m.content ILIKE '%issue%' OR m.content ILIKE '%error%' OR m.content ILIKE '%bad%' THEN 1
+                   ELSE 0 
+               END) as negative_proxy,
                COUNT(*) as total
-        FROM messages
-        WHERE timestamp IS NOT NULL
-        GROUP BY day, platform
-        ORDER BY day
+        FROM messages m
+        WHERE m.client_id = :client_id AND m.timestamp IS NOT NULL
+        GROUP BY day, m.platform
+        ORDER BY day ASC
     """).fetchall()
 
     db.close()
@@ -204,9 +212,8 @@ def api_sentiment_by_channel(client_name):
     client_config = config.get("clients", {}).get(client_name, {})
     reddit_config = client_config.get("reddit", {}).get("subreddits", {})
     
-    # Subreddits are 'owned' if they DON'T have track_keywords (meaning we track everything)
-    # They are 'external' if they DO have track_keywords (meaning we only blip-monitor them)
-    owned_subreddits = [s.lower() for s, conf in reddit_config.items() if not conf.get("track_keywords")]
+    # Subreddits are 'owned' if they are explicitly marked as owned
+    owned_subreddits = [s.lower() for s, conf in reddit_config.items() if conf.get("owned")]
     
     enriched = {}
     for ch, data in channel_data.items():
@@ -279,6 +286,28 @@ def api_purpose(client_name):
     validate_client(client_name)
     report = load_report(client_name)
     return jsonify(report.get("purpose", {}))
+
+
+@app.route("/api/<client_name>/help_data")
+def api_help_data(client_name):
+    """Provide specific metadata for the help page."""
+    validate_client(client_name)
+    config = load_config()
+    client_config = config.get("clients", {}).get(client_name, {})
+    report = load_report(client_name)
+    
+    return jsonify({
+        "client_name": client_name,
+        "client_config": client_config,
+        "report_meta": report.get("meta", {}),
+        "db_status": "Connected (Postgres)"
+    })
+
+@app.route("/<client_name>/help")
+def help_guide(client_name):
+    """Serve the Mission Control Guide with client-specific context."""
+    validate_client(client_name)
+    return render_template("help.html", client_name=client_name)
 
 
 @app.route("/api/clients")
@@ -514,7 +543,11 @@ def _calculate_engagement_score(row, now):
     recency = 0
     if last_active:
         try:
-            last_dt = datetime.fromisoformat(last_active.replace("Z", "+00:00"))
+            if isinstance(last_active, str):
+                last_dt = datetime.fromisoformat(last_active.replace("Z", "+00:00"))
+            else:
+                last_dt = last_active
+                
             days_ago = (now - last_dt).days
             recency = max(0, 1 - days_ago / 90)  # Decay over 90 days
         except Exception:
@@ -523,7 +556,15 @@ def _calculate_engagement_score(row, now):
     msg_score = min(row["total_messages"] / 500, 1) * 30  # Cap at 500 messages
     reaction_score = min(row["reactions_received"] / 200, 1) * 25  # Cap at 200 reactions
     reply_score = min(row["reply_count"] / 100, 1) * 20  # Cap at 100 replies
-    sent_score = (row["sentiment_score"] + 1) / 2 * 15  # -1 to 1 → 0 to 15
+    
+    # Handle potentially string or null sentiment
+    raw_sent = row["sentiment_score"]
+    try:
+        sent_val = float(raw_sent) if raw_sent is not None else 0
+    except (ValueError, TypeError):
+        sent_val = 0
+        
+    sent_score = (sent_val + 1) / 2 * 15  # -1 to 1 → 0 to 15
     recency_score = recency * 10
 
     total_score = msg_score + reaction_score + reply_score + sent_score + recency_score
@@ -560,30 +601,38 @@ def api_cuebot_engagement_score(client_name):
             u.messages as total_messages,
             u.reactions_received,
             u.last_seen,
-            COALESCE(u.sentiment, 0) as sentiment_score,
-            (SELECT platform FROM messages WHERE user_id = u.id LIMIT 1) as platform,
+            COALESCE(NULLIF(u.sentiment, '')::numeric, 0) as sentiment_score,
+            (SELECT platform FROM messages WHERE user_id = u.id AND client_id = :client_id LIMIT 1) as platform,
             (SELECT COUNT(*) FROM messages WHERE reply_to IN 
-                (SELECT message_id FROM messages WHERE user_id = u.id)
+                (SELECT message_id FROM messages WHERE user_id = u.id AND client_id = :client_id)
+                AND client_id = :client_id
             ) as reply_count
         FROM users u
-        WHERE u.messages > 0
+        WHERE u.messages > 0 AND u.client_id = :client_id
     """).fetchall()
 
     scores = []
     now = datetime.now()
     for r in rows:
-        calc = _calculate_engagement_score(r, now)
+        # Robustly ensure sentiment_score is a float for _calculate_engagement_score
+        r_dict = dict(r)
+        try:
+            r_dict["sentiment_score"] = float(r_dict["sentiment_score"])
+        except (ValueError, TypeError):
+            r_dict["sentiment_score"] = 0.0
+            
+        calc = _calculate_engagement_score(r_dict, now)
         
         scores.append({
-            "user_id": r["user_id"],
-            "display_name": r["display_name"],
-            "username": r["username"],
-            "platform": r["platform"],
-            "total_messages": r["total_messages"],
-            "reactions_received": r["reactions_received"],
-            "reply_count": r["reply_count"],
-            "sentiment_score": round(r["sentiment_score"], 3),
-            "last_active": r["last_seen"],
+            "user_id": r_dict["user_id"],
+            "display_name": r_dict["display_name"],
+            "username": r_dict["username"],
+            "platform": r_dict["platform"],
+            "total_messages": r_dict["total_messages"],
+            "reactions_received": r_dict["reactions_received"],
+            "reply_count": r_dict["reply_count"],
+            "sentiment_score": round(r_dict["sentiment_score"], 3),
+            "last_active": r_dict["last_seen"],
             "engagement_score": calc["engagement_score"],
             "score_breakdown": calc["score_breakdown"]
         })
@@ -615,14 +664,16 @@ def api_cuebot_leaderboard(client_name):
             SELECT 
                 user_id,
                 COUNT(*) as msg_count,
-                platform
+                MAX(platform) as platform
             FROM messages
+            WHERE client_id = :client_id
             GROUP BY user_id
         ),
         reply_counts AS (
             SELECT m1.user_id, COUNT(*) as count
             FROM messages m1
             JOIN messages m2 ON m1.message_id = m2.reply_to
+            WHERE m1.client_id = :client_id AND m2.client_id = :client_id
             GROUP BY m1.user_id
         )
         SELECT 
@@ -632,11 +683,11 @@ def api_cuebot_leaderboard(client_name):
             us.msg_count as total_messages,
             u.reactions_received,
             u.last_seen,
-            COALESCE(u.sentiment, 0) as sentiment_score,
+            COALESCE(NULLIF(u.sentiment, '')::numeric, 0) as sentiment_score,
             us.platform,
             COALESCE(rc.count, 0) as reply_count
         FROM users u
-        JOIN user_stats us ON u.id = us.user_id
+        JOIN user_stats us ON (u.id = us.user_id AND u.client_id = :client_id)
         LEFT JOIN reply_counts rc ON u.id = rc.user_id
         WHERE us.msg_count > 0
     """
@@ -651,17 +702,25 @@ def api_cuebot_leaderboard(client_name):
     now = datetime.now()
     scores = []
     for r in rows:
-        calc = _calculate_engagement_score(r, now)
+        r_dict = dict(r)
+        try:
+            r_dict["sentiment_score"] = float(r_dict["sentiment_score"])
+        except (ValueError, TypeError):
+            r_dict["sentiment_score"] = 0.0
+            
+        calc = _calculate_engagement_score(r_dict, now)
 
         scores.append({
-            "user_id": r["user_id"],
-            "display_name": r["display_name"],
-            "username": r["username"],
-            "platform": r["platform"],
+            "user_id": r_dict["user_id"],
+            "display_name": r_dict["display_name"],
+            "username": r_dict["username"],
+            "platform": r_dict["platform"],
             "engagement_score": calc["engagement_score"],
-            "total_messages": r["total_messages"],
-            "reactions_received": r["reactions_received"],
-            "reply_count": r["reply_count"]
+            "total_messages": r_dict["total_messages"],
+            "reactions_received": r_dict["reactions_received"],
+            "reply_count": r_dict["reply_count"],
+            "sentiment_score": round(r_dict["sentiment_score"], 3),
+            "last_active": r_dict["last_seen"]
         })
 
     scores.sort(key=lambda x: x["engagement_score"], reverse=True)
@@ -669,6 +728,7 @@ def api_cuebot_leaderboard(client_name):
 
     return jsonify({
         "leaderboard": scores[:limit],
+        "total_users": len(scores),
         "limit": limit,
         "platform_filter": platform
     })

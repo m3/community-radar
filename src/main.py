@@ -224,13 +224,22 @@ def show_config(args):
 def analyze(args):
     """Run sentiment + community analysis"""
     import subprocess
+    
+    print(f"Running sentiment analysis for client: {args.client}")
     cmd = [sys.executable, str(ROOT / "src" / "analysis" / "sentiment.py")]
     if args.client:
         cmd.extend(["--client", args.client])
         
-    result = subprocess.run(cmd, cwd=str(ROOT))
+    subprocess.run(cmd, cwd=str(ROOT))
+    
+    print(f"\nRunning competitor analysis for client: {args.client}")
+    cmd2 = [sys.executable, str(ROOT / "src" / "analysis" / "competitors.py")]
+    if args.client:
+        cmd2.extend(["--client", args.client])
+        
+    result = subprocess.run(cmd2, cwd=str(ROOT))
     if result.returncode == 0:
-        print("\nAnalysis complete.")
+        print("\nAnalysis pipeline complete.")
 
 
 def sync_identities(args):

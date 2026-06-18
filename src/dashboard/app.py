@@ -702,6 +702,45 @@ def api_cuebot_engagement_score(client_name):
     })
 
 
+@app.route("/<client_name>/intel")
+def intel_view(client_name):
+    """Market Intelligence page."""
+    validate_client(client_name)
+    return render_template("intel.html", client_name=client_name)
+
+
+@app.route("/api/<client_name>/intel/market")
+def api_market_intel(client_name):
+    """Aggregate competitor intel and domain monitoring data."""
+    validate_client(client_name)
+    
+    # 1. Load Competitor JSON
+    report_path = config_mgr.DATA_DIR / "clients" / client_name / "reports" / "competitor_intel.json"
+    intel = {}
+    if report_path.exists():
+        import json
+        with open(report_path) as f:
+            intel = json.load(f)
+            
+    # 2. Get Domain Monitoring Stats
+    db = get_db(client_name)
+    # Using LegacySessionWrapper mappings() for Postgres compatibility
+    domain_stats = db.execute("""
+        SELECT c.name as channel_name, COUNT(*) as post_count, MAX(m.timestamp) as last_post
+        FROM messages m
+        JOIN channels c ON m.channel_id = c.id
+        WHERE c.name LIKE 'domain:%' AND m.client_id = :client_id
+        GROUP BY c.name
+        ORDER BY post_count DESC
+    """).fetchall() # Result will be mappings if LegacySessionWrapper detected SELECT
+    db.close()
+    
+    return jsonify({
+        "competitors": intel,
+        "domains": [dict(d) for d in domain_stats]
+    })
+
+
 @app.route("/api/<client_name>/cuebot/engagement/leaderboard")
 def api_cuebot_leaderboard(client_name):
     """Get top N users by engagement score with optimized aggregation."""
@@ -909,7 +948,9 @@ def queue_view():
 def api_queue_status():
     from src.db.queue import get_queue_db
     db = get_queue_db()
-    tasks = db.execute("SELECT * FROM tasks ORDER BY id DESC LIMIT 50").fetchall()
+    # Explicitly use text() to avoid wrapper issues if using LegacySessionWrapper
+    from sqlalchemy import text
+    tasks = db.session.execute(text("SELECT * FROM tasks ORDER BY id DESC LIMIT 50")).mappings().all()
     db.close()
     return jsonify([dict(t) for t in tasks])
 

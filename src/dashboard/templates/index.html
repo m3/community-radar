@@ -83,6 +83,68 @@
     </div>
 </div>
 
+<!-- Ecosystem Summary -->
+<div class="mb-10 radar-card p-0 overflow-hidden border-indigo-500/20">
+    <div class="grid grid-cols-1 md:grid-cols-2">
+        <!-- Owned Side -->
+        <div class="p-6 bg-slate-800/30 border-b md:border-b-0 md:border-r border-slate-700/50 relative group">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-transparent opacity-50"></div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-emerald-400 font-bold text-lg flex items-center">
+                        <i class="fas fa-home mr-2"></i> Owned Communities
+                    </h3>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">The Living Room</p>
+                </div>
+            </div>
+            <div class="flex space-x-8">
+                <div>
+                    <div class="text-3xl font-bold text-white" id="ecoOwnedVol"><span class="skeleton skeleton-text-lg w-16"></span></div>
+                    <div class="text-xs text-slate-500 mt-1">Total Volume</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-emerald-400" id="ecoOwnedRatio"><span class="skeleton skeleton-text-lg w-12"></span></div>
+                    <div class="text-xs text-slate-500 mt-1">Sent. Ratio</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- External Side -->
+        <div class="p-6 bg-slate-800/10 relative group">
+            <div class="absolute top-0 right-0 w-full h-1 bg-gradient-to-l from-slate-500 to-transparent opacity-30"></div>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-slate-300 font-bold text-lg flex items-center">
+                        <i class="fas fa-satellite-dish mr-2"></i> External Communities
+                    </h3>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1">The Town Square</p>
+                </div>
+            </div>
+            <div class="flex space-x-8">
+                <div>
+                    <div class="text-3xl font-bold text-white" id="ecoExtVol"><span class="skeleton skeleton-text-lg w-16"></span></div>
+                    <div class="text-xs text-slate-500 mt-1">Total Volume</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-slate-400" id="ecoExtRatio"><span class="skeleton skeleton-text-lg w-12"></span></div>
+                    <div class="text-xs text-slate-500 mt-1">Sent. Ratio</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Strategic Insight Banner -->
+    <div class="bg-indigo-950/40 border-t border-indigo-500/20 p-4 px-6 flex items-center">
+        <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center mr-4 flex-shrink-0">
+            <i class="fas fa-lightbulb text-indigo-400"></i>
+        </div>
+        <div>
+            <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Strategic Insight</div>
+            <p class="text-sm text-indigo-100/90 font-medium leading-snug" id="ecoInsight">Analyzing ecosystem balance...</p>
+        </div>
+    </div>
+</div>
+
 <!-- Community Pulse (Added) -->
 <div class="radar-card p-6 mb-10">
     <div class="flex items-center justify-between mb-6">
@@ -272,6 +334,25 @@
     showTableSkeleton('contributorsTable', 3);
 
     // ─── DATA LOADERS ──────────────────────────────────────────
+    async function loadEcosystem() {
+        try {
+            const res = await fetch(`/api/${clientName}/ecosystem`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+
+            document.getElementById('ecoOwnedVol').textContent = fmt(data.owned.total);
+            document.getElementById('ecoOwnedRatio').textContent = data.owned.ratio.toFixed(2);
+            
+            document.getElementById('ecoExtVol').textContent = fmt(data.external.total);
+            document.getElementById('ecoExtRatio').textContent = data.external.ratio.toFixed(2);
+            
+            document.getElementById('ecoInsight').textContent = data.insight;
+        } catch (e) {
+            console.error('Failed to load ecosystem data:', e);
+            document.getElementById('ecoInsight').innerHTML = '<span class="text-red-400">Failed to load ecosystem insights.</span>';
+        }
+    }
+
     async function loadMarketAwareness() {
         try {
             const res = await fetch(`/api/${clientName}/market/awareness`);
@@ -382,8 +463,8 @@
                     { pos: '#fb923c', neg: '#f87171', neu: '#94a3b8' };
 
                 return [
-                    { label: `${platform} Positive`, data: sortedDays.map(d => data.series[platform][d]?.positive || 0), borderColor: colors.pos, backgroundColor: colors.pos + '20', fill: true, tension: 0.3, hidden: platform === 'reddit', pointRadius: 1, borderWidth: 2 },
-                    { label: `${platform} Negative`, data: sortedDays.map(d => data.series[platform][d]?.negative || 0), borderColor: colors.neg, backgroundColor: colors.neg + '20', fill: true, tension: 0.3, hidden: platform === 'reddit', pointRadius: 1, borderWidth: 2 }
+                    { label: `${platform} Positive`, data: sortedDays.map(d => data.series[platform][d]?.positive || 0), borderColor: colors.pos, backgroundColor: colors.pos + '20', fill: true, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+                    { label: `${platform} Negative`, data: sortedDays.map(d => data.series[platform][d]?.negative || 0), borderColor: colors.neg, backgroundColor: colors.neg + '20', fill: true, tension: 0.3, pointRadius: 1, borderWidth: 2 }
                 ];
             }).flat();
 
@@ -711,6 +792,7 @@
         await Promise.all([
             loadOverview(),
             loadMarketAwareness(),
+            loadEcosystem(),
             loadPulse(),
             loadSentimentTimeseries(),
             loadVolumeChart(),

@@ -123,7 +123,7 @@ def import_dce_exports():
             content = msg.get("content", "")
             reply_to = str(msg.get("referencedMessageId", ""))
             reactions = len(msg.get("reactions", []))
-            message_rows.append((msg_id, channel_id, user_id, content, ts, reply_to, reactions))
+            message_rows.append((msg_id, channel_id, user_id, content, ts, reply_to, reactions, "discord"))
 
         # Batch insert messages
         batch_size = 500
@@ -132,8 +132,8 @@ def import_dce_exports():
             batch = message_rows[i:i+batch_size]
             db.executemany("""
                 INSERT OR IGNORE INTO messages
-                    (message_id, channel_id, user_id, content, timestamp, reply_to, reactions)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (message_id, channel_id, user_id, content, timestamp, reply_to, reactions, platform)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, batch)
             inserted_msgs += len(batch)
 

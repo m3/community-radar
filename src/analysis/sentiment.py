@@ -340,7 +340,7 @@ def detect_anomalies(trends, threshold=ANOMALY_THRESHOLD):
 def run_analysis(db, output_dir):
     print("Loading messages...")
     messages = db.execute("""
-        SELECT m.message_id, m.content, m.timestamp, m.reactions, m.channel_id,
+        SELECT m.user_id, m.message_id, m.content, m.timestamp, m.reactions, m.channel_id,
                c.name as channel_name, u.display_name, u.role
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
@@ -440,13 +440,29 @@ def run_analysis(db, output_dir):
 
     # ─── 3. User sentiment profiles ─────────────────────────────────────
     print("[3/6] User sentiment profiles...")
-    user_sentiment = defaultdict(lambda: {"pos": 0, "neg": 0, "neu": 0, "total": 0})
+    user_sentiment = defaultdict(lambda: {"pos": 0, "neg": 0, "neu": 0, "total": 0, "score_sum": 0.0})
 
     for msg in messages:
         score, label = classify_sentiment(msg["content"])
-        uid = msg["display_name"] or "unknown"
+        uid = msg["user_id"] # Use user_id for DB update
+        display_name = msg["display_name"] or "unknown"
+        
         user_sentiment[uid]["total"] += 1
         user_sentiment[uid][label[:3]] += 1
+        user_sentiment[uid]["score_sum"] += score
+        user_sentiment[uid]["display_name"] = display_name
+
+    # Persist user sentiment to DB
+    print("  Updating users table...")
+    for uid, stats in user_sentiment.items():
+        # Normalize sentiment to -1..1 range
+        raw_avg = stats["score_sum"] / stats["total"]
+        # Simple normalization: tanh or just cap it. 
+        # Since we use lexicon, raw_avg is average words difference.
+        # Let's use a soft cap at +/- 2.0
+        normalized = max(-1.0, min(1.0, raw_avg / 2.0))
+        db.execute("UPDATE users SET sentiment = ? WHERE id = ? AND client_id = :client_id", (str(round(normalized, 3)), uid))
+    db.commit()
 
     # ─── 4. Reddit comparison (from DB) ──────────────────────────────────
     print("[4/6] Reddit data from DB...")
@@ -504,6 +520,7 @@ def run_analysis(db, output_dir):
 
     report = {
         "meta": {
+            "generated_at": datetime.now().isoformat(),
             "total_messages_analyzed": total,
             "deduped_messages": deduped_total,
             "duplicates_removed": duplicates_removed,

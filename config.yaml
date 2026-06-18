@@ -17,6 +17,7 @@ clients:
     reddit:
       subreddits:
         PurePoolPro:
+          owned: true
           sorts:
           - new
           - hot

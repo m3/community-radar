@@ -93,7 +93,8 @@ def process_export_file(channel_id, channel_name, db, server_id):
 
         message_rows.append((
             msg["message_id"], channel_id, msg["user_id"],
-            msg["content"], msg["timestamp"], msg["reply_to"], msg["reactions"]
+            msg["content"], msg["timestamp"], msg["reply_to"], msg["reactions"],
+            "discord"
         ))
 
     # Batch insert messages
@@ -103,8 +104,8 @@ def process_export_file(channel_id, channel_name, db, server_id):
         batch = message_rows[i:i+batch_size]
         db.executemany("""
             INSERT OR IGNORE INTO messages
-                (message_id, channel_id, user_id, content, timestamp, reply_to, reactions)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (message_id, channel_id, user_id, content, timestamp, reply_to, reactions, platform)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, batch)
         inserted_msgs += len(batch)
 
@@ -152,8 +153,9 @@ def export_channel(server_id, server_name, channel_id, channel_name, client_cfg=
 
     if last_ts:
         # Only get messages after last export
-        cmd.extend(["--after", last_ts[:10]])
-        print(f"  Incremental export since {last_ts[:10]}")
+        last_ts_str = last_ts.strftime("%Y-%m-%d") if hasattr(last_ts, "strftime") else str(last_ts)[:10]
+        cmd.extend(["--after", last_ts_str])
+        print(f"  Incremental export since {last_ts_str}")
     else:
         print(f"  Full export (no prior scan data)")
 

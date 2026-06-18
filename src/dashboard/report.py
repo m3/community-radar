@@ -201,7 +201,14 @@ def generate_report(client_name=None, output_path=None):
     if channels:
         html += "<div><h2>Channels Scanned</h2>\n<table>\n<thead><tr><th>Channel</th><th>Messages</th><th>Last Scan</th></tr></thead>\n<tbody>\n"
         for c in channels:
-            html += f"<tr><td><small>{c['server_name']}</small><br/>#{c['name']}</td><td>{c['message_count'] or 0}</td><td>{c['last_scan'][:10] if c['last_scan'] else 'never'}</td></tr>\n"
+            last_scan = c['last_scan']
+            if hasattr(last_scan, 'strftime'):
+                last_scan = last_scan.strftime('%Y-%m-%d')
+            elif last_scan:
+                last_scan = str(last_scan)[:10]
+            else:
+                last_scan = 'never'
+            html += f"<tr><td><small>{c['server_name']}</small><br/>#{c['name']}</td><td>{c['message_count'] or 0}</td><td>{last_scan}</td></tr>\n"
         html += "</tbody>\n</table></div>\n"
 
     # Top users

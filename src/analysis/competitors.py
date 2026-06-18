@@ -7,16 +7,26 @@ Scans r/billiards, r/snooker, and other niche subreddits for:
 4. Sentiment around cue sports simulation
 """
 
-import sqlite3
 import json
 import re
 import hashlib
 from pathlib import Path
 from datetime import datetime
 from collections import Counter, defaultdict
+import argparse
+import yaml
 
-DB_PATH = Path("/Users/mathias/Development/Projects/community-radar/data/community_radar.db")
-OUTPUT_PATH = Path("/Users/mathias/Development/Projects/community-radar/docs/competitor-opportunities.md")
+from src.db.models import get_db
+
+ROOT = Path(__file__).parent.parent.parent
+CONFIG_PATH = ROOT / "config.yaml"
+with open(CONFIG_PATH, "r") as f:
+    CONFIG = yaml.safe_load(f)
+DATA_DIR = ROOT / CONFIG.get("data_dir", "data")
+
+def load_config():
+    with open(CONFIG_PATH, "r") as f:
+        return yaml.safe_load(f) or {}
 
 # Brand & product names to track (multi-word phrases first to avoid false matches)
 BRAND_KEYWORDS = {
@@ -83,22 +93,33 @@ def extract_quote(text, keyword, context=200):
     return quote
 
 
-def run_analysis():
-    db = sqlite3.connect(DB_PATH)
-    db.row_factory = sqlite3.Row
+def run_analysis(client_name):
+    db = get_db(client_name)
+    config = load_config()
+    client_config = config.get("clients", {}).get(client_name, {})
+    reddit_config = client_config.get("reddit", {}).get("subreddits", {})
 
-    print("Loading Reddit messages from r/billiards and r/snooker...")
-    # Get messages from billiards and snooker subreddits
-    messages = db.execute("""
+    external_channels = []
+    for sub, conf in reddit_config.items():
+        if conf.get("track_keywords"): # Only scan external channels for intel
+            external_channels.append(f"reddit_{sub.lower()}_%")
+
+    if not external_channels:
+        print("No external channels configured for intelligence scanning.")
+        return
+
+    channel_filters = " OR ".join(["c.name LIKE ?" for _ in external_channels])
+    query = f"""
         SELECT m.message_id, m.content, m.timestamp, m.reactions, m.platform,
                c.name as channel_name
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
-        WHERE (c.name LIKE 'reddit-billiards%' OR c.name LIKE 'reddit-snooker%')
-          AND m.content IS NOT NULL
-          AND m.content != ''
+        WHERE m.client_id = :client_id AND ({channel_filters})
+          AND m.content IS NOT NULL AND m.content != ''
         ORDER BY m.timestamp DESC
-    """).fetchall()
+    """
+    messages = db.execute(query, external_channels).all()
+
     print(f"  {len(messages)} messages loaded")
 
     # Categorize
@@ -199,16 +220,18 @@ def run_analysis():
     }
 
     # Save JSON
-    json_path = OUTPUT_PATH.with_suffix(".json")
+    json_path = DATA_DIR / "clients" / client_name / "reports" / "competitor_intel.json"
+    json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     print(f"  JSON saved: {json_path}")
 
     # Generate Markdown
     md = generate_markdown(report)
-    with open(OUTPUT_PATH, "w") as f:
+    md_path = json_path.with_suffix(".md")
+    with open(md_path, "w") as f:
         f.write(md)
-    print(f"  Markdown saved: {OUTPUT_PATH}")
+    print(f"  Markdown saved: {md_path}")
 
     return report
 
@@ -219,10 +242,10 @@ def generate_markdown(r):
     m = a["meta"]
 
     lines.append("# Competitor & Opportunity Analysis")
-    lines.append(f"\n*Scanned {m['total_messages_scanned']} messages from r/billiards + r/snooker*")
+    lines.append(f"\n*Scanned {m['total_messages_scanned']} messages*")
     lines.append(f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
     lines.append(f"\n**Key findings:**")
-    lines.append(f"- {m['pure_pool_mentions']} mentions of Pure Pool / Ripstone (opportunity leads)")
+    lines.append(f"- {m['pure_pool_mentions']} brand mentions (opportunity leads)")
     lines.append(f"- {m['competitor_mentions']} mentions of {m['unique_competitors']} competitor games")
     lines.append(f"- {m['feature_requests']} feature requests identified")
     lines.append(f"- {m['pain_points_flagged']} pain point signals")
@@ -230,7 +253,7 @@ def generate_markdown(r):
     # Sentiment
     s = a["sentiment_indicators"]
     total = sum(s.values())
-    lines.append(f"\n## Community Sentiment (r/billiards + r/snooker)")
+    lines.append(f"\n## Community Sentiment")
     lines.append(f"\n| Sentiment | Count | % |")
     lines.append(f"|-----------|-------|---|")
     for k, v in s.items():
@@ -238,30 +261,30 @@ def generate_markdown(r):
         lines.append(f"| {k.title()} | {v} | {pct:.1f}% |")
 
     # Pure Pool mentions
-    lines.append(f"\n## 🎯 Pure Pool / Ripstone Mentions ({m['pure_pool_mentions']})")
-    lines.append(f"\n*Highest-priority opportunity leads — people actively looking for/discussing our game*")
+    lines.append(f"\n## 🎯 Brand Mentions ({m['pure_pool_mentions']})")
+    lines.append(f"\n*Highest-priority opportunity leads — people actively looking for/discussing the brand*")
     if a["pure_pool_mentions"]:
-        lines.append(f"\n| Date | Subreddit | Score | Quote |")
-        lines.append(f"|------|-----------|-------|-------|")
+        lines.append(f"\n| Date | Channel | Score | Quote |")
+        lines.append(f"|------|---------|-------|-------|")
         for mention in a["pure_pool_mentions"][:15]:
-            sub = mention["channel"].split("-")[1] if "-" in mention["channel"] else mention["channel"]
+            sub = mention["channel"]
             quote = mention["quote"].replace("\n", " ").replace("|", "\\|")[:200]
-            lines.append(f"| {mention['timestamp']} | r/{sub} | {mention['score']} | {quote} |")
+            lines.append(f"| {mention['timestamp']} | {sub} | {mention['score']} | {quote} |")
     else:
-        lines.append(f"\n*No mentions found in scanned messages. This is itself a signal — Pure Pool is not on these users' radar.*")
+        lines.append(f"\n*No mentions found in scanned messages.*")
 
     # Competitor mentions
-    lines.append(f"\n## 🏆 Competitor Mentions ({m['unique_competitors']} games)")
-    lines.append(f"\n*Market intelligence — what else are cue sports enthusiasts playing?*")
+    lines.append(f"\n## 🏆 Competitor Mentions ({m['unique_competitors']} competitors)")
+    lines.append(f"\n*Market intelligence — what else are users discussing?*")
     if a["competitor_mentions"]:
         lines.append(f"\n| Competitor | Mentions | Top Quote |")
         lines.append(f"|------------|----------|-----------|")
         for comp, mentions in a["competitor_mentions"].items():
             top = mentions[0] if mentions else None
             if top:
-                sub = top["channel"].split("-")[1] if "-" in top["channel"] else top["channel"]
+                sub = top["channel"]
                 quote = top["quote"].replace("\n", " ").replace("|", "\\|")[:150]
-                lines.append(f"| {comp.title()} | {len(mentions)} | r/{sub}: {quote} |")
+                lines.append(f"| {comp.title()} | {len(mentions)} | {sub}: {quote} |")
     else:
         lines.append(f"\n*No competitor game mentions found.*")
 
@@ -283,10 +306,10 @@ def generate_markdown(r):
 
         lines.append(f"\n### Sample Quotes")
         for req in a["feature_requests"][:5]:
-            sub = req["channel"].split("-")[1] if "-" in req["channel"] else req["channel"]
+            sub = req["channel"]
             quote = req["quote"].replace("\n", " ").replace("|", "\\|")[:200]
             features = ", ".join(req["features"])
-            lines.append(f"\n> r/{sub} ({req['timestamp']}) — *{features}*")
+            lines.append(f"\n> {sub} ({req['timestamp']}) — *{features}*")
             lines.append(f"> {quote}")
     else:
         lines.append(f"\n*No explicit feature requests captured.*")
@@ -308,10 +331,10 @@ def generate_markdown(r):
 
         lines.append(f"\n### Top Frustrations (by score)")
         for pp in a["pain_points"][:5]:
-            sub = pp["channel"].split("-")[1] if "-" in pp["channel"] else pp["channel"]
+            sub = pp["channel"]
             quote = pp["quote"].replace("\n", " ").replace("|", "\\|")[:200]
             pains = ", ".join(pp["pains"])
-            lines.append(f"\n> r/{sub} ({pp['timestamp']}, score: {pp['score']}) — *{pains}*")
+            lines.append(f"\n> {sub} ({pp['timestamp']}, score: {pp['score']}) — *{pains}*")
             lines.append(f"> {quote}")
     else:
         lines.append(f"\n*No pain point signals captured.*")
@@ -320,7 +343,7 @@ def generate_markdown(r):
     lines.append(f"\n## 🎯 Strategic Opportunities")
     lines.append(f"\n### Immediate (this week)")
     if a["pure_pool_mentions"]:
-        lines.append(f"- **Engage with {len(a['pure_pool_mentions'])} Pure Pool mentions** — these are warm leads. Drop a helpful comment, link to relevant content.")
+        lines.append(f"- **Engage with {len(a['pure_pool_mentions'])} brand mentions** — these are warm leads. Drop a helpful comment, link to relevant content.")
     if a["competitor_mentions"]:
         top_competitor_name, top_competitor_items = max(a["competitor_mentions"].items(), key=lambda x: len(x[1]))
         lines.append(f"- **Monitor '{top_competitor_name.title()}' mentions** ({len(top_competitor_items)} posts) — most-mentioned competitor. Consider what they're doing right/wrong.")
@@ -341,15 +364,21 @@ def generate_markdown(r):
             for p in pp["pains"]:
                 top_pain[p] += 1
         top = top_pain.most_common(1)[0]
-        lines.append(f"- **Address top pain point: {top[0]}** ({top[1]} mentions) — if Pure Pool avoids this issue, use it in marketing.")
+        lines.append(f"- **Address top pain point: {top[0]}** ({top[1]} mentions) — if you avoid this issue, use it in marketing.")
 
     lines.append(f"\n### Brand Awareness Gap")
     if m["pure_pool_mentions"] < 5:
-        lines.append(f"- **⚠️ Low Pure Pool awareness in r/billiards + r/snooker** — only {m['pure_pool_mentions']} mentions vs {m['competitor_mentions']} competitor mentions. Consider cross-posting content, AMAs, or community engagement strategy.")
+        lines.append(f"- **⚠️ Low brand awareness** — only {m['pure_pool_mentions']} mentions vs {m['competitor_mentions']} competitor mentions. Consider cross-posting content, AMAs, or community engagement strategy.")
 
     return "\n".join(lines)
 
 
 if __name__ == "__main__":
-    report = run_analysis()
-    print("\n✅ Competitor analysis complete.")
+    parser = argparse.ArgumentParser(description="Run competitor analysis.")
+    parser.add_argument("--client", required=True, help="Client name to run analysis for")
+    args = parser.parse_args()
+
+    report = run_analysis(args.client)
+    if report:
+        print("\n✅ Competitor analysis complete.")
+

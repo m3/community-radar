@@ -1,0 +1,243 @@
+{% extends "layout.html" %}
+
+{% block title %}Market Intelligence - {{ clients[client_name].name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Fade-in for content */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+        animation: fadeInUp 0.4s ease-out forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header class="mb-10">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white mb-2 neon-glow">Market Intelligence</h1>
+            <p class="text-slate-400">Competitor tracking, brand mentions, and domain monitoring</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button onclick="loadIntel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-emerald-500/20">
+                <i class="fas fa-sync-alt mr-2"></i> Refresh
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    <!-- Left Column: Opportunity Leads -->
+    <div class="xl:col-span-2 space-y-8">
+        <div class="radar-card p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-bullseye text-emerald-400 mr-3"></i> Opportunity Leads
+                </h2>
+                <span class="text-xs text-slate-500 font-medium px-2 py-1 bg-slate-900 rounded-full border border-slate-700" id="leadsCount">0 mentions</span>
+            </div>
+            
+            <div id="leadsList" class="space-y-4">
+                <div class="text-slate-500 italic py-8 text-center">Loading intelligence data...</div>
+            </div>
+        </div>
+        
+        <!-- Domain Monitoring -->
+        <div class="radar-card p-6">
+            <h2 class="text-xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-globe text-sky-400 mr-3"></i> Domain Monitor
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left" id="domainsTable">
+                    <thead>
+                        <tr class="text-slate-500 text-[10px] font-bold uppercase tracking-widest border-b border-slate-700/50">
+                            <th class="px-4 py-3">Referrer Domain</th>
+                            <th class="px-4 py-3 text-center">Post Count</th>
+                            <th class="px-4 py-3 text-right">Last Mention</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/30">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Competitor Matrix -->
+    <div class="space-y-8">
+        <div class="radar-card p-6">
+            <h2 class="text-xl font-bold text-white mb-6 flex items-center">
+                <i class="fas fa-chess-knight text-orange-400 mr-3"></i> Competitor Matrix
+            </h2>
+            <div id="competitorList" class="space-y-6">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        
+        <div class="radar-card p-6 bg-indigo-950/20 border-indigo-500/20">
+            <h3 class="text-sm font-bold text-indigo-300 uppercase tracking-widest mb-4">Strategic Advice</h3>
+            <div class="space-y-4 text-sm text-indigo-100/70" id="strategicAdvice">
+                <p>Select intelligence data to see strategic recommendations.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const clientName = "{{ client_name }}";
+
+    function fmt(num) {
+        return new Intl.NumberFormat().format(num);
+    }
+
+    function timeAgo(dateString) {
+        if (!dateString || dateString === 'unknown' || dateString === 'N/A') return 'N/A';
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes ago";
+        return Math.floor(seconds) + " seconds ago";
+    }
+
+    async function loadIntel() {
+        try {
+            const res = await fetch(`/api/${clientName}/intel/market`);
+            if (!res.ok) throw new Error('API error');
+            const data = await res.json();
+
+            renderLeads(data.competitors.pure_pool_mentions || []);
+            renderCompetitors(data.competitors.competitor_mentions || {});
+            renderDomains(data.domains || []);
+            renderAdvice(data.competitors.meta || {});
+            
+        } catch (e) {
+            console.error('Failed to load intelligence:', e);
+        }
+    }
+
+    function renderLeads(leads) {
+        const list = document.getElementById('leadsList');
+        document.getElementById('leadsCount').textContent = leads.length + ' mentions';
+        
+        if (leads.length === 0) {
+            list.innerHTML = '<div class="text-slate-500 italic py-8 text-center">No recent brand mentions found in external subreddits.</div>';
+            return;
+        }
+
+        list.innerHTML = leads.slice(0, 10).map(l => `
+            <div class="bg-slate-900/50 rounded-xl p-5 border border-slate-700/50 hover:border-emerald-500/30 transition-all group">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">${l.channel}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500">${timeAgo(l.timestamp)}</span>
+                </div>
+                <p class="text-slate-300 text-sm italic leading-relaxed mb-4">"${l.quote}"</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Match Score: ${l.score}</span>
+                    <button class="text-xs font-bold text-emerald-400 hover:text-white transition-colors flex items-center">
+                        <i class="fas fa-reply mr-2 text-[10px]"></i> View on Reddit
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderCompetitors(comps) {
+        const list = document.getElementById('competitorList');
+        const entries = Object.entries(comps);
+        
+        if (entries.length === 0) {
+            list.innerHTML = '<div class="text-slate-500 italic py-4 text-center">No competitor mentions tracked.</div>';
+            return;
+        }
+
+        list.innerHTML = entries.map(([name, mentions]) => {
+            const top = mentions[0] || {};
+            return `
+            <div class="group">
+                <div class="flex justify-between items-end mb-2">
+                    <h3 class="font-bold text-white text-lg">${name.charAt(0).toUpperCase() + name.slice(1)}</h3>
+                    <span class="text-sm font-bold text-orange-400">${mentions.length} mentions</span>
+                </div>
+                <div class="bg-slate-900/30 p-3 rounded-lg border border-slate-800 italic text-xs text-slate-400 line-clamp-2">
+                    "${top.quote || 'No quote available'}"
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    function renderDomains(domains) {
+        const tbody = document.querySelector('#domainsTable tbody');
+        if (domains.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-slate-500 italic">No domain referrers tracked in the database.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = domains.map(d => {
+            const cleanName = d.channel_name.replace('domain:', '');
+            return `
+            <tr class="hover:bg-slate-800/30 transition-colors">
+                <td class="px-4 py-4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center mr-3">
+                            <i class="fas fa-link text-sky-400 text-xs"></i>
+                        </div>
+                        <span class="text-sm font-medium text-white">${cleanName}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-4 text-center text-slate-300 font-mono text-sm">${d.post_count}</td>
+                <td class="px-4 py-4 text-right text-slate-500 text-xs">${timeAgo(d.last_post)}</td>
+            </tr>
+            `;
+        }).join('');
+    }
+
+    function renderAdvice(meta) {
+        const box = document.getElementById('strategicAdvice');
+        if (!meta.total_messages_scanned) return;
+
+        let advice = [];
+        if (meta.pure_pool_mentions < 5) {
+            advice.push(`<div class="flex space-x-3">
+                <i class="fas fa-exclamation-triangle text-amber-500 mt-1"></i>
+                <p>Brand awareness is critically low in external communities. Consider an outreach campaign on r/snooker or r/billiards.</p>
+            </div>`);
+        } else {
+            advice.push(`<div class="flex space-x-3">
+                <i class="fas fa-check-circle text-emerald-500 mt-1"></i>
+                <p>Healthy organic brand growth detected. Maintain presence in top threads.</p>
+            </div>`);
+        }
+
+        if (meta.competitor_mentions > meta.pure_pool_mentions * 2) {
+            advice.push(`<div class="flex space-x-3">
+                <i class="fas fa-info-circle text-sky-500 mt-1"></i>
+                <p>Competitor game volume is dominant. Audit feature requests in those threads to identify missing gaps in your product.</p>
+            </div>`);
+        }
+
+        box.innerHTML = advice.join('<div class="h-px bg-slate-700/50 my-2"></div>');
+    }
+
+    loadIntel();
+</script>
+{% endblock %}

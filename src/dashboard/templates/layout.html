@@ -205,8 +205,13 @@
                 <span class="nav-text transition-opacity duration-200">Mission Control</span>
             </a>
             <a href="/{{ client_name }}/leaderboard" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path.endswith('/leaderboard') %}active{% endif %} {% if not request.path.endswith('/leaderboard') %}text-slate-400{% endif %}">
-                <i class="fas fa-trophy w-6"></i>
-                <span class="nav-text transition-opacity duration-200">Leaderboard</span>
+                <i class="fas fa-trophy w-5"></i>
+                <span class="ml-3 nav-label">Leaderboard</span>
+            </a>
+
+            <a href="/{{ client_name }}/intel" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {% if request.path.endswith('/intel') %}active{% endif %} {% if not request.path.endswith('/intel') %}text-slate-400{% endif %}">
+                <i class="fas fa-microchip w-5"></i>
+                <span class="ml-3 nav-label">Market Intel</span>
             </a>
             {% else %}
             <a href="#" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-500 cursor-default">

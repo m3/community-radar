@@ -232,6 +232,59 @@ def api_sentiment_by_channel(client_name):
     return jsonify(enriched)
 
 
+@app.route("/api/<client_name>/ecosystem")
+def api_ecosystem_summary(client_name):
+    """Aggregate stats and generate insights for Owned vs External channels."""
+    validate_client(client_name)
+    report = load_report(client_name)
+    config = load_config()
+    
+    channel_data = report.get("sentiment", {}).get("by_channel", {})
+    client_config = config.get("clients", {}).get(client_name, {})
+    reddit_config = client_config.get("reddit", {}).get("subreddits", {})
+    
+    owned_subreddits = [s.lower() for s, conf in reddit_config.items() if conf.get("owned")]
+    
+    owned = {"total": 0, "positive": 0, "negative": 0}
+    external = {"total": 0, "positive": 0, "negative": 0}
+    
+    for ch, data in channel_data.items():
+        is_owned = False
+        if ch.startswith("reddit-"):
+            parts = ch.split("-")
+            if len(parts) > 1 and parts[1].lower() in owned_subreddits:
+                is_owned = True
+        elif not ch.startswith("reddit"):
+            is_owned = True
+            
+        target = owned if is_owned else external
+        target["total"] += data.get("total", 0)
+        target["positive"] += data.get("positive", 0)
+        target["negative"] += data.get("negative", 0)
+        
+    owned["ratio"] = round(owned["positive"] / max(owned["negative"], 1), 2)
+    external["ratio"] = round(external["positive"] / max(external["negative"], 1), 2)
+    
+    # Auto-Learnings Engine
+    insights = []
+    if external["total"] > (owned["total"] * 3):
+        insights.append("External conversation volume dwarfs owned channels. Significant opportunity to convert broader market discussion into owned community members.")
+    
+    if owned["ratio"] > (external["ratio"] + 1.0):
+        insights.append(f"Core community sentiment ({owned['ratio']}) outpaces external market ({external['ratio']}). Strong retention, but potential struggle with initial market perception.")
+    elif external["ratio"] > (owned["ratio"] + 0.5):
+        insights.append("External sentiment is noticeably higher than owned channels. Core players may be experiencing burnout or specific live-ops friction.")
+        
+    if not insights:
+        insights.append("Ecosystem is balanced. Core and external sentiment are relatively aligned.")
+
+    return jsonify({
+        "owned": owned,
+        "external": external,
+        "insight": insights[0] # Pick the most prominent insight
+    })
+
+
 @app.route("/api/<client_name>/topics")
 def api_topics(client_name):
     """Topic-level sentiment."""

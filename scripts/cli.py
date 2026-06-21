@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import sys
+from reddit.human import sleep_random
 
 def get_proxy_from_bws(secret_id: str) -> str | None:
     import subprocess
@@ -198,7 +199,6 @@ def cmd_subreddit_feed(args: argparse.Namespace) -> None:
 
 def cmd_json_feed(args: argparse.Namespace) -> None:
     """Fetch Reddit's .json API for bulk post extraction with timestamps."""
-    from reddit.human import sleep_random
 
     browser, page = _connect(args)
     try:

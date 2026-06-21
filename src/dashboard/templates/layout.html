@@ -314,7 +314,16 @@
         // Utility: relative time
         function timeAgo(dateStr) {
             if (!dateStr) return 'Never';
-            const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+            let date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                date = new Date(dateStr + 'Z');
+            } else if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('GMT') && !dateStr.includes('UTC') && !/[-+]\d{2}:?\d{2}$/.test(dateStr)) {
+                const utcDate = new Date(dateStr + 'Z');
+                if (!isNaN(utcDate.getTime())) {
+                    date = utcDate;
+                }
+            }
+            if (isNaN(date.getTime())) return 'Invalid Date';
             const now = new Date();
             const diffMs = now - date;
             const diffMins = Math.floor(diffMs / 60000);

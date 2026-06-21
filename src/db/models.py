@@ -45,13 +45,16 @@ class LegacySessionWrapper:
         if not params:
             params = {}
             
-        # Inject client_id if not present
-        if ":client_id" in sql or "client_id" in sql.lower():
+        # Inject client_id if not present (skip for tasks table which is global)
+        is_tasks = isinstance(sql, str) and re.search(r'\b(FROM|UPDATE|INSERT\s+INTO|JOIN)\s+tasks\b', sql, re.IGNORECASE) is not None
+        
+        if is_tasks:
+            pass
+        elif ":client_id" in sql or "client_id" in sql.lower():
             if "client_id" not in params:
                 params["client_id"] = self.client_id
         else:
             # Detect table aliases for qualified client_id injection
-            import re
             # Find first table alias: "FROM table_name alias" or "FROM table_name AS alias"
             alias_match = re.search(r'\bFROM\s+\w+\s+(?:AS\s+)?(\w+)', sql, re.IGNORECASE)
             first_alias = alias_match.group(1) if alias_match else None
@@ -102,6 +105,8 @@ class LegacySessionWrapper:
             return sql, params
         if "client_id" in sql.lower():
             return sql, params  # already has client_id
+        if "tasks" in sql.lower():
+            return sql, params  # tasks table is global and has no client_id
 
         # Match: INSERT INTO table (col1, col2, ...) VALUES (val1, val2, ...)
         pattern = r'(INSERT\s+(?:INTO|OR\s+IGNORE\s+INTO)\s+\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)'

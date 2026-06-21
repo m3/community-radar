@@ -17,7 +17,6 @@ clients:
     reddit:
       subreddits:
         PurePoolPro:
-          owned: true
           sorts:
           - new
           - hot
@@ -63,7 +62,7 @@ clients:
         - https://ripstone.com/pure-pool-pro/
         - ripstone.com
         max_pages: 3
-        sort: new
+        sort: relevance
     discord:
       servers:
         '203428322082816001':

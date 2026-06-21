@@ -133,13 +133,17 @@ def run_analysis(client_name):
         content = msg["content"]
         classification, hits = classify_message(content)
 
+        def fmt_ts(ts):
+            if not ts: return "unknown"
+            if isinstance(ts, str): return ts[:10]
+            return ts.strftime("%Y-%m-%d")
+
         # Track Pure Pool mentions
         if classification == "pure_pool_mention":
             for hit in hits:
                 pure_pool_mentions.append({
-                    "keyword": hit,
                     "channel": msg["channel_name"],
-                    "timestamp": msg["timestamp"][:10] if msg["timestamp"] else "unknown",
+                    "timestamp": fmt_ts(msg["timestamp"]),
                     "score": msg["reactions"] or 0,
                     "quote": extract_quote(content, hit),
                 })
@@ -148,7 +152,7 @@ def run_analysis(client_name):
             for hit in hits:
                 competitor_mentions[hit].append({
                     "channel": msg["channel_name"],
-                    "timestamp": msg["timestamp"][:10] if msg["timestamp"] else "unknown",
+                    "timestamp": fmt_ts(msg["timestamp"]),
                     "score": msg["reactions"] or 0,
                     "quote": extract_quote(content, hit),
                 })
@@ -160,7 +164,7 @@ def run_analysis(client_name):
                 feature_requests.append({
                     "features": feature_hits,
                     "channel": msg["channel_name"],
-                    "timestamp": msg["timestamp"][:10] if msg["timestamp"] else "unknown",
+                    "timestamp": fmt_ts(msg["timestamp"]),
                     "quote": extract_quote(content, "suggestion" if "suggestion" in content.lower() else "feature"),
                 })
 
@@ -170,7 +174,7 @@ def run_analysis(client_name):
             pain_points.append({
                 "pains": pain_hits,
                 "channel": msg["channel_name"],
-                "timestamp": msg["timestamp"][:10] if msg["timestamp"] else "unknown",
+                "timestamp": fmt_ts(msg["timestamp"]),
                 "quote": extract_quote(content, pain_hits[0]),
                 "score": msg["reactions"] or 0,
             })

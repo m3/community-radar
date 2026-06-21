@@ -715,7 +715,9 @@ def api_market_intel(client_name):
     validate_client(client_name)
     
     # 1. Load Competitor JSON
-    report_path = config_mgr.DATA_DIR / "clients" / client_name / "reports" / "competitor_intel.json"
+    config = load_config()
+    data_dir = ROOT / config.get("data_dir", "data")
+    report_path = data_dir / "clients" / client_name / "reports" / "competitor_intel.json"
     intel = {}
     if report_path.exists():
         import json

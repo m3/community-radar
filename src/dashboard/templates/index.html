@@ -23,6 +23,19 @@
                 </span>
             </div>
             
+            <!-- Segment Toggle -->
+            <div class="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700 space-x-1">
+                <button onclick="changeSegment('all')" id="seg-all" class="seg-btn bg-indigo-500 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200" data-segment="all">
+                    All Channels
+                </button>
+                <button onclick="changeSegment('owned')" id="seg-owned" class="seg-btn text-slate-400 hover:text-white hover:bg-slate-700/30 px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200" data-segment="owned">
+                    Owned (Product)
+                </button>
+                <button onclick="changeSegment('external')" id="seg-external" class="seg-btn text-slate-400 hover:text-white hover:bg-slate-700/30 px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200" data-segment="external">
+                    External (Market)
+                </button>
+            </div>
+
             <div class="flex items-center space-x-2 bg-slate-800/50 rounded-lg p-1 border border-slate-700">
                 <button onclick="triggerTask('collect')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center shadow-lg shadow-indigo-500/20" id="btnSync">
                     <i class="fas fa-cloud-download-alt mr-2"></i> Sync
@@ -315,6 +328,22 @@
 <script>
     const clientName = '{{ client_name }}';
     let sentimentChart = null, volumeChart = null;
+    let currentSegment = 'all';
+
+    function changeSegment(seg) {
+        if (currentSegment === seg) return;
+        currentSegment = seg;
+        
+        document.querySelectorAll('.seg-btn').forEach(btn => {
+            if (btn.getAttribute('data-segment') === seg) {
+                btn.className = "seg-btn bg-indigo-500 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200";
+            } else {
+                btn.className = "seg-btn text-slate-400 hover:text-white hover:bg-slate-700/30 px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200";
+            }
+        });
+        
+        init();
+    }
 
     // Data caches for show-more
     let allTopics = [], allPowerWords = [], allContributors = [];
@@ -370,7 +399,7 @@
     async function loadPulse() {
         const feed = document.getElementById('pulseFeed');
         try {
-            const res = await fetch(`/api/${clientName}/raw_messages?limit=20`);
+            const res = await fetch(`/api/${clientName}/raw_messages?limit=20&segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
             
@@ -412,7 +441,7 @@
 
     async function loadOverview() {
         try {
-            const res = await fetch(`/api/${clientName}/overview`);
+            const res = await fetch(`/api/${clientName}/overview?segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
 
@@ -442,7 +471,7 @@
 
     async function loadSentimentTimeseries() {
         try {
-            const res = await fetch(`/api/${clientName}/sentiment/timeseries`);
+            const res = await fetch(`/api/${clientName}/sentiment/timeseries?segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
 
@@ -491,7 +520,7 @@
 
     async function loadVolumeChart() {
         try {
-            const res = await fetch(`/api/${clientName}/sentiment/timeseries`);
+            const res = await fetch(`/api/${clientName}/sentiment/timeseries?segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
 
@@ -537,7 +566,7 @@
 
     async function loadTopics() {
         try {
-            const res = await fetch(`/api/${clientName}/topics`);
+            const res = await fetch(`/api/${clientName}/topics?segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
             allTopics = Object.entries(data);
@@ -574,7 +603,7 @@
 
     async function loadChannels() {
         try {
-            const res = await fetch(`/api/${clientName}/sentiment/by_channel`);
+            const res = await fetch(`/api/${clientName}/sentiment/by_channel?segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
             const entries = Object.entries(data).sort((a, b) => b[1].total - a[1].total);
@@ -616,7 +645,7 @@
 
     async function loadPowerWords() {
         try {
-            const res = await fetch(`/api/${clientName}/power_words`);
+            const res = await fetch(`/api/${clientName}/power_words?segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
             allPowerWords = Object.entries(data);
@@ -655,7 +684,7 @@
 
     async function loadContributors() {
         try {
-            const res = await fetch(`/api/${clientName}/contributors`);
+            const res = await fetch(`/api/${clientName}/contributors?segment=${currentSegment}`);
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
             allContributors = data;

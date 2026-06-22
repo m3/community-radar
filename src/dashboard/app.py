@@ -8,8 +8,9 @@ import os
 from pathlib import Path
 import json
 from datetime import datetime
-from collections import defaultdict
+from collections import defaultdict, Counter
 import sys
+import re
 
 app = Flask(__name__)
 
@@ -58,6 +59,54 @@ def validate_client(client_name):
 def get_db(client_name):
     """Get database connection for a specific client."""
     return _get_db(client_name)
+
+
+def is_channel_owned(ch_name, owned_subreddits):
+    ch_name_lower = ch_name.lower()
+    if ch_name_lower.startswith("reddit-"):
+        parts = ch_name_lower.split("-")
+        if len(parts) > 1 and parts[1].lower() in owned_subreddits:
+            return True
+        return False
+    elif ch_name_lower.startswith("reddit_"):
+        parts = ch_name_lower.split("_")
+        if len(parts) > 1 and parts[1].lower() in owned_subreddits:
+            return True
+        return False
+    elif not ch_name_lower.startswith("reddit"):
+        return True
+    return False
+
+
+def get_channel_segmentation(client_name):
+    """
+    Returns (owned_channel_ids, external_channel_ids) for the client.
+    """
+    config = load_config()
+    client_config = config.get("clients", {}).get(client_name, {})
+    reddit_config = client_config.get("reddit", {}).get("subreddits", {})
+    owned_subreddits = [s.lower() for s, conf in reddit_config.items() if conf.get("owned")]
+    
+    db = get_db(client_name)
+    rows = db.execute("SELECT id, name FROM channels").fetchall()
+    db.close()
+    
+    owned_ids = []
+    external_ids = []
+    
+    for r in rows:
+        # Support fallback keys to be resilient to mock DB connections in unit tests
+        ch_id = r.get("id") or r.get("channel_id")
+        ch_name = r.get("name") or r.get("channel_name")
+        if not ch_id or not ch_name:
+            continue
+            
+        if is_channel_owned(ch_name, owned_subreddits):
+            owned_ids.append(ch_id)
+        else:
+            external_ids.append(ch_id)
+            
+    return owned_ids, external_ids
 
 
 def load_report(client_name):
@@ -149,25 +198,63 @@ def user_profile(client_name, user_id):
 def api_overview(client_name):
     """High-level stats for dashboard cards."""
     validate_client(client_name)
+    segment = request.args.get("segment", "all")
     db = get_db(client_name)
 
+    owned_ids, external_ids = get_channel_segmentation(client_name)
+
+    # Determine message filter
+    msg_filter = ""
+    msg_params = []
+    if segment == "owned":
+        if owned_ids:
+            msg_filter = " WHERE channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            msg_params.extend(owned_ids)
+        else:
+            msg_filter = " WHERE 1=0"
+    elif segment == "external":
+        if external_ids:
+            msg_filter = " WHERE channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            msg_params.extend(external_ids)
+        else:
+            msg_filter = " WHERE 1=0"
+
     # Total messages by platform
-    platform_stats = db.execute("""
-        SELECT platform, COUNT(*) as count
-        FROM messages
-        GROUP BY platform
-    """).fetchall()
+    if msg_filter:
+        platform_stats = db.execute(f"""
+            SELECT platform, COUNT(*) as count
+            FROM messages
+            {msg_filter}
+            GROUP BY platform
+        """, msg_params).fetchall()
+    else:
+        platform_stats = db.execute("""
+            SELECT platform, COUNT(*) as count
+            FROM messages
+            GROUP BY platform
+        """).fetchall()
 
     # Date range
-    date_range = db.execute("""
-        SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts
-        FROM messages
-        WHERE timestamp IS NOT NULL
-    """).fetchone()
+    date_range_query = "SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM messages"
+    if msg_filter:
+        date_range_query += msg_filter + " AND timestamp IS NOT NULL"
+        date_range = db.execute(date_range_query, msg_params).fetchone()
+    else:
+        date_range = db.execute(date_range_query + " WHERE timestamp IS NOT NULL").fetchone()
 
     # Channels
-    channels = db.execute("SELECT COUNT(*) as c FROM channels").fetchone()["c"]
-    users = db.execute("SELECT COUNT(*) as c FROM users").fetchone()["c"]
+    if segment == "owned":
+        channels = len(owned_ids)
+    elif segment == "external":
+        channels = len(external_ids)
+    else:
+        channels = db.execute("SELECT COUNT(*) as c FROM channels").fetchone()["c"]
+
+    # Users
+    if msg_filter:
+        users = db.execute(f"SELECT COUNT(DISTINCT user_id) as c FROM messages {msg_filter}", msg_params).fetchone()["c"]
+    else:
+        users = db.execute("SELECT COUNT(*) as c FROM users").fetchone()["c"]
 
     db.close()
 
@@ -178,7 +265,25 @@ def api_overview(client_name):
     report = load_report(client_name)
     report_meta = report.get("meta", {})
     if report.get("sentiment", {}).get("overall"):
-        report_meta["sentiment_ratio"] = report["sentiment"]["overall"].get("sentiment_ratio", 0)
+        if segment != "all":
+            # Compute dynamic sentiment ratio
+            from src.analysis.sentiment import classify_sentiment
+            db = get_db(client_name)
+            msg_query = f"SELECT content FROM messages {msg_filter} AND content IS NOT NULL AND content != ''"
+            msgs = db.execute(msg_query, msg_params).fetchall()
+            db.close()
+            
+            pos, neg = 0, 0
+            for m in msgs:
+                _, label = classify_sentiment(m["content"])
+                if label == "positive":
+                    pos += 1
+                elif label == "negative":
+                    neg += 1
+            report_meta = {**report_meta}
+            report_meta["sentiment_ratio"] = round(pos / max(neg, 1), 2)
+        else:
+            report_meta["sentiment_ratio"] = report["sentiment"]["overall"].get("sentiment_ratio", 0)
         report_meta["generated_at"] = report["meta"].get("generated_at")
 
     return jsonify({
@@ -195,15 +300,32 @@ def api_overview(client_name):
 def api_sentiment_timeseries(client_name):
     """Time-series sentiment data for charts using actual lexicon model."""
     validate_client(client_name)
+    segment = request.args.get("segment", "all")
     db = get_db(client_name)
 
-    rows = db.execute("""
+    owned_ids, external_ids = get_channel_segmentation(client_name)
+
+    query = """
         SELECT m.timestamp, m.platform, m.content
         FROM messages m
         WHERE m.client_id = :client_id AND m.timestamp IS NOT NULL AND m.content IS NOT NULL AND m.content != ''
-        ORDER BY m.timestamp ASC
-    """).fetchall()
+    """
+    params = []
+    if segment == "owned":
+        if owned_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            params.extend(owned_ids)
+        else:
+            query += " AND 1=0"
+    elif segment == "external":
+        if external_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            params.extend(external_ids)
+        else:
+            query += " AND 1=0"
 
+    query += " ORDER BY m.timestamp ASC"
+    rows = db.execute(query, params).fetchall()
     db.close()
 
     from src.analysis.sentiment import classify_sentiment
@@ -227,10 +349,23 @@ def api_sentiment_timeseries(client_name):
         series[platform][day]["total"] += 1
 
     report = load_report(client_name)
+    report_sentiment = report.get("sentiment", {})
+    if segment != "all" and "by_channel" in report_sentiment:
+        config = load_config()
+        client_config = config.get("clients", {}).get(client_name, {})
+        reddit_config = client_config.get("reddit", {}).get("subreddits", {})
+        owned_subreddits = [s.lower() for s, conf in reddit_config.items() if conf.get("owned")]
+        
+        filtered_by_channel = {}
+        for ch, data in report_sentiment["by_channel"].items():
+            owned = is_channel_owned(ch, owned_subreddits)
+            if (segment == "owned" and owned) or (segment == "external" and not owned):
+                filtered_by_channel[ch] = data
+        report_sentiment = {**report_sentiment, "by_channel": filtered_by_channel}
 
     return jsonify({
         "series": {p: dict(d) for p, d in series.items()},
-        "report_sentiment": report.get("sentiment", {})
+        "report_sentiment": report_sentiment
     })
 
 
@@ -238,6 +373,7 @@ def api_sentiment_timeseries(client_name):
 def api_sentiment_by_channel(client_name):
     """Sentiment breakdown by channel with ownership metadata."""
     validate_client(client_name)
+    segment = request.args.get("segment", "all")
     report = load_report(client_name)
     channel_data = report.get("sentiment", {}).get("by_channel", {})
     
@@ -251,15 +387,12 @@ def api_sentiment_by_channel(client_name):
     
     enriched = {}
     for ch, data in channel_data.items():
-        is_owned = False
-        if ch.startswith("reddit-"):
-            # Format: reddit-SubName-sort
-            parts = ch.split("-")
-            if len(parts) > 1 and parts[1].lower() in owned_subreddits:
-                is_owned = True
-        elif not ch.startswith("reddit"):
-            # Discord is always owned
-            is_owned = True
+        is_owned = is_channel_owned(ch, owned_subreddits)
+        
+        if segment == "owned" and not is_owned:
+            continue
+        if segment == "external" and is_owned:
+            continue
             
         enriched[ch] = {**data, "is_owned": is_owned}
         
@@ -283,13 +416,7 @@ def api_ecosystem_summary(client_name):
     external = {"total": 0, "positive": 0, "negative": 0}
     
     for ch, data in channel_data.items():
-        is_owned = False
-        if ch.startswith("reddit-"):
-            parts = ch.split("-")
-            if len(parts) > 1 and parts[1].lower() in owned_subreddits:
-                is_owned = True
-        elif not ch.startswith("reddit"):
-            is_owned = True
+        is_owned = is_channel_owned(ch, owned_subreddits)
             
         target = owned if is_owned else external
         target["total"] += data.get("total", 0)
@@ -323,56 +450,302 @@ def api_ecosystem_summary(client_name):
 def api_topics(client_name):
     """Topic-level sentiment."""
     validate_client(client_name)
-    report = load_report(client_name)
-    return jsonify(report.get("topic_sentiment", {}))
+    segment = request.args.get("segment", "all")
+    if segment == "all":
+        report = load_report(client_name)
+        return jsonify(report.get("topic_sentiment", {}))
+
+    db = get_db(client_name)
+    owned_ids, external_ids = get_channel_segmentation(client_name)
+
+    query = """
+        SELECT m.content, m.channel_id
+        FROM messages m
+        WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
+    """
+    params = []
+    if segment == "owned":
+        if owned_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            params.extend(owned_ids)
+        else:
+            query += " AND 1=0"
+    elif segment == "external":
+        if external_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            params.extend(external_ids)
+        else:
+            query += " AND 1=0"
+
+    rows = db.execute(query, params).fetchall()
+    topic_rows = db.execute("SELECT name, category FROM topics").fetchall()
+    topic_keywords = {r["name"]: r["category"] for r in topic_rows}
+    db.close()
+
+    from src.analysis.sentiment import classify_sentiment
+
+    topic_sentiment = defaultdict(lambda: {"pos": 0, "neg": 0, "neu": 0, "total": 0})
+    for r in rows:
+        text_lower = r["content"].lower()
+        score, label = classify_sentiment(r["content"])
+        for topic, category in topic_keywords.items():
+            if topic.lower() in text_lower:
+                topic_sentiment[topic]["total"] += 1
+                topic_sentiment[topic][label[:3]] += 1
+
+    result = {
+        topic: {
+            "total": data["total"],
+            "pos_pct": round(data["pos"] / max(data["total"], 1) * 100, 1),
+            "neg_pct": round(data["neg"] / max(data["total"], 1) * 100, 1),
+            "net_sentiment": round((data["pos"] - data["neg"]) / max(data["total"], 1) * 100, 1),
+        }
+        for topic, data in sorted(topic_sentiment.items(), key=lambda x: -x[1]["total"])[:30]
+    }
+    return jsonify(result)
 
 
 @app.route("/api/<client_name>/power_words")
 def api_power_words(client_name):
     """Community power words."""
     validate_client(client_name)
-    report = load_report(client_name)
-    return jsonify(report.get("power_words", {}))
+    segment = request.args.get("segment", "all")
+    if segment == "all":
+        report = load_report(client_name)
+        return jsonify(report.get("power_words", {}))
+
+    db = get_db(client_name)
+    owned_ids, external_ids = get_channel_segmentation(client_name)
+
+    query = """
+        SELECT m.content
+        FROM messages m
+        WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
+    """
+    params = []
+    if segment == "owned":
+        if owned_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            params.extend(owned_ids)
+        else:
+            query += " AND 1=0"
+    elif segment == "external":
+        if external_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            params.extend(external_ids)
+        else:
+            query += " AND 1=0"
+
+    rows = db.execute(query, params).fetchall()
+    db.close()
+
+    from src.analysis.sentiment import extract_power_words
+
+    all_power_words = Counter()
+    for r in rows:
+        pw = extract_power_words(r["content"])
+        for w in pw:
+            all_power_words[w] += 1
+
+    return jsonify(dict(all_power_words.most_common(40)))
 
 
 @app.route("/api/<client_name>/engagement")
 def api_engagement(client_name):
     """Engagement metrics."""
     validate_client(client_name)
-    report = load_report(client_name)
-    return jsonify(report.get("engagement", {}))
+    segment = request.args.get("segment", "all")
+    if segment == "all":
+        report = load_report(client_name)
+        return jsonify(report.get("engagement", {}))
+
+    db = get_db(client_name)
+    owned_ids, external_ids = get_channel_segmentation(client_name)
+
+    query_base = """
+        FROM messages m
+        WHERE m.client_id = :client_id
+    """
+    params = []
+    if segment == "owned":
+        if owned_ids:
+            query_base += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            params.extend(owned_ids)
+        else:
+            query_base += " AND 1=0"
+    elif segment == "external":
+        if external_ids:
+            query_base += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            params.extend(external_ids)
+        else:
+            query_base += " AND 1=0"
+
+    # Total & Avg reactions
+    stats = db.execute(f"SELECT COUNT(*) as cnt, COALESCE(SUM(reactions), 0) as total_react {query_base}", params).fetchone()
+    total_messages = stats["cnt"] if stats else 0
+    total_reactions = stats["total_react"] if stats else 0
+    avg_reactions = total_reactions / total_messages if total_messages > 0 else 0
+
+    # Reply count
+    reply_stats = db.execute(f"SELECT COUNT(*) as c {query_base} AND m.reply_to IS NOT NULL", params).fetchone()
+    reply_count = reply_stats["c"] if reply_stats else 0
+    reply_rate = round(reply_count / total_messages * 100, 1) if total_messages > 0 else 0
+
+    # Active users (5+ messages)
+    active_users_stats = db.execute(f"""
+        SELECT COUNT(*) as c FROM (
+            SELECT user_id, COUNT(*) as cnt
+            {query_base}
+            GROUP BY user_id
+            HAVING cnt >= 5
+        ) AS sub
+    """, params).fetchone()
+    active_users_5plus = active_users_stats["c"] if active_users_stats else 0
+
+    db.close()
+
+    return jsonify({
+        "total_reactions": total_reactions,
+        "avg_reactions_per_message": round(avg_reactions, 2),
+        "reply_count": reply_count,
+        "reply_rate": reply_rate,
+        "active_users_5plus": active_users_5plus
+    })
 
 
 @app.route("/api/<client_name>/contributors")
 def api_contributors(client_name):
     """Top contributors."""
     validate_client(client_name)
-    report = load_report(client_name)
-    return jsonify(report.get("top_contributors", []))
+    segment = request.args.get("segment", "all")
+    if segment == "all":
+        report = load_report(client_name)
+        return jsonify(report.get("top_contributors", []))
+
+    db = get_db(client_name)
+    owned_ids, external_ids = get_channel_segmentation(client_name)
+
+    query = """
+        SELECT u.display_name, COUNT(m.id) as messages, COALESCE(SUM(m.reactions), 0) as reactions_received
+        FROM messages m
+        JOIN users u ON (m.user_id = u.id AND m.client_id = u.client_id)
+        WHERE m.client_id = :client_id
+    """
+    params = []
+    if segment == "owned":
+        if owned_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            params.extend(owned_ids)
+        else:
+            query += " AND 1=0"
+    elif segment == "external":
+        if external_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            params.extend(external_ids)
+        else:
+            query += " AND 1=0"
+
+    query += " GROUP BY u.id, u.display_name ORDER BY messages DESC LIMIT 15"
+    rows = db.execute(query, params).fetchall()
+    db.close()
+
+    result = [{"name": r["display_name"] or "unknown", "messages": r["messages"], "reactions_received": r["reactions_received"]} for r in rows]
+    return jsonify(result)
 
 
 @app.route("/api/<client_name>/negative_messages")
 def api_negative_messages(client_name):
     """Top negative messages."""
     validate_client(client_name)
+    segment = request.args.get("segment", "all")
     report = load_report(client_name)
-    return jsonify(report.get("top_negative", []))
+    msgs = report.get("top_negative", [])
+    if segment == "all":
+        return jsonify(msgs)
+
+    config = load_config()
+    client_config = config.get("clients", {}).get(client_name, {})
+    reddit_config = client_config.get("reddit", {}).get("subreddits", {})
+    owned_subreddits = [s.lower() for s, conf in reddit_config.items() if conf.get("owned")]
+
+    filtered = []
+    for msg in msgs:
+        ch = msg.get("channel", "")
+        if is_channel_owned(ch, owned_subreddits) == (segment == "owned"):
+            filtered.append(msg)
+    return jsonify(filtered)
 
 
 @app.route("/api/<client_name>/positive_messages")
 def api_positive_messages(client_name):
     """Top positive messages."""
     validate_client(client_name)
+    segment = request.args.get("segment", "all")
     report = load_report(client_name)
-    return jsonify(report.get("top_positive", []))
+    msgs = report.get("top_positive", [])
+    if segment == "all":
+        return jsonify(msgs)
+
+    config = load_config()
+    client_config = config.get("clients", {}).get(client_name, {})
+    reddit_config = client_config.get("reddit", {}).get("subreddits", {})
+    owned_subreddits = [s.lower() for s, conf in reddit_config.items() if conf.get("owned")]
+
+    filtered = []
+    for msg in msgs:
+        ch = msg.get("channel", "")
+        if is_channel_owned(ch, owned_subreddits) == (segment == "owned"):
+            filtered.append(msg)
+    return jsonify(filtered)
 
 
 @app.route("/api/<client_name>/purpose")
 def api_purpose(client_name):
     """Purpose classification."""
     validate_client(client_name)
-    report = load_report(client_name)
-    return jsonify(report.get("purpose", {}))
+    segment = request.args.get("segment", "all")
+    if segment == "all":
+        report = load_report(client_name)
+        return jsonify(report.get("purpose", {}))
+
+    db = get_db(client_name)
+    owned_ids, external_ids = get_channel_segmentation(client_name)
+
+    query = """
+        SELECT m.content
+        FROM messages m
+        WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
+    """
+    params = []
+    if segment == "owned":
+        if owned_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            params.extend(owned_ids)
+        else:
+            query += " AND 1=0"
+    elif segment == "external":
+        if external_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            params.extend(external_ids)
+        else:
+            query += " AND 1=0"
+
+    rows = db.execute(query, params).fetchall()
+    db.close()
+
+    from src.analysis.sentiment import classify_purpose
+
+    purpose_dist = Counter()
+    for r in rows:
+        purpose = classify_purpose(r["content"])
+        purpose_dist[purpose] += 1
+
+    total = len(rows)
+    distribution = {k: {"count": v, "pct": round(v / total * 100, 1)} for k, v in purpose_dist.most_common()} if total > 0 else {}
+    return jsonify({
+        "distribution": distribution,
+        "by_channel": {}
+    })
 
 
 @app.route("/api/<client_name>/help_data")
@@ -536,6 +909,9 @@ def api_raw_messages(client_name):
     channel = request.args.get("channel")
     limit = min(int(request.args.get("limit", 100)), 500)
     offset = int(request.args.get("offset", 0))
+    segment = request.args.get("segment", "all")
+
+    owned_ids, external_ids = get_channel_segmentation(client_name)
 
     query = """
         SELECT m.message_id, m.content, m.timestamp, m.reactions, m.channel_id,
@@ -548,6 +924,19 @@ def api_raw_messages(client_name):
         WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
     """
     params = []
+
+    if segment == "owned":
+        if owned_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
+            params.extend(owned_ids)
+        else:
+            query += " AND 1=0"
+    elif segment == "external":
+        if external_ids:
+            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
+            params.extend(external_ids)
+        else:
+            query += " AND 1=0"
 
     if platform:
         query += " AND m.platform = ?"

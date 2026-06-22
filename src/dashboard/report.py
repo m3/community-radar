@@ -143,30 +143,33 @@ def generate_report(client_name=None, output_path=None):
         # Weekly Trends
         if "weekly_trends" in analysis:
             trends = analysis["weekly_trends"]
-            pos_pcts = [t["pos_pct"] for t in trends]
-            neg_pcts = [t["neg_pct"] for t in trends]
-            
-            def get_spark(val, vals):
-                if not vals: return "▁"
-                lo, hi = min(vals), max(vals)
-                if hi == lo: return "▅"
-                idx = int((val - lo) / (hi - lo) * 7)
-                glyphs = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
-                return glyphs[min(7, idx)]
+            if trends:
+                pos_pcts = [t["pos_pct"] for t in trends]
+                neg_pcts = [t["neg_pct"] for t in trends]
+                
+                def get_spark(val, vals):
+                    if not vals: return "▁"
+                    lo, hi = min(vals), max(vals)
+                    if hi == lo: return "▅"
+                    idx = int((val - lo) / (hi - lo) * 7)
+                    glyphs = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+                    return glyphs[min(7, idx)]
 
-            html += "<h2>Weekly Sentiment Trends</h2>\n<table>\n<thead><tr><th>Week</th><th>Volume</th><th>Positive %</th><th>Negative %</th><th>Pos Trend</th><th>Neg Trend</th></tr></thead>\n<tbody>\n"
-            for t in trends:
-                pos_spark = get_spark(t['pos_pct'], pos_pcts)
-                neg_spark = get_spark(t['neg_pct'], neg_pcts)
-                html += f"""<tr>
-                    <td>{t['week']}</td>
-                    <td>{t['total']}</td>
-                    <td><span class="sent-pill pill-pos">{t['pos_pct']}%</span></td>
-                    <td><span class="sent-pill pill-neg">{t['neg_pct']}%</span></td>
-                    <td class="sparkline">{pos_spark}</td>
-                    <td class="sparkline">{neg_spark}</td>
-                </tr>"""
-            html += "</tbody>\n</table>\n"
+                html += "<h2>Weekly Sentiment Trends</h2>\n<table>\n<thead><tr><th>Week</th><th>Volume</th><th>Positive %</th><th>Negative %</th><th>Pos Trend</th><th>Neg Trend</th></tr></thead>\n<tbody>\n"
+                for t in trends:
+                    pos_spark = get_spark(t['pos_pct'], pos_pcts)
+                    neg_spark = get_spark(t['neg_pct'], neg_pcts)
+                    html += f"""<tr>
+                        <td>{t['week']}</td>
+                        <td>{t['total']}</td>
+                        <td><span class="sent-pill pill-pos">{t['pos_pct']}%</span></td>
+                        <td><span class="sent-pill pill-neg">{t['neg_pct']}%</span></td>
+                        <td class="sparkline">{pos_spark}</td>
+                        <td class="sparkline">{neg_spark}</td>
+                    </tr>"""
+                html += "</tbody>\n</table>\n"
+            else:
+                html += "<h2>Weekly Sentiment Trends</h2>\n<p><em>Insufficient trend data available for the last 8 weeks.</em></p>\n"
 
         # Anomalies
         if analysis.get("anomalies"):

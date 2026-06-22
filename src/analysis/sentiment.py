@@ -627,14 +627,18 @@ def generate_markdown_report(r):
 
     # ── WEEKLY SENTIMENT TRENDS ──
     lines.append("\n\n## Weekly Sentiment Trends (Last 8 Weeks)")
-    neg_pcts = [t["neg_pct"] for t in a.get("weekly_trends", [])]
-    pos_pcts = [t["pos_pct"] for t in a.get("weekly_trends", [])]
-    lines.append("\n| Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% | Pos Trend | Neg Trend |")
-    lines.append("|------|-------|------|------|------|--------------|--------------|-------------|-------------|-----------|-----------|")
-    for t in a.get("weekly_trends", []):
-        pos_spark = sparkline_for_value(t["pos_pct"], pos_pcts)
-        neg_spark = sparkline_for_value(t["neg_pct"], neg_pcts)
-        lines.append(f"| {t['week']} | {t['total']} | {t['pos_pct']}% | {t['neg_pct']}% | {t['neu_pct']}% | {t['discord_pos_pct']}% | {t['discord_neg_pct']}% | {t['reddit_pos_pct']}% | {t['reddit_neg_pct']}% | {pos_spark} | {neg_spark} |")
+    trends = a.get("weekly_trends", [])
+    if trends:
+        neg_pcts = [t["neg_pct"] for t in trends]
+        pos_pcts = [t["pos_pct"] for t in trends]
+        lines.append("\n| Week | Total | Pos% | Neg% | Neu% | Discord Pos% | Discord Neg% | Reddit Pos% | Reddit Neg% | Pos Trend | Neg Trend |")
+        lines.append("|------|-------|------|------|------|--------------|--------------|-------------|-------------|-----------|-----------|")
+        for t in trends:
+            pos_spark = sparkline_for_value(t["pos_pct"], pos_pcts)
+            neg_spark = sparkline_for_value(t["neg_pct"], neg_pcts)
+            lines.append(f"| {t['week']} | {t['total']} | {t['pos_pct']}% | {t['neg_pct']}% | {t['neu_pct']}% | {t['discord_pos_pct']}% | {t['discord_neg_pct']}% | {t['reddit_pos_pct']}% | {t['reddit_neg_pct']}% | {pos_spark} | {neg_spark} |")
+    else:
+        lines.append("\n*Insufficient trend data available for the last 8 weeks.*")
 
     # ── ANOMALY ALERTS ──
     anomalies = a.get("anomalies", [])

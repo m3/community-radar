@@ -18,25 +18,31 @@ from .errors import ElementNotFoundError
 class PlaywrightPage:
     """Playwright implementation compatible with BrowserPage interface."""
 
-    def __init__(self, headless: bool = True, proxy: str | None = None) -> None:
-        self._pw = sync_playwright().start()
-        try:
-            browser_args: dict[str, Any] = {}
-            if proxy:
-                # Format: http://user:pass@host:port
-                browser_args["proxy"] = {"server": proxy}
-
-            self._browser = self._pw.chromium.launch(headless=headless, **browser_args)
-            self._context = self._browser.new_context(
-                user_agent=(
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-                )
-            )
+    def __init__(self, headless: bool = True, proxy: str | None = None, context: Any = None) -> None:
+        if context:
+            self._pw = None
+            self._browser = None
+            self._context = context
             self._page = self._context.new_page()
-        except Exception:
-            self._pw.stop()
-            raise
+        else:
+            self._pw = sync_playwright().start()
+            try:
+                browser_args: dict[str, Any] = {}
+                if proxy:
+                    # Format: http://user:pass@host:port
+                    browser_args["proxy"] = {"server": proxy}
+
+                self._browser = self._pw.chromium.launch(headless=headless, **browser_args)
+                self._context = self._browser.new_context(
+                    user_agent=(
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                    )
+                )
+                self._page = self._context.new_page()
+            except Exception:
+                self._pw.stop()
+                raise
 
     def _get_modifier(self) -> str:
         """Return the appropriate modifier key for the current platform."""
@@ -178,5 +184,17 @@ class PlaywrightPage:
         self._page.set_input_files(selector, abs_paths)
 
     def close(self) -> None:
-        self._browser.close()
-        self._pw.stop()
+        try:
+            self._page.close()
+        except Exception:
+            pass
+        if self._browser:
+            try:
+                self._browser.close()
+            except Exception:
+                pass
+        if self._pw:
+            try:
+                self._pw.stop()
+            except Exception:
+                pass

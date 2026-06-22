@@ -197,7 +197,12 @@
         if (!confirm('Retry task #' + taskId + '?')) return;
         
         try {
-            const response = await fetch('/api/queue/retry/' + taskId, { method: 'POST' });
+            const response = await fetch('/api/queue/retry/' + taskId, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': getCookie('csrf_token')
+                }
+            });
             if (response.ok) {
                 fetchQueueStatus();
             }

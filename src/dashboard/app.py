@@ -13,6 +13,25 @@ import sys
 
 app = Flask(__name__)
 
+# Register custom JSON provider to serialize datetime/date objects as ISO strings
+from datetime import date, datetime
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
+
+try:
+    from flask.json.provider import DefaultJSONProvider
+    class CustomJSONProvider(DefaultJSONProvider):
+        def dumps(self, obj, **kwargs):
+            return json.dumps(obj, cls=CustomJSONEncoder, **kwargs)
+        def loads(self, s, **kwargs):
+            return json.loads(s, **kwargs)
+    app.json = CustomJSONProvider(app)
+except ImportError:
+    app.json_encoder = CustomJSONEncoder
+
 ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -50,6 +69,8 @@ def load_report(client_name):
     return {}
 
 
+import secrets
+
 @app.context_processor
 def inject_clients():
     """Inject available clients into all templates."""
@@ -58,6 +79,27 @@ def inject_clients():
         return dict(clients=config.get("clients", {}))
     except Exception:
         return dict(clients={})
+
+
+@app.before_request
+def csrf_protect():
+    if app.config.get("TESTING"):
+        return
+    if request.method in ["POST", "PUT", "DELETE"]:
+        csrf_cookie = request.cookies.get("csrf_token")
+        csrf_header = request.headers.get("X-CSRF-Token")
+        if not csrf_cookie or not csrf_header or csrf_cookie != csrf_header:
+            return jsonify({"success": False, "error": "CSRF Token missing or invalid"}), 403
+
+
+@app.after_request
+def set_csrf_cookie(response):
+    if app.config.get("TESTING"):
+        return response
+    if not request.cookies.get("csrf_token"):
+        token = secrets.token_urlsafe(32)
+        response.set_cookie("csrf_token", token, httponly=False, samesite="Lax")
+    return response
 
 
 @app.route("/")
@@ -151,48 +193,40 @@ def api_overview(client_name):
 
 @app.route("/api/<client_name>/sentiment/timeseries")
 def api_sentiment_timeseries(client_name):
-    """Time-series sentiment data for charts."""
+    """Time-series sentiment data for charts using actual lexicon model."""
     validate_client(client_name)
     db = get_db(client_name)
 
-    # Get messages with sentiment - we'll compute on the fly
-    # For performance, we use pre-computed daily aggregates
     rows = db.execute("""
-        SELECT m.timestamp::date as day, m.platform,
-               SUM(CASE 
-                   WHEN m.reactions > 0 THEN 1 
-                   WHEN m.content ILIKE '%good%' OR m.content ILIKE '%love%' OR m.content ILIKE '%great%' THEN 1
-                   ELSE 0 
-               END) as positive_proxy,
-               SUM(CASE 
-                   WHEN m.platform = 'reddit' AND m.reactions < 0 THEN 1
-                   WHEN m.content ILIKE '%bug%' OR m.content ILIKE '%issue%' OR m.content ILIKE '%error%' OR m.content ILIKE '%bad%' THEN 1
-                   ELSE 0 
-               END) as negative_proxy,
-               COUNT(*) as total
+        SELECT m.timestamp, m.platform, m.content
         FROM messages m
-        WHERE m.client_id = :client_id AND m.timestamp IS NOT NULL
-        GROUP BY day, m.platform
-        ORDER BY day ASC
+        WHERE m.client_id = :client_id AND m.timestamp IS NOT NULL AND m.content IS NOT NULL AND m.content != ''
+        ORDER BY m.timestamp ASC
     """).fetchall()
 
     db.close()
 
-    # Also get actual sentiment from report if available
-    report = load_report(client_name)
+    from src.analysis.sentiment import classify_sentiment
 
     # Build time series by platform
     series = defaultdict(lambda: defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0, "total": 0}))
 
     for r in rows:
-        day = str(r["day"]) if r["day"] else "unknown"
+        ts = r["timestamp"]
+        if isinstance(ts, str):
+            day = ts[:10]
+        else:
+            day = ts.strftime("%Y-%m-%d")
+            
         platform = r["platform"]
-        series[platform][day] = {
-            "positive": r["positive_proxy"],  # Using reactions as proxy
-            "negative": r["negative_proxy"],
-            "neutral": r["total"] - r["positive_proxy"] - r["negative_proxy"],
-            "total": r["total"]
-        }
+        content = r["content"]
+        
+        _, label = classify_sentiment(content)
+        
+        series[platform][day][label] += 1
+        series[platform][day]["total"] += 1
+
+    report = load_report(client_name)
 
     return jsonify({
         "series": {p: dict(d) for p, d in series.items()},
@@ -272,7 +306,7 @@ def api_ecosystem_summary(client_name):
     
     if owned["ratio"] > (external["ratio"] + 1.0):
         insights.append(f"Core community sentiment ({owned['ratio']}) outpaces external market ({external['ratio']}). Strong retention, but potential struggle with initial market perception.")
-    elif external["ratio"] > (owned["ratio"] + 0.5):
+    elif external["ratio"] > (owned["ratio"] + 0.5) and owned["ratio"] < 4.0:
         insights.append("External sentiment is noticeably higher than owned channels. Core players may be experiencing burnout or specific live-ops friction.")
         
     if not insights:
@@ -393,6 +427,52 @@ def api_create_client():
     return jsonify({"success": True})
 
 
+def get_friendly_field_name(loc):
+    if not loc:
+        return "Configuration"
+    
+    parts = []
+    i = 0
+    while i < len(loc):
+        key = str(loc[i])
+        if key == "name" and len(loc) == 1:
+            parts.append("Client Display Name")
+        elif key == "reddit":
+            parts.append("Reddit")
+            if i + 1 < len(loc) and str(loc[i+1]) == "subreddits":
+                parts.append("Subreddits")
+                if i + 2 < len(loc):
+                    parts.append(f'"{loc[i+2]}"')
+                    i += 2
+                i += 1
+            elif i + 1 < len(loc) and str(loc[i+1]) == "domain_monitoring":
+                parts.append("Domain Monitoring")
+                if i + 2 < len(loc):
+                    field = str(loc[i+2]).replace("_", " ").title()
+                    parts.append(field)
+                    i += 2
+                i += 1
+        elif key == "discord":
+            parts.append("Discord")
+            if i + 1 < len(loc) and str(loc[i+1]) == "servers":
+                parts.append("Servers")
+                if i + 2 < len(loc):
+                    parts.append(f'Server "{loc[i+2]}"')
+                    if i + 3 < len(loc) and str(loc[i+3]) == "channels":
+                        parts.append("Channels")
+                        if i + 4 < len(loc):
+                            parts.append(f'Channel "{loc[i+4]}"')
+                            i += 4
+                        i += 3
+                    i += 2
+                i += 1
+        else:
+            parts.append(key.replace("_", " ").title())
+        i += 1
+    
+    return " -> ".join(parts)
+
+
 @app.route("/api/clients/<client_name>/update", methods=["POST"])
 def api_update_client_config(client_name):
     """Update an existing client's configuration with basic validation."""
@@ -402,24 +482,38 @@ def api_update_client_config(client_name):
     if not isinstance(data, dict):
         return jsonify({"success": False, "error": "Invalid payload format"}), 400
         
-    # Basic structure check
-    if "name" not in data or not data["name"]:
-        return jsonify({"success": False, "error": "Client name is required"}), 400
-        
-    if "reddit" not in data or not isinstance(data["reddit"], dict):
-        return jsonify({"success": False, "error": "Missing or invalid reddit config"}), 400
-        
-    if "discord" not in data or not isinstance(data["discord"], dict):
-        return jsonify({"success": False, "error": "Missing or invalid discord config"}), 400
-
-    # Ensure subreddits and servers are dicts
-    if not isinstance(data["reddit"].get("subreddits"), dict):
-        return jsonify({"success": False, "error": "Invalid subreddits format"}), 400
-    if not isinstance(data["discord"].get("servers"), dict):
-        return jsonify({"success": False, "error": "Invalid discord servers format"}), 400
+    from pydantic import ValidationError
+    from src.dashboard.validation import ClientConfigSchema
+    
+    # 1. Load old config to preserve existing 'owned' flags
+    old_config = config_mgr.load()
+    old_client_config = old_config.get("clients", {}).get(client_name, {})
+    old_subreddits = old_client_config.get("reddit", {}).get("subreddits", {})
+    
+    # 2. Inject existing 'owned' flags into the new data before validating
+    if "reddit" in data and isinstance(data["reddit"], dict) and "subreddits" in data["reddit"] and isinstance(data["reddit"]["subreddits"], dict):
+        for sub_name, sub_conf in data["reddit"]["subreddits"].items():
+            if isinstance(sub_conf, dict) and sub_name in old_subreddits:
+                sub_conf["owned"] = old_subreddits[sub_name].get("owned", False)
+                
+    try:
+        # 3. Perform Pydantic validation
+        validated_data = ClientConfigSchema.model_validate(data)
+    except ValidationError as e:
+        details = []
+        for err in e.errors():
+            details.append({
+                "field": get_friendly_field_name(err["loc"]),
+                "message": err["msg"]
+            })
+        return jsonify({
+            "success": False,
+            "error": "Validation failed",
+            "details": details
+        }), 400
 
     config = config_mgr.load()
-    config["clients"][client_name] = data
+    config["clients"][client_name] = validated_data.model_dump()
     config_mgr.save(config)
     return jsonify({"success": True})
 
@@ -471,25 +565,36 @@ def api_raw_messages(client_name):
     # Flag external mentions
     config = config_mgr.load()
     client_config = config.get("clients", {}).get(client_name, {})
-    keywords = []
-    external_prefixes = []
     subreddits_config = client_config.get("reddit", {}).get("subreddits", {})
-    for sub, sub_conf in subreddits_config.items():
-        if "track_keywords" in sub_conf and sub_conf["track_keywords"]:
-            keywords.extend(sub_conf["track_keywords"])
-            external_prefixes.append(f"reddit_{sub.lower()}")
-            
-    keywords = list(set([k.lower() for k in keywords]))
     
+    # Map external subreddit name (lowercase) to its specific track_keywords
+    subreddit_keywords = {}
+    for sub, sub_conf in subreddits_config.items():
+        if not sub_conf.get("owned"):
+            if "track_keywords" in sub_conf and sub_conf["track_keywords"]:
+                kws = [k.lower() for k in sub_conf["track_keywords"]]
+                subreddit_keywords[sub.lower()] = kws
+            
     result_rows = []
     for r in rows:
         r_dict = dict(r)
         r_dict["is_external_mention"] = False
         
         channel_name = (r_dict.get("channel_name") or "").lower()
-        if any(channel_name.startswith(p) for p in external_prefixes):
+        sub_name = None
+        if channel_name.startswith("reddit-"):
+            parts = channel_name.split("-")
+            if len(parts) > 1:
+                sub_name = parts[1]
+        elif channel_name.startswith("reddit_"):
+            parts = channel_name.split("_")
+            if len(parts) > 1:
+                sub_name = parts[1]
+                
+        if sub_name and sub_name in subreddit_keywords:
             content_lower = (r_dict.get("content") or "").lower()
-            if any(kw in content_lower for kw in keywords):
+            kws = subreddit_keywords[sub_name]
+            if any(kw in content_lower for kw in kws):
                 r_dict["is_external_mention"] = True
                 
         result_rows.append(r_dict)
@@ -522,52 +627,60 @@ def api_market_awareness(client_name):
     config = config_mgr.load()
     client_config = config.get("clients", {}).get(client_name, {})
     
-    # 1. Gather keywords and identify external subreddits
-    keywords = []
+    # 1. Identify external subreddits and their specific keywords
     subreddits_config = client_config.get("reddit", {}).get("subreddits", {})
-    external_channels = []
+    external_subs = {}
     for sub, sub_conf in subreddits_config.items():
-        if "track_keywords" in sub_conf and sub_conf["track_keywords"]:
-            keywords.extend(sub_conf["track_keywords"])
-            # Channel name format in DB is like reddit_billiards_hot
-            external_channels.append(f"reddit_{sub.lower()}_%")
-    
-    keywords = list(set(keywords)) # Deduplicate
+        if not sub_conf.get("owned"):
+            kws = sub_conf.get("track_keywords") or []
+            external_subs[sub.lower()] = [k.lower() for k in kws]
+            
     db = get_db(client_name)
     
     total_external = 0
     external_mentions = 0
     
-    if external_channels:
-        channel_filters = " OR ".join(["c.name LIKE ?" for _ in external_channels])
+    if external_subs:
+        channel_likes = [f"reddit%{sub}%" for sub in external_subs.keys()]
+        channel_filters = " OR ".join(["LOWER(c.name) LIKE ?" for _ in channel_likes])
         
         # Total External Volume
         total_external_row = db.execute(f"""
             SELECT COUNT(*) as count FROM messages m
             JOIN channels c ON m.channel_id = c.id
             WHERE m.client_id = :client_id AND ({channel_filters})
-        """, external_channels).fetchone()
+        """, channel_likes).fetchone()
         total_external = total_external_row["count"] if total_external_row else 0
         
         # External Mentions (Brand Blips)
-        if keywords:
-            kw_filters = " OR ".join(["m.content LIKE ?" for _ in keywords])
-            params = external_channels + [f"%{k}%" for k in keywords]
+        mention_clauses = []
+        mention_params = []
+        for sub, kws in external_subs.items():
+            if kws:
+                kw_likes = [f"%{k}%" for k in kws]
+                kw_or = " OR ".join(["LOWER(m.content) LIKE ?" for _ in kw_likes])
+                mention_clauses.append(f"(LOWER(c.name) LIKE ? AND ({kw_or}))")
+                mention_params.append(f"reddit%{sub}%")
+                mention_params.extend(kw_likes)
+                
+        if mention_clauses:
+            mentions_filter = " OR ".join(mention_clauses)
             external_mentions_row = db.execute(f"""
                 SELECT COUNT(*) as count FROM messages m
                 JOIN channels c ON m.channel_id = c.id
-                WHERE m.client_id = :client_id AND ({channel_filters}) AND ({kw_filters})
-            """, params).fetchone()
+                WHERE m.client_id = :client_id AND ({mentions_filter})
+            """, mention_params).fetchone()
             external_mentions = external_mentions_row["count"] if external_mentions_row else 0
 
     # 2. Total Owned Volume (Everything else)
-    if external_channels:
-        not_channel_filters = " AND ".join(["c.name NOT LIKE ?" for _ in external_channels])
+    if external_subs:
+        channel_likes = [f"reddit%{sub}%" for sub in external_subs.keys()]
+        not_channel_filters = " AND ".join(["LOWER(c.name) NOT LIKE ?" for _ in channel_likes])
         total_owned_row = db.execute(f"""
             SELECT COUNT(*) as count FROM messages m
             JOIN channels c ON m.channel_id = c.id
             WHERE m.client_id = :client_id AND ({not_channel_filters})
-        """, external_channels).fetchone()
+        """, channel_likes).fetchone()
         total_owned = total_owned_row["count"] if total_owned_row else 0
     else:
         total_owned_row = db.execute("SELECT COUNT(*) as count FROM messages WHERE client_id = :client_id").fetchone()
@@ -836,11 +949,11 @@ def api_cuebot_user_profile(client_name, user_id):
 
     user = db.execute("""
         SELECT u.*, 
-            (SELECT COUNT(*) FROM messages WHERE reply_to IN 
-                (SELECT message_id FROM messages WHERE user_id = u.id)
+            (SELECT COUNT(*) FROM messages WHERE client_id = :client_id AND reply_to IN 
+                (SELECT message_id FROM messages WHERE client_id = :client_id AND user_id = u.id)
             ) as reply_count
         FROM users u
-        WHERE u.id = ?
+        WHERE u.client_id = :client_id AND u.id = ?
     """, (user_id,)).fetchone()
 
     if not user:
@@ -856,11 +969,11 @@ def api_cuebot_user_profile(client_name, user_id):
                    WHEN m.reactions < 0 THEN 'negative'
                    ELSE 'neutral'
                END as sentiment_proxy
-        FROM messages m
-        JOIN channels c ON m.channel_id = c.id
-        WHERE m.client_id = :client_id AND m.user_id = ? AND m.content IS NOT NULL AND m.content != ''
-        ORDER BY m.timestamp DESC
-        LIMIT 100
+         FROM messages m
+         JOIN channels c ON m.channel_id = c.id
+         WHERE m.client_id = :client_id AND m.user_id = ? AND m.content IS NOT NULL AND m.content != ''
+         ORDER BY m.timestamp DESC
+         LIMIT 100
     """, (user_id,)).fetchall()
 
     # Channel activity
@@ -875,7 +988,7 @@ def api_cuebot_user_profile(client_name, user_id):
 
     # Cross-platform presence
     platforms = db.execute("""
-        SELECT DISTINCT platform FROM messages WHERE user_id = ?
+        SELECT DISTINCT platform FROM messages WHERE client_id = :client_id AND user_id = ?
     """, (user_id,)).fetchall()
 
     # Linked identities (Heuristic Engine)

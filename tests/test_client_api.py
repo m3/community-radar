@@ -106,3 +106,33 @@ def test_api_market_intel(client, tmp_path):
         data = json.loads(response.data)
         assert data["competitors"]["meta"]["pure_pool_mentions"] == 10
         assert data["domains"][0]["post_count"] == 3
+
+
+def test_update_client_validation_errors(client):
+    # First create
+    client.post('/api/clients', json={"client_id": "val_client", "name": "Old Name"})
+    
+    # Then update with invalid max_pages (greater than 20) and blank name
+    payload = {
+        "name": "",
+        "reddit": {
+            "subreddits": {"test": {"sorts": ["new"]}},
+            "domain_monitoring": {
+                "enabled": True,
+                "domains": ["ripstone.com"],
+                "max_pages": 99,  # Invalid: must be <= 20
+                "sort": "relevance"
+            }
+        },
+        "discord": {"servers": {}}
+    }
+    response = client.post('/api/clients/val_client/update', json=payload)
+    assert response.status_code == 400
+    data = json.loads(response.data)
+    assert data["success"] is False
+    assert "details" in data
+    
+    # Check field mappings
+    fields = [d["field"] for d in data["details"]]
+    assert "Client Display Name" in fields or any("Name" in f for f in fields)
+    assert "Reddit -> Domain Monitoring -> Max Pages" in fields

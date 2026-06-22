@@ -1,6 +1,7 @@
 """
 Reddit collector v4 — uses Reddit's .json API for bulk post extraction
 (with full timestamps, scores, pagination) and Chrome bridge for comment threads.
+Supports in-process Playwright session sharing via PlaywrightManager.
 """
 
 import json
@@ -12,6 +13,24 @@ from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, lo
 from src.collectors.utils import get_config_value, run_cli, CONFIG
 
 DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
+
+
+def get_proxy_from_bws(secret_id: str) -> str | None:
+    import subprocess
+    import json
+    if not secret_id:
+        return None
+    try:
+        result = subprocess.run(
+            ["bws", "secret", "get", secret_id, "--output", "json"],
+            capture_output=True, text=True, check=True
+        )
+        data = json.loads(result.stdout)
+        return data.get("value")
+    except Exception as e:
+        import sys
+        print(f"Error fetching proxy from BWS: {e}", file=sys.stderr)
+        return None
 
 
 def fetch_posts_via_json(subreddit, sort="new", limit=100, max_pages=5, client_cfg=None):
@@ -56,10 +75,95 @@ def fetch_posts_via_json(subreddit, sort="new", limit=100, max_pages=5, client_c
 
 
 def fetch_comments_for_post(permalink, client_cfg=None):
-    """Fetch comments for a post using the Chrome bridge."""
+    """Fetch comments for a post using the Chrome bridge CLI."""
     detail = run_cli(["get-post-detail", "--post-url", f"https://www.reddit.com{permalink}"], timeout=30, client_cfg=client_cfg)
     if detail:
         return detail.get("comments", [])
+    return []
+
+
+def fetch_posts_via_json_in_process(page, subreddit, sort="new", limit=100, max_pages=5):
+    """Fetch posts using Reddit's .json API in-process via PlaywrightPage."""
+    all_posts = []
+    after = ""
+
+    for page_num in range(max_pages):
+        base_sort = sort.split("?")[0]
+        url = f"https://www.reddit.com/r/{subreddit}/{base_sort}.json?limit={limit}"
+        if "?" in sort:
+            url += "&" + sort.split("?", 1)[1]
+        if after:
+            url += f"&after={after}"
+
+        print(f"    Navigating to {url}...")
+        page.navigate(url)
+        page.wait_for_load()
+        time.sleep(1)
+
+        text = page.evaluate("document.body.innerText")
+        if not text:
+            break
+
+        try:
+            data = json.loads(text.strip())
+        except Exception:
+            try:
+                pre_text = page.evaluate("document.querySelector('pre')?.innerText")
+                if pre_text:
+                    data = json.loads(pre_text.strip())
+                else:
+                    break
+            except Exception:
+                break
+
+        children = data.get("data", {}).get("children", [])
+        if not children:
+            break
+
+        page_posts = []
+        for c in children:
+            d = c.get("data", {})
+            post = {
+                "id": d.get("id", ""),
+                "title": d.get("title", ""),
+                "subreddit": d.get("subreddit", ""),
+                "author": {"name": d.get("author", "[deleted]")},
+                "permalink": d.get("permalink", ""),
+                "postType": "text" if d.get("is_self") else "link",
+                "selftext": d.get("selftext", ""),
+                "createdUtc": d.get("created_utc", 0),
+                "stats": {
+                    "score": d.get("score", 0),
+                    "numComments": d.get("num_comments", 0),
+                    "upvoteRatio": d.get("upvote_ratio", 0),
+                },
+                "flair": d.get("link_flair_text", ""),
+                "domain": d.get("domain", ""),
+                "url": d.get("url", ""),
+            }
+            page_posts.append(post)
+
+        all_posts.extend(page_posts)
+        after = data.get("data", {}).get("after")
+        print(f"    Page {page_num + 1}: {len(page_posts)} posts (total: {len(all_posts)}, after={after[:20] if after else None}...)")
+        if not after:
+            break
+
+        time.sleep(1.5)  # Rate limit between pages
+
+    return all_posts
+
+
+def fetch_comments_for_post_in_process(page, permalink):
+    """Fetch comments for a post in-process via PlaywrightPage and post_detail module."""
+    from reddit.post_detail import get_post_detail
+    url = f"https://www.reddit.com{permalink}"
+    try:
+        detail = get_post_detail(page, url, load_all_comments=False)
+        if detail:
+            return [c.to_dict() for c in detail.comments]
+    except Exception as e:
+        print(f"    ⚠ Failed to fetch comments for {permalink}: {e}")
     return []
 
 
@@ -69,30 +173,94 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
     sort_safe = sort.replace("?", "_").replace("=", "_").replace("&", "_")
     print(f"  📥 r/{subreddit} ({sort})...")
 
-    # Fetch posts via .json API
-    posts = fetch_posts_via_json(subreddit, sort, limit=100, max_pages=max_post_pages, client_cfg=client_cfg)
-    if not posts:
-        print(f"  ✗ No posts fetched")
-        return 0, 0
-
-    print(f"  Got {len(posts)} posts total")
-
-    # Fetch comments for top posts
+    posts = []
+    used_in_process = False
     total_comments = 0
-    if with_comments:
-        # Sort by comment count descending, take top N
-        posts_with_comments = sorted(
-            [p for p in posts if p["stats"]["numComments"] > 0],
-            key=lambda p: p["stats"]["numComments"],
-            reverse=True,
-        )
-        for post in posts_with_comments[:comment_limit]:
-            time.sleep(1.5)  # Rate limit
-            comments = fetch_comments_for_post(post["permalink"], client_cfg=client_cfg)
-            if comments:
-                post["comments"] = comments
-                total_comments += len(comments)
-                print(f"    💬 {post['id']}: {len(comments)} comments")
+
+    # Try in-process Playwright browser session first
+    backend = get_config_value(client_cfg, "reddit", "backend", "playwright")
+    if backend == "playwright":
+        try:
+            # Set up import path for scripts/reddit
+            import sys
+            from pathlib import Path
+            current_dir = Path(__file__).parent
+            scripts_dir = current_dir.parent.parent / "scripts"
+            if str(scripts_dir) not in sys.path:
+                sys.path.append(str(scripts_dir))
+
+            from src.collectors.browser_manager import PlaywrightManager
+            from reddit.playwright_backend import PlaywrightPage
+
+            headless = get_config_value(client_cfg, "reddit", "headless", True)
+            proxy_secret_id = get_config_value(client_cfg, "reddit", "proxy_secret_id")
+            proxy = get_proxy_from_bws(proxy_secret_id) if proxy_secret_id else None
+            proxy_cfg = {"server": proxy} if proxy else None
+
+            # Get manager and start
+            manager = PlaywrightManager.get_instance()
+            manager.start(headless=headless)
+            context = manager.get_context(proxy_cfg=proxy_cfg)
+            page = PlaywrightPage(headless=headless, proxy=proxy, context=context)
+
+            try:
+                print("  [In-Process] Fetching posts via JSON API...")
+                posts = fetch_posts_via_json_in_process(
+                    page, subreddit, sort, limit=100, max_pages=max_post_pages
+                )
+                used_in_process = True
+                
+                # Fetch comments for top posts using the same page
+                if with_comments and posts:
+                    # Sort by comment count descending, take top N
+                    posts_with_comments = sorted(
+                        [p for p in posts if p["stats"]["numComments"] > 0],
+                        key=lambda p: p["stats"]["numComments"],
+                        reverse=True,
+                    )
+                    for post in posts_with_comments[:comment_limit]:
+                        time.sleep(1.5)  # Rate limit
+                        comments = fetch_comments_for_post_in_process(page, post["permalink"])
+                        if comments:
+                            post["comments"] = comments
+                            total_comments += len(comments)
+                            print(f"    💬 {post['id']}: {len(comments)} comments")
+            finally:
+                try:
+                    page.close()
+                except Exception:
+                    pass
+                try:
+                    context.close()
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"  ⚠ In-process crawling failed: {e}. Falling back to CLI subprocess...")
+            posts = []
+
+    # Fallback to CLI subprocess if in-process failed
+    if not used_in_process:
+        posts = fetch_posts_via_json(subreddit, sort, limit=100, max_pages=max_post_pages, client_cfg=client_cfg)
+        if not posts:
+            print(f"  ✗ No posts fetched")
+            return 0, 0
+
+        print(f"  Got {len(posts)} posts total")
+
+        if with_comments:
+            # Sort by comment count descending, take top N
+            posts_with_comments = sorted(
+                [p for p in posts if p["stats"]["numComments"] > 0],
+                key=lambda p: p["stats"]["numComments"],
+                reverse=True,
+            )
+            for post in posts_with_comments[:comment_limit]:
+                time.sleep(1.5)  # Rate limit
+                comments = fetch_comments_for_post(post["permalink"], client_cfg=client_cfg)
+                if comments:
+                    post["comments"] = comments
+                    total_comments += len(comments)
+                    print(f"    💬 {post['id']}: {len(comments)} comments")
 
     # Save raw data
     out_dir = DATA_DIR / "reddit-exports"
@@ -200,13 +368,22 @@ def export_all(client_cfg=None):
     total_comments = 0
     subreddits = get_config_value(client_cfg, "reddit", "subreddits", {})
     
-    for sub, config in subreddits.items():
-        print(f"\n📡 r/{sub}")
-        for sort in config["sorts"]:
-            msgs, comments = export_subreddit(sub, sort, max_post_pages=config.get("max_pages", 3), client_cfg=client_cfg)
-            total_msgs += msgs
-            total_comments += comments
-            time.sleep(2)
+    try:
+        for sub, config in subreddits.items():
+            print(f"\n📡 r/{sub}")
+            for sort in config["sorts"]:
+                msgs, comments = export_subreddit(sub, sort, max_post_pages=config.get("max_pages", 3), client_cfg=client_cfg)
+                total_msgs += msgs
+                total_comments += comments
+                time.sleep(2)
+    finally:
+        # Clean up browser singleton
+        try:
+            from src.collectors.browser_manager import PlaywrightManager
+            PlaywrightManager.get_instance().stop()
+        except Exception:
+            pass
+
     print(f"\n✅ Total: {total_msgs} messages ({total_comments} comments)")
     return total_msgs
 

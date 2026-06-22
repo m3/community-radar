@@ -4,6 +4,7 @@ import subprocess
 import json
 import time
 from pathlib import Path
+import ijson
 
 from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, log_export
 from src.collectors.utils import get_config_value, CONFIG
@@ -16,48 +17,63 @@ def get_token(client_cfg=None):
     if not bws_secret_id:
         raise ValueError("discord.bws_secret_id not found in config")
 
-    result = subprocess.run(
-        ["bws", "secret", "get", bws_secret_id, "--output", "json"],
-        capture_output=True, text=True
-    )
-    data = json.loads(result.stdout)
-    return data["value"]
+    try:
+        result = subprocess.run(
+            ["bws", "secret", "get", bws_secret_id, "--output", "json"],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"BWS CLI error: {result.stderr.strip() or 'Unknown error'}")
+        data = json.loads(result.stdout)
+        return data["value"]
+    except Exception as e:
+        raise RuntimeError(f"Failed to fetch Discord token from BWS: {e}")
+
+
+def parse_single_dce_message(m):
+    """Helper to parse raw DCE message dictionary into normalized model fields"""
+    author = m.get("author", {})
+    if isinstance(author, dict):
+        user_id = str(author.get("id", ""))
+        display_name = author.get("nick", author.get("globalName", author.get("name", "")))
+        username = author.get("name", "")
+    else:
+        user_id = str(author) if author else ""
+        display_name = str(author)
+        username = str(author)
+
+    return {
+        "message_id": str(m.get("id", "")),
+        "user_id": user_id,
+        "display_name": display_name,
+        "username": username,
+        "content": m.get("content", ""),
+        "timestamp": m.get("timestamp", ""),
+        "reply_to": str(m.get("referencedMessageId", "")),
+        "reactions": len(m.get("reactions", [])),
+    }
 
 
 def parse_dce_export(filepath):
-    """Parse a DCE JSON export and return messages list"""
-    with open(filepath, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    """Parse a DCE JSON export using ijson to stream messages and save memory"""
+    # Determine JSON structure: root list or root object with messages key
+    is_object = True
+    try:
+        with open(filepath, "rb") as f:
+            chunk = f.read(100).strip()
+            if chunk.startswith(b"["):
+                is_object = False
+    except Exception as e:
+        print(f"  ⚠ Error reading header of {filepath}: {e}")
+        return
 
-    # DCE wraps messages in a dict with guild/channel metadata
-    msg_list = data.get("messages", data) if isinstance(data, dict) else data
-    if not isinstance(msg_list, list):
-        print(f"  ⚠ Unexpected format in {filepath}")
-        return []
-
-    messages = []
-    for m in msg_list:
-        author = m.get("author", {})
-        if isinstance(author, dict):
-            user_id = str(author.get("id", ""))
-            display_name = author.get("nick", author.get("globalName", author.get("name", "")))
-            username = author.get("name", "")
-        else:
-            user_id = str(author) if author else ""
-            display_name = str(author)
-            username = str(author)
-
-        messages.append({
-            "message_id": str(m.get("id", "")),
-            "user_id": user_id,
-            "display_name": display_name,
-            "username": username,
-            "content": m.get("content", ""),
-            "timestamp": m.get("timestamp", ""),
-            "reply_to": str(m.get("referencedMessageId", "")),
-            "reactions": len(m.get("reactions", [])),
-        })
-    return messages
+    prefix = 'messages.item' if is_object else 'item'
+    try:
+        with open(filepath, "rb") as f:
+            for item in ijson.items(f, prefix):
+                yield parse_single_dce_message(item)
+    except Exception as e:
+        print(f"  ⚠ Error streaming JSON from {filepath}: {e}")
 
 
 def process_export_file(channel_id, channel_name, db, server_id):
@@ -70,14 +86,13 @@ def process_export_file(channel_id, channel_name, db, server_id):
         return 0, 0
 
     messages = parse_dce_export(str(output_path))
-    if not messages:
-        return 0, 0
-
-    print(f"  📥 {len(messages)} new messages from #{channel_name}")
 
     new_last_ts = None
     new_users = 0
     message_rows = []
+    inserted_msgs = 0
+    batch_size = 500
+
     for msg in messages:
         ts = msg["timestamp"]
         if ts and (not new_last_ts or ts > new_last_ts):
@@ -97,17 +112,28 @@ def process_export_file(channel_id, channel_name, db, server_id):
             "discord"
         ))
 
-    # Batch insert messages
-    batch_size = 500
-    inserted_msgs = 0
-    for i in range(0, len(message_rows), batch_size):
-        batch = message_rows[i:i+batch_size]
+        if len(message_rows) >= batch_size:
+            db.executemany("""
+                INSERT OR IGNORE INTO messages
+                    (message_id, channel_id, user_id, content, timestamp, reply_to, reactions, platform)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, message_rows)
+            inserted_msgs += len(message_rows)
+            message_rows.clear()
+
+    # Insert remaining messages in last batch
+    if message_rows:
         db.executemany("""
             INSERT OR IGNORE INTO messages
                 (message_id, channel_id, user_id, content, timestamp, reply_to, reactions, platform)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, batch)
-        inserted_msgs += len(batch)
+        """, message_rows)
+        inserted_msgs += len(message_rows)
+
+    if inserted_msgs == 0:
+        return 0, 0
+
+    print(f"  📥 {inserted_msgs} new messages from #{channel_name}")
 
     # Update channel state
     msg_count = inserted_msgs
@@ -139,7 +165,15 @@ def export_channel(server_id, server_name, channel_id, channel_name, client_cfg=
     last_ts = row["last_message_ts"] if row else None
 
     # Build DCE command
-    token = get_token(client_cfg)
+    try:
+        token = get_token(client_cfg)
+    except Exception as e:
+        print(f"  ✗ Export failed: {e}")
+        log_export(db, server_id, channel_id, 0, 0, 0.0, "failed", str(e))
+        db.commit()
+        db.close()
+        return
+
     dce_bin = get_config_value(client_cfg, "discord", "dce_bin")
     if not dce_bin:
         raise ValueError("discord.dce_bin not found in config")

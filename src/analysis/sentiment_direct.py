@@ -118,11 +118,7 @@ def run_analysis_direct(db, output_dir):
         "exploiting", "hacker", "hacking", "cheating", "cheater", "toxic", "grief",
         "griefing", "camping", "spam", "spamming", "afk", "leaver",
         "leaving", "quit", "quitting", "ragequit",
-        "missing", "lacking", "lacks", "need", "needs", "want", "wanted", "wish",
-        "wished", "hope", "hoped", "please", "pls", "plz", "request", "requested",
-        "suggestion", "suggestions", "feature", "features", "add", "adding",
-        "include", "including", "implement", "implementation", "update", "updates",
-        "patch", "patches", "fix", "fixes", "fixed", "fixing",
+        "missing", "lacking", "lacks",
     }
 
     POWER_WORDS = {

@@ -747,7 +747,12 @@
         btn.disabled = true;
 
         try {
-            const res = await fetch(`/api/${clientName}/trigger/${command}`, { method: 'POST' });
+            const res = await fetch(`/api/${clientName}/trigger/${command}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': getCookie('csrf_token')
+                }
+            });
             const data = await res.json();
             
             if (data.success) {

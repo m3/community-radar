@@ -197,4 +197,5 @@ class Task(Base):
     error_log: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    heartbeat_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime)

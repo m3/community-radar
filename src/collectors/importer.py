@@ -298,13 +298,31 @@ def extract_topics():
     inserted = 0
     for name, count in topic_counts.items():
         category = TOPIC_KEYWORDS[name]
-        db.execute("""
-            INSERT INTO topics (name, category, mention_count, first_seen, last_seen)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(name) DO UPDATE SET
-                mention_count = mention_count + excluded.mention_count,
-                last_seen = MAX(last_seen, excluded.last_seen)
-        """, (name, category, count, topic_first_seen.get(name), topic_last_seen.get(name)))
+        
+        existing = db.execute("SELECT id, mention_count, last_seen FROM topics WHERE name = ?", (name,)).fetchone()
+        
+        if existing:
+            new_count = existing["mention_count"] + count
+            ex_last_seen = existing["last_seen"]
+            new_last_seen = topic_last_seen.get(name)
+            
+            final_last_seen = new_last_seen
+            if ex_last_seen and new_last_seen:
+                if str(ex_last_seen) > str(new_last_seen):
+                    final_last_seen = ex_last_seen
+            elif ex_last_seen:
+                final_last_seen = ex_last_seen
+                
+            db.execute("""
+                UPDATE topics 
+                SET mention_count = ?, last_seen = ? 
+                WHERE id = ?
+            """, (new_count, final_last_seen, existing["id"]))
+        else:
+            db.execute("""
+                INSERT INTO topics (name, category, mention_count, first_seen, last_seen)
+                VALUES (?, ?, ?, ?, ?)
+            """, (name, category, count, topic_first_seen.get(name), topic_last_seen.get(name)))
         inserted += 1
 
     print(f"    {inserted} topics extracted from {len(messages)} messages")

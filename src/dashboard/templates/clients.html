@@ -161,7 +161,7 @@
         try {
             const res = await fetch('/api/clients', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getMutationHeaders(),
                 body: JSON.stringify(data)
             });
             

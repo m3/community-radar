@@ -37,6 +37,17 @@
         </ul>
     </div>
 
+    <!-- Validation Error Summary -->
+    <div id="errorSummary" class="hidden bg-red-950/40 border border-red-500/30 text-red-200 p-5 rounded-xl mb-8">
+        <div class="flex items-center space-x-2 font-bold mb-3">
+            <i class="fas fa-exclamation-circle text-red-500 text-lg"></i>
+            <span class="text-white">Validation failed. Please correct the following errors:</span>
+        </div>
+        <ul id="errorList" class="list-disc pl-6 text-sm space-y-1.5 text-slate-300">
+            <!-- Populated via JS -->
+        </ul>
+    </div>
+
     <form id="configForm" onsubmit="return false;">
         <!-- General Tab -->
         <div id="panel-general" class="tab-panel">
@@ -442,14 +453,25 @@
         try {
             const res = await fetch(`/api/clients/${client_id}/update`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getMutationHeaders(),
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (data.success) {
+                document.getElementById('errorSummary').classList.add('hidden');
                 showToast('Configuration updated successfully!', 'success');
             } else {
-                showToast('Error: ' + (data.error || 'Unknown error occurred'), 'error');
+                if (data.details && data.details.length > 0) {
+                    const list = document.getElementById('errorList');
+                    list.innerHTML = data.details.map(err => `
+                        <li><strong>${err.field}</strong>: ${err.message}</li>
+                    `).join('');
+                    document.getElementById('errorSummary').classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    showToast('Validation failed. Please review errors.', 'error');
+                } else {
+                    showToast('Error: ' + (data.error || 'Unknown error occurred'), 'error');
+                }
             }
         } catch (e) {
             showToast('Network error: ' + e.message, 'error');

@@ -7,6 +7,8 @@ except ImportError:
         def ratio(s1, s2):
             return difflib.SequenceMatcher(None, s1, s2).ratio() * 100
 
+from collections import defaultdict
+
 def match_identities(users):
     """
     Match identities between Discord and Reddit users based on username.
@@ -23,39 +25,63 @@ def match_identities(users):
     reddit_users = [u for u in users if u["id"].startswith("reddit_")]
     
     matches = []
-    for d_user in discord_users:
-        d_name = d_user["username"].lower() if d_user.get("username") else ""
-        if not d_name:
-            continue
+    matched_discord = set()
+    matched_reddit = set()
+    
+    # 1. Exact matching (O(N + M))
+    discord_by_username = {}
+    for du in discord_users:
+        uname = du.get("username")
+        if uname:
+            discord_by_username[uname.lower()] = du
             
-        for r_user in reddit_users:
-            r_name = r_user["username"].lower() if r_user.get("username") else ""
-            if not r_name:
-                continue
+    for ru in reddit_users:
+        uname = ru.get("username")
+        if uname and uname.lower() in discord_by_username:
+            du = discord_by_username[uname.lower()]
+            matches.append({
+                "user_id": du["id"],
+                "platform1": "discord",
+                "username1": du["username"],
+                "platform2": "reddit",
+                "username2": ru["username"],
+                "match_type": "exact",
+                "confidence": 1.0
+            })
+            matched_discord.add(du["id"])
+            matched_reddit.add(ru["id"])
+            
+    # 2. Fuzzy matching with 2-character blocking prefix
+    unmatched_discord = [u for u in discord_users if u["id"] not in matched_discord]
+    unmatched_reddit = [u for u in reddit_users if u["id"] not in matched_reddit]
+    
+    discord_blocks = defaultdict(list)
+    for du in unmatched_discord:
+        uname = du.get("username") or ""
+        if uname:
+            prefix = uname[:2].lower()
+            discord_blocks[prefix].append(du)
+            
+    for ru in unmatched_reddit:
+        uname = ru.get("username") or ""
+        if uname:
+            prefix = uname[:2].lower()
+            block_users = discord_blocks.get(prefix, [])
+            for du in block_users:
+                d_name = du["username"].lower()
+                r_name = ru["username"].lower()
                 
-            if d_name == r_name:
-                matches.append({
-                    "user_id": d_user["id"],
-                    "platform1": "discord",
-                    "username1": d_user["username"],
-                    "platform2": "reddit",
-                    "username2": r_user["username"],
-                    "match_type": "exact",
-                    "confidence": 1.0
-                })
-                continue
-            
-            score = fuzz.ratio(d_name, r_name)
-            if score > 85:
-                matches.append({
-                    "user_id": d_user["id"],
-                    "platform1": "discord",
-                    "username1": d_user["username"],
-                    "platform2": "reddit",
-                    "username2": r_user["username"],
-                    "match_type": "fuzzy",
-                    "confidence": score / 100.0
-                })
+                score = fuzz.ratio(d_name, r_name)
+                if score > 85:
+                    matches.append({
+                        "user_id": du["id"],
+                        "platform1": "discord",
+                        "username1": du["username"],
+                        "platform2": "reddit",
+                        "username2": ru["username"],
+                        "match_type": "fuzzy",
+                        "confidence": score / 100.0
+                    })
     return matches
 
 def run_identity_sync(db):

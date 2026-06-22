@@ -14,6 +14,11 @@ from pathlib import Path
 from datetime import datetime
 from collections import Counter, defaultdict
 import argparse
+import sys
+from pathlib import Path
+ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(ROOT))
+
 import yaml
 
 from src.db.models import get_db
@@ -101,7 +106,7 @@ def run_analysis(client_name):
 
     external_channels = []
     for sub, conf in reddit_config.items():
-        if conf.get("track_keywords"): # Only scan external channels for intel
+        if not conf.get("owned") and conf.get("track_keywords"): # Only scan external channels for intel
             external_channels.append(f"reddit_{sub.lower()}_%")
 
     if not external_channels:

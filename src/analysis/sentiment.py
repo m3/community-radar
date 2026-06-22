@@ -68,11 +68,7 @@ NEGATIVE_WORDS = {
     "griefing", "camping", "camping", "spam", "spamming", "afk", "leaver",
     "leaving", "quit", "quitting", "ragequit",
     # Missing / lacking
-    "missing", "lacking", "lacks", "need", "needs", "want", "wanted", "wish",
-    "wished", "hope", "hoped", "please", "pls", "plz", "request", "requested",
-    "suggestion", "suggestions", "feature", "features", "add", "adding",
-    "include", "including", "implement", "implementation", "update", "updates",
-    "patch", "patches", "fix", "fixes", "fixed", "fixing",
+    "missing", "lacking", "lacks",
     # Negative emoji
     "😤", "😡", "🤬", "💀", "😢", "😭", "😞", "😔", "😟", "😠", "👎", "🤦",
 }

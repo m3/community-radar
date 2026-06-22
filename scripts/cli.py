@@ -29,7 +29,8 @@ def get_proxy_from_bws(secret_id: str) -> str | None:
         data = json.loads(result.stdout)
         return data.get("value")
     except Exception as e:
-        print(f"Error fetching proxy from BWS: {e}")
+        import sys
+        print(f"Error fetching proxy from BWS: {e}", file=sys.stderr)
         return None
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
@@ -219,11 +220,18 @@ def cmd_json_feed(args: argparse.Namespace) -> None:
             page.wait_for_load()
             sleep_random(500, 1000)
 
-            text = page.evaluate("document.body.innerText")
-            if not text:
-                break
+            try:
+                data = json.loads(text.strip())
+            except Exception:
+                try:
+                    pre_text = page.evaluate("document.querySelector('pre')?.innerText")
+                    if pre_text:
+                        data = json.loads(pre_text.strip())
+                    else:
+                        break
+                except Exception:
+                    break
 
-            data = json.loads(text)
             children = data.get("data", {}).get("children", [])
 
             if not children:
@@ -278,7 +286,14 @@ def cmd_json_url(args: argparse.Namespace) -> None:
             _output(data)
         except json.JSONDecodeError:
             # Some browsers might wrap JSON in <pre> or similar
-            # Attempt to extract text content
+            try:
+                pre_text = page.evaluate("document.querySelector('pre')?.innerText")
+                if pre_text:
+                    data = json.loads(pre_text.strip())
+                    _output(data)
+                    return
+            except Exception:
+                pass
             _output({"error": "Failed to parse JSON from body", "raw": text[:200]}, exit_code=2)
     finally:
         browser.close()

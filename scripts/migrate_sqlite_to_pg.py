@@ -1,274 +1,149 @@
-import sqlite3
-import os
-from pathlib import Path
-from datetime import datetime
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session
-from src.db.orm import Client, Server, Channel, User, Message, Export, CrossReference, Topic, Task
-from src.db.session import DATABASE_URL, SessionLocal
+import sqlite3, re, sys, psycopg2
 
-DATA_DIR = Path(__file__).parent.parent / "data"
-CLIENTS_DIR = DATA_DIR / "clients"
-QUEUE_DB_PATH = DATA_DIR / "queue.db"
+SQLITE_PATH = '/tmp/pure-pool-pro.db'
 
-def parse_date(date_str):
-    if not date_str:
-        return None
-    if isinstance(date_str, datetime):
-        return date_str
-    try:
-        # Try ISO format
-        return datetime.fromisoformat(date_str)
-    except ValueError:
-        try:
-            # Try sqlite datetime('now') format
-            return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            return None
+conn = sqlite3.connect(SQLITE_PATH)
+conn.row_factory = sqlite3.Row
 
-def migrate_queue():
-    if not QUEUE_DB_PATH.exists():
-        return
-        
-    print("Migrating execution queue...")
-    sqlite_conn = sqlite3.connect(QUEUE_DB_PATH)
-    sqlite_conn.row_factory = sqlite3.Row
-    pg_session = SessionLocal()
-    
-    try:
-        # Cleanup
-        pg_session.query(Task).delete()
-        pg_session.commit()
-        
-        rows = sqlite_conn.execute("SELECT * FROM tasks").fetchall()
-        for row in rows:
-            task = Task(
-                client_name=row["client_name"],
-                command=row["command"],
-                args_json=row["args_json"],
-                status=row["status"],
-                error_log=row["error_log"],
-                created_at=parse_date(row["created_at"]),
-                started_at=parse_date(row["started_at"]),
-                finished_at=parse_date(row["finished_at"])
-            )
-            pg_session.add(task)
-        pg_session.commit()
-        print("Finished migrating queue")
-    except Exception as e:
-        pg_session.rollback()
-        print(f"Error migrating queue: {e}")
-    finally:
-        pg_session.close()
-        sqlite_conn.close()
+def rows_to_dicts(rows):
+    return [dict(r) for r in rows]
 
-def migrate_client(client_db_path: Path):
-    client_name = client_db_path.stem
-    print(f"Migrating client: {client_name}")
-    
-    # Connect to SQLite
-    sqlite_conn = sqlite3.connect(client_db_path)
-    sqlite_conn.row_factory = sqlite3.Row
-    
-    # Connect to PG
-    pg_session = SessionLocal()
-    
-    try:
-        # 1. Create or get Client
-        client = pg_session.query(Client).filter_by(name=client_name).first()
-        if not client:
-            client = Client(name=client_name)
-            pg_session.add(client)
-            pg_session.commit()
-            pg_session.refresh(client)
-        
-        client_id = client.id
-        
-        # 0. Cleanup existing data for this client in PG
-        print(f"  Cleaning up existing data for {client_name} (ID: {client_id})")
-        pg_session.query(Topic).filter_by(client_id=client_id).delete()
-        pg_session.query(CrossReference).filter_by(client_id=client_id).delete()
-        pg_session.query(Export).filter_by(client_id=client_id).delete()
-        pg_session.query(Message).filter_by(client_id=client_id).delete()
-        pg_session.query(Channel).filter_by(client_id=client_id).delete()
-        pg_session.query(User).filter_by(client_id=client_id).delete()
-        pg_session.query(Server).filter_by(client_id=client_id).delete()
-        pg_session.commit()
-        
-        # 2. Migrate Servers
-        rows = sqlite_conn.execute("SELECT * FROM servers").fetchall()
-        server_ids = set()
-        for row in rows:
-            server = Server(
-                id=row["id"],
-                client_id=client_id,
-                name=row["name"],
-                data_source=row["data_source"],
-                first_scan=parse_date(row["first_scan"]),
-                last_scan=parse_date(row["last_scan"]),
-                total_messages=row["total_messages"],
-                total_users=row["total_users"],
-                created_at=parse_date(row["created_at"]),
-                updated_at=parse_date(row["updated_at"])
-            )
-            pg_session.merge(server)
-            server_ids.add(row["id"])
-        pg_session.commit()
-        
-        # 3. Migrate Channels
-        rows = sqlite_conn.execute("SELECT * FROM channels").fetchall()
-        channel_ids = set()
-        for row in rows:
-            channel = Channel(
-                id=row["id"],
-                client_id=client_id,
-                server_id=row["server_id"],
-                name=row["name"],
-                topic=row["topic"],
-                first_scan=parse_date(row["first_scan"]),
-                last_scan=parse_date(row["last_scan"]),
-                last_message_ts=parse_date(row["last_message_ts"]),
-                message_count=row["message_count"],
-                status=row["status"],
-                created_at=parse_date(row["created_at"]),
-                updated_at=parse_date(row["updated_at"])
-            )
-            pg_session.merge(channel)
-            channel_ids.add(row["id"])
-        pg_session.commit()
-            
-        # 4. Migrate Users
-        rows = sqlite_conn.execute("SELECT * FROM users").fetchall()
-        user_ids = set()
-        for row in rows:
-            user = User(
-                id=row["id"],
-                client_id=client_id,
-                display_name=row["display_name"],
-                username=row["username"],
-                role=row["role"],
-                messages=row["messages"],
-                reactions_given=row["reactions_given"],
-                reactions_received=row["reactions_received"],
-                first_seen=parse_date(row["first_seen"]),
-                last_seen=parse_date(row["last_seen"]),
-                sentiment=row["sentiment"],
-                notes=row["notes"],
-                created_at=parse_date(row["created_at"]),
-                updated_at=parse_date(row["updated_at"])
-            )
-            pg_session.merge(user)
-            user_ids.add(row["id"])
-        pg_session.commit()
-            
-        # Pre-check for missing Foreign Keys in Messages
-        msg_rows = sqlite_conn.execute("SELECT DISTINCT channel_id, user_id FROM messages").fetchall()
-        for row in msg_rows:
-            c_id = row["channel_id"]
-            u_id = row["user_id"]
-            
-            if c_id and c_id not in channel_ids:
-                print(f"  Creating stub channel {c_id}")
-                stub_server_id = "stub_server"
-                if stub_server_id not in server_ids:
-                    pg_session.merge(Server(id=stub_server_id, client_id=client_id, name="Stub Server"))
-                    server_ids.add(stub_server_id)
-                
-                pg_session.merge(Channel(id=c_id, client_id=client_id, server_id=stub_server_id, name=f"Stub Channel {c_id}"))
-                channel_ids.add(c_id)
-            
-            if u_id and u_id not in user_ids:
-                print(f"  Creating stub user {u_id}")
-                pg_session.merge(User(id=u_id, client_id=client_id, username=f"stub_user_{u_id}"))
-                user_ids.add(u_id)
-        pg_session.commit()
+servers = rows_to_dicts(conn.execute('SELECT * FROM servers').fetchall())
+channels = rows_to_dicts(conn.execute('SELECT * FROM channels').fetchall())
+users = rows_to_dicts(conn.execute('SELECT * FROM users').fetchall())
+messages = rows_to_dicts(conn.execute('SELECT * FROM messages').fetchall())
+topics = rows_to_dicts(conn.execute('SELECT * FROM topics').fetchall())
+cross_refs = rows_to_dicts(conn.execute('SELECT * FROM cross_references').fetchall())
+exports = rows_to_dicts(conn.execute('SELECT * FROM exports').fetchall())
+conn.close()
 
-        # 5. Migrate Messages (Batch)
-        rows = sqlite_conn.execute("SELECT * FROM messages").fetchall()
-        for i in range(0, len(rows), 1000):
-            batch = rows[i:i+1000]
-            for row in batch:
-                msg = Message(
-                    client_id=client_id,
-                    message_id=row["message_id"],
-                    channel_id=row["channel_id"],
-                    user_id=row["user_id"],
-                    content=row["content"],
-                    timestamp=parse_date(row["timestamp"]),
-                    reply_to=row["reply_to"],
-                    reactions=row["reactions"],
-                    export_batch=row["export_batch"],
-                    platform=row["platform"],
-                    created_at=parse_date(row["created_at"])
-                )
-                pg_session.add(msg)
-            pg_session.commit()
-            
-        # 6. Migrate Exports
-        rows = sqlite_conn.execute("SELECT * FROM exports").fetchall()
-        for row in rows:
-            export = Export(
-                client_id=client_id,
-                server_id=row["server_id"],
-                channel_id=row["channel_id"],
-                export_ts=parse_date(row["export_ts"]),
-                messages=row["messages"],
-                new_users=row["new_users"],
-                duration_s=row["duration_s"],
-                status=row["status"],
-                notes=row["notes"],
-                created_at=parse_date(row["created_at"])
-            )
-            pg_session.add(export)
-            
-        # 7. Migrate Cross References
-        rows = sqlite_conn.execute("SELECT * FROM cross_references").fetchall()
-        for row in rows:
-            xref = CrossReference(
-                client_id=client_id,
-                user_id=row["user_id"],
-                platform1=row["platform1"],
-                username1=row["username1"],
-                platform2=row["platform2"],
-                username2=row["username2"],
-                match_type=row["match_type"],
-                confidence=row["confidence"],
-                created_at=parse_date(row["created_at"])
-            )
-            pg_session.add(xref)
-            
-        # 8. Migrate Topics
-        rows = sqlite_conn.execute("SELECT * FROM topics").fetchall()
-        for row in rows:
-            topic = Topic(
-                client_id=client_id,
-                name=row["name"],
-                category=row["category"],
-                mention_count=row["mention_count"],
-                first_seen=parse_date(row["first_seen"]),
-                last_seen=parse_date(row["last_seen"]),
-                created_at=parse_date(row["created_at"])
-            )
-            pg_session.add(topic)
-            
-        pg_session.commit()
-        print(f"Finished migrating {client_name}")
-        
-    except Exception as e:
-        pg_session.rollback()
-        print(f"Error migrating {client_name}: {e}")
-    finally:
-        pg_session.close()
-        sqlite_conn.close()
+print(f"SQLite: {len(servers)} servers, {len(channels)} channels, {len(users)} users, {len(messages)} messages, {len(exports)} exports, {len(topics)} topics, {len(cross_refs)} cross-refs")
 
-def main():
-    migrate_queue()
-    if CLIENTS_DIR.exists():
-        db_files = list(CLIENTS_DIR.glob("*.db"))
-        for db_file in db_files:
-            migrate_client(db_file)
-    else:
-        print("No clients directory found.")
+pg = psycopg2.connect(dbname='community_radar', user='community_radar', host='/var/run/postgresql')
+pg.autocommit = False
+cur = pg.cursor()
 
-if __name__ == "__main__":
-    main()
+# Truncate all data first (clean slate)
+cur.execute('TRUNCATE messages, channels, users, servers, topics, cross_references, exports, alembic_version RESTART IDENTITY CASCADE')
+pg.commit()
+
+# Use pure-pool-pro as the single client
+cur.execute('INSERT INTO clients (name, created_at, updated_at) VALUES (%s, NOW(), NOW()) ON CONFLICT (name) DO UPDATE SET updated_at = NOW() RETURNING id', ('pure-pool-pro',))
+client_id = cur.fetchone()[0]
+pg.commit()
+
+print(f"Client: pure-pool-pro (id={client_id})")
+
+# 1. Insert servers
+created = 0
+for s in servers:
+    cur.execute('''INSERT INTO servers (id, client_id, name, data_source, first_scan, last_scan,
+                   total_messages, total_users, created_at, updated_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT DO NOTHING''',
+                (s['id'], client_id, s['name'], s.get('data_source','discord'),
+                 s['first_scan'], s['last_scan'], s['total_messages'], s['total_users'],
+                 s['created_at'], s['updated_at']))
+    if cur.rowcount: created += 1
+pg.commit()
+print(f"Servers: {created}")
+
+# 2. Insert channels
+created = 0
+for c in channels:
+    cur.execute('''INSERT INTO channels (id, client_id, server_id, name, topic,
+                   first_scan, last_scan, last_message_ts, message_count, status, created_at, updated_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT DO NOTHING''',
+                (c['id'], client_id, c['server_id'], c['name'], c.get('topic'),
+                 c['first_scan'], c['last_scan'], c['last_message_ts'],
+                 c['message_count'], c.get('status','active'), c['created_at'], c['updated_at']))
+    created += 1
+pg.commit()
+print(f"Channels: {created}")
+
+# 3. Insert users
+created = 0
+for u in users:
+    cur.execute('''INSERT INTO users (id, client_id, display_name, username, role,
+                   messages, reactions_given, reactions_received, first_seen, last_seen,
+                   sentiment, notes, created_at, updated_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT DO NOTHING''',
+                (u['id'], client_id, u.get('display_name'), u.get('username'),
+                 u.get('role','member'), u.get('messages',0), u.get('reactions_given',0),
+                 u.get('reactions_received',0), u.get('first_seen'), u.get('last_seen'),
+                 u.get('sentiment'), u.get('notes'), u.get('created_at'), u.get('updated_at')))
+    created += 1
+pg.commit()
+print(f"Users: {created}")
+
+# 4. Insert topics
+created = 0
+for t in topics:
+    cur.execute('''INSERT INTO topics (id, client_id, name, category, mention_count,
+                   first_seen, last_seen, created_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT DO NOTHING''',
+                (t['id'], client_id, t['name'], t.get('category'), t.get('mention_count',0),
+                 t.get('first_seen'), t.get('last_seen'), t.get('created_at')))
+    created += 1
+pg.commit()
+print(f"Topics: {created}")
+
+# 5. Insert cross_references
+created = 0
+for xr in cross_refs:
+    cur.execute('''INSERT INTO cross_references (id, client_id, user_id, platform1,
+                   username1, platform2, username2, match_type, confidence, created_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT DO NOTHING''',
+                (xr['id'], client_id, xr.get('user_id'), xr.get('platform1'),
+                 xr.get('username1'), xr.get('platform2'), xr.get('username2'),
+                 xr.get('match_type'), xr.get('confidence',0), xr.get('created_at')))
+    created += 1
+pg.commit()
+print(f"Cross-refs: {created}")
+
+# 6. Insert exports
+created = 0
+for e in exports:
+    cur.execute('''INSERT INTO exports (id, client_id, server_id, channel_id, export_ts,
+                   messages, new_users, duration_s, status, notes, created_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT DO NOTHING''',
+                (e['id'], client_id, e.get('server_id'), e.get('channel_id'),
+                 e.get('export_ts'), e.get('messages',0), e.get('new_users',0),
+                 e.get('duration_s',0), e.get('status'), e.get('notes'), e.get('created_at')))
+    created += 1
+pg.commit()
+print(f"Exports: {created}")
+
+# 7. Insert messages (batched, let PG assign IDs)
+created = 0
+batch = []
+for m in messages:
+    batch.append((client_id, m.get('message_id'), m.get('channel_id'),
+                  m.get('user_id'), m.get('content'), m.get('timestamp'),
+                  m.get('reply_to'), m.get('reactions',0), m.get('export_batch'),
+                  m.get('platform','discord'), m.get('created_at')))
+    if len(batch) >= 5000:
+        cur.executemany('''INSERT INTO messages (client_id, message_id, channel_id, user_id,
+                          content, timestamp, reply_to, reactions, export_batch, platform, created_at)
+                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                          ON CONFLICT (message_id) DO NOTHING''', batch)
+        created += len(batch); batch = []
+        pg.commit()
+if batch:
+    cur.executemany('''INSERT INTO messages (client_id, message_id, channel_id, user_id,
+                      content, timestamp, reply_to, reactions, export_batch, platform, created_at)
+                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                      ON CONFLICT (message_id) DO NOTHING''', batch)
+    created += len(batch)
+pg.commit()
+print(f"Messages: {created}")
+
+pg.commit()
+cur.close()
+pg.close()
+print("Migration complete!")

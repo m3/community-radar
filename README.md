@@ -8,22 +8,22 @@ Scrapes Discord and Reddit, profiles users across platforms, tracks engagement p
 
 - **Discord export** (DiscordChatExporter) — full channel history, unlimited messages
 - **Reddit scraping** (reddit-skills) — posts, comments, scores via your browser session
-- **Data Segmentation** — separate owned (product/support) communities from external (market/hobbyist) channels dynamically to prevent general discussions from muddying direct feedback.
+- **Data Segmentation** — separate owned (product/support) communities from external (market/hobbyist) channels dynamically
 - **Market Awareness** — visualize brand penetration in external subreddits (r/billiards, r/snooker)
 - **Heuristic Identity Engine** — automatically map Discord and Reddit users using fuzzy matching
 - **Multi-tenant Dashboard** — dynamic routing and client-specific intelligence
 - **Client Management** — browser-based onboarding and form-based configuration editor
 - **Execution Queue** — background task processing for large-scale data collection
 - **User profiling** — engagement scoring, role classification, and cross-platform badges
-- **Database Migrations** — automatic schema updates across all tenant databases
+- **Database Migrations** — Alembic-based schema updates (PostgreSQL)
 
-## Quick Start
+## Quick Start (Local)
 
 ```bash
 # Setup
 uv sync
 
-# Run database migrations for all clients
+# Run database migrations
 python src/main.py migrate
 
 # Map users across platforms (Identity Engine)
@@ -36,18 +36,51 @@ python src/queue_worker.py
 python src/main.py dashboard
 ```
 
+## Quick Start (Docker)
+
+```bash
+# Start full stack (Postgres + Flask backend + queue worker)
+docker compose up -d --build
+
+# Access dashboard
+open http://127.0.0.1:5001/pure-pool-pro/intel
+
+# View logs
+docker compose logs -f backend worker
+
+# Stop
+docker compose down
+```
+
+### Docker Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| db | 5432 | PostgreSQL 15 |
+| backend | 5001 | Flask dashboard + API |
+| worker | — | Background queue processor |
+
+### Docker Volumes
+
+- `pgdata` — PostgreSQL data (persists across restarts)
+- `./data` bind-mounted to `/app/data` in backend and worker (reports, exports, config)
+
 ## Architecture
 
 ```
 community-radar/
 ├── src/
 │   ├── collectors/     # Data collection (DCE, reddit-skills)
-│   ├── db/             # SQLite schema, queries
-│   └── dashboard/      # Web dashboard (Flask)
-├── data/               # Exports, state, DB (gitignored)
-├── docs/               # Reports, analysis
-├── scripts/            # Utility scripts
-└── tests/
+│   ├── db/             # SQLAlchemy ORM, migrations (PostgreSQL)
+│   ├── analysis/       # Sentiment analysis, competitor intel
+│   ├── dashboard/      # Flask web dashboard + REST API
+│   └── queue_worker.py # Background task processor
+├── data/               # Exports, reports, client data (gitignored)
+├── docs/               # Analysis reports, sentiment reports
+├── scripts/            # Utility scripts (migration, etc.)
+├── tests/              # Test suite
+├── Dockerfile          # Python backend/worker image
+└── docker-compose.yml  # Full stack definition
 ```
 
 ## Data Segmentation
@@ -72,10 +105,24 @@ Backend REST APIs accept a `?segment=all|owned|external` query parameter to filt
 |--------|------|--------|
 | Discord | DiscordChatExporter CLI | ✅ Working |
 | Reddit | reddit-skills (Chrome extension) | ✅ Working |
-| Reddit | RSS feed (fallback) | ✅ Working |
+
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/<client>/overview` | Summary stats (messages, users, channels) |
+| `/api/<client>/sentiment/timeseries` | Daily sentiment trends by platform |
+| `/api/<client>/sentiment/topics` | Topic-level sentiment rankings |
+| `/api/<client>/contributors` | Top contributors by engagement |
+| `/api/<client>/negative_messages` | Most negative messages |
+| `/api/<client>/channels` | Channel list with stats |
+| `/api/<client>/power_words` | Community-specific power words |
+| `/api/<client>/market/awareness` | Brand penetration in external channels |
+| `/api/queue/status` | Execution queue status |
 
 ## Security
 
 - Tokens stored in Bitwarden Secrets Manager (BWS)
 - No credentials in config files
-- Incremental exports preserve state
+- All Docker ports bound to `127.0.0.1` only
+- PostgreSQL password authentication (not exposed to internet)

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-06-17T03:12:24.499485",
+    "generated_at": "2026-06-24T08:12:17.400704",
     "total_messages_analyzed": 58041,
     "deduped_messages": 33857,
     "duplicates_removed": 24184,
@@ -14,115 +14,115 @@
   "sentiment": {
     "overall": {
       "positive": {
-        "count": 9423,
-        "pct": 16.2
+        "count": 10954,
+        "pct": 18.9
       },
       "negative": {
-        "count": 2506,
-        "pct": 4.3
+        "count": 1023,
+        "pct": 1.8
       },
       "neutral": {
-        "count": 46112,
+        "count": 46064,
         "pct": 79.4
       },
-      "sentiment_ratio": 3.76
+      "sentiment_ratio": 10.71
     },
     "by_channel": {
       "chat-pure-pool-pro": {
-        "positive": 1513,
-        "negative": 677,
-        "neutral": 10089,
+        "positive": 1831,
+        "negative": 295,
+        "neutral": 10153,
         "total": 12279,
-        "pos_pct": 12.3,
-        "neg_pct": 5.5
+        "pos_pct": 14.9,
+        "neg_pct": 2.4
       },
       "questions-and-suggestions-pure-pool-pro": {
-        "positive": 622,
-        "negative": 250,
-        "neutral": 2615,
+        "positive": 809,
+        "negative": 88,
+        "neutral": 2590,
         "total": 3487,
-        "pos_pct": 17.8,
-        "neg_pct": 7.2
+        "pos_pct": 23.2,
+        "neg_pct": 2.5
       },
       "find-a-game-pure-pool-pro": {
-        "positive": 154,
-        "negative": 45,
-        "neutral": 868,
+        "positive": 169,
+        "negative": 21,
+        "neutral": 877,
         "total": 1067,
-        "pos_pct": 14.4,
-        "neg_pct": 4.2
+        "pos_pct": 15.8,
+        "neg_pct": 2.0
       },
       "play-of-the-month-submissions": {
-        "positive": 6,
+        "positive": 12,
         "negative": 0,
-        "neutral": 68,
+        "neutral": 62,
         "total": 74,
-        "pos_pct": 8.1,
+        "pos_pct": 16.2,
         "neg_pct": 0.0
       },
       "pool-and-snooker-talk": {
-        "positive": 61,
+        "positive": 64,
         "negative": 3,
-        "neutral": 569,
+        "neutral": 566,
         "total": 633,
-        "pos_pct": 9.6,
+        "pos_pct": 10.1,
         "neg_pct": 0.5
       },
       "announcements-ripstone": {
-        "positive": 22,
-        "negative": 4,
-        "neutral": 86,
+        "positive": 32,
+        "negative": 0,
+        "neutral": 80,
         "total": 112,
-        "pos_pct": 19.6,
-        "neg_pct": 3.6
+        "pos_pct": 28.6,
+        "neg_pct": 0.0
       },
       "reddit-PurePoolPro-new": {
-        "positive": 764,
-        "negative": 272,
-        "neutral": 1852,
+        "positive": 963,
+        "negative": 78,
+        "neutral": 1847,
         "total": 2888,
-        "pos_pct": 26.5,
-        "neg_pct": 9.4
+        "pos_pct": 33.3,
+        "neg_pct": 2.7
       },
       "reddit-PurePoolPro-hot": {
-        "positive": 506,
-        "negative": 160,
-        "neutral": 1195,
+        "positive": 627,
+        "negative": 50,
+        "neutral": 1184,
         "total": 1861,
-        "pos_pct": 27.2,
-        "neg_pct": 8.6
+        "pos_pct": 33.7,
+        "neg_pct": 2.7
       },
       "reddit-PurePoolPro-top?t=month": {
-        "positive": 99,
-        "negative": 41,
-        "neutral": 302,
+        "positive": 138,
+        "negative": 16,
+        "neutral": 288,
         "total": 442,
-        "pos_pct": 22.4,
-        "neg_pct": 9.3
+        "pos_pct": 31.2,
+        "neg_pct": 3.6
       },
       "reddit-PurePoolPro-top?t=year": {
-        "positive": 250,
-        "negative": 77,
-        "neutral": 586,
+        "positive": 310,
+        "negative": 25,
+        "neutral": 578,
         "total": 913,
-        "pos_pct": 27.4,
-        "neg_pct": 8.4
+        "pos_pct": 34.0,
+        "neg_pct": 2.7
       },
       "reddit-PurePoolPro-top?t=all": {
-        "positive": 307,
-        "negative": 115,
-        "neutral": 781,
+        "positive": 389,
+        "negative": 35,
+        "neutral": 779,
         "total": 1203,
-        "pos_pct": 25.5,
-        "neg_pct": 9.6
+        "pos_pct": 32.3,
+        "neg_pct": 2.9
       },
       "💬・pro-talk-general": {
-        "positive": 30,
-        "negative": 16,
-        "neutral": 687,
+        "positive": 34,
+        "negative": 6,
+        "neutral": 693,
         "total": 733,
-        "pos_pct": 4.1,
-        "neg_pct": 2.2
+        "pos_pct": 4.6,
+        "neg_pct": 0.8
       },
       "💬・general": {
         "positive": 9,
@@ -149,173 +149,173 @@
         "neg_pct": 0.0
       },
       "tetradome-season-2-⚔️": {
-        "positive": 78,
-        "negative": 9,
-        "neutral": 704,
+        "positive": 79,
+        "negative": 2,
+        "neutral": 710,
         "total": 791,
-        "pos_pct": 9.9,
-        "neg_pct": 1.1
+        "pos_pct": 10.0,
+        "neg_pct": 0.3
       },
       "rackhaus-season-2🛡️": {
-        "positive": 16,
-        "negative": 2,
+        "positive": 18,
+        "negative": 0,
         "neutral": 131,
         "total": 149,
-        "pos_pct": 10.7,
-        "neg_pct": 1.3
+        "pos_pct": 12.1,
+        "neg_pct": 0.0
       },
       "🎱8ball-focused-s2": {
-        "positive": 50,
-        "negative": 16,
-        "neutral": 408,
+        "positive": 52,
+        "negative": 5,
+        "neutral": 417,
         "total": 474,
-        "pos_pct": 10.5,
-        "neg_pct": 3.4
+        "pos_pct": 11.0,
+        "neg_pct": 1.1
       },
       "💚pro-killer-tournament": {
         "positive": 4,
-        "negative": 1,
-        "neutral": 92,
+        "negative": 0,
+        "neutral": 93,
         "total": 97,
         "pos_pct": 4.1,
-        "neg_pct": 1.0
+        "neg_pct": 0.0
       },
       "reddit-billiards-new": {
-        "positive": 551,
-        "negative": 98,
-        "neutral": 2701,
+        "positive": 628,
+        "negative": 47,
+        "neutral": 2675,
         "total": 3350,
-        "pos_pct": 16.4,
-        "neg_pct": 2.9
+        "pos_pct": 18.7,
+        "neg_pct": 1.4
       },
       "reddit-snooker-new": {
-        "positive": 700,
-        "negative": 121,
-        "neutral": 3315,
+        "positive": 746,
+        "negative": 71,
+        "neutral": 3319,
         "total": 4136,
-        "pos_pct": 16.9,
-        "neg_pct": 2.9
+        "pos_pct": 18.0,
+        "neg_pct": 1.7
       },
       "reddit-billiards-hot": {
-        "positive": 576,
-        "negative": 79,
-        "neutral": 2455,
+        "positive": 647,
+        "negative": 36,
+        "neutral": 2427,
         "total": 3110,
-        "pos_pct": 18.5,
-        "neg_pct": 2.5
+        "pos_pct": 20.8,
+        "neg_pct": 1.2
       },
       "reddit-snooker-hot": {
-        "positive": 604,
-        "negative": 97,
+        "positive": 652,
+        "negative": 49,
         "neutral": 2908,
         "total": 3609,
-        "pos_pct": 16.7,
-        "neg_pct": 2.7
+        "pos_pct": 18.1,
+        "neg_pct": 1.4
       },
       "reddit-billiards-top?t=month": {
-        "positive": 687,
-        "negative": 112,
-        "neutral": 3431,
+        "positive": 761,
+        "negative": 37,
+        "neutral": 3432,
         "total": 4230,
-        "pos_pct": 16.2,
-        "neg_pct": 2.6
+        "pos_pct": 18.0,
+        "neg_pct": 0.9
       },
       "reddit-snooker-top?t=month": {
-        "positive": 582,
-        "negative": 120,
-        "neutral": 2878,
+        "positive": 657,
+        "negative": 59,
+        "neutral": 2864,
         "total": 3580,
-        "pos_pct": 16.3,
-        "neg_pct": 3.4
+        "pos_pct": 18.4,
+        "neg_pct": 1.6
       },
       "reddit-billiards-top?t=year": {
-        "positive": 628,
-        "negative": 88,
-        "neutral": 3530,
+        "positive": 671,
+        "negative": 41,
+        "neutral": 3534,
         "total": 4246,
-        "pos_pct": 14.8,
-        "neg_pct": 2.1
+        "pos_pct": 15.8,
+        "neg_pct": 1.0
       },
       "reddit-snooker-top?t=year": {
-        "positive": 589,
-        "negative": 99,
-        "neutral": 3451,
+        "positive": 637,
+        "negative": 55,
+        "neutral": 3447,
         "total": 4139,
-        "pos_pct": 14.2,
-        "neg_pct": 2.4
+        "pos_pct": 15.4,
+        "neg_pct": 1.3
       }
     },
     "reddit_comparison": {
-      "positive": 6843,
-      "negative": 1479,
-      "neutral": 29385,
-      "pos_pct": 18.1,
-      "neg_pct": 3.9,
+      "positive": 7826,
+      "negative": 599,
+      "neutral": 29282,
+      "pos_pct": 20.8,
+      "neg_pct": 1.6,
       "reddit_by_channel": {
         "reddit-PurePoolPro-new": {
-          "neutral": 1852,
-          "negative": 272,
-          "positive": 764
+          "neutral": 1847,
+          "negative": 78,
+          "positive": 963
         },
         "reddit-PurePoolPro-hot": {
-          "neutral": 1195,
-          "positive": 506,
-          "negative": 160
+          "neutral": 1184,
+          "positive": 627,
+          "negative": 50
         },
         "reddit-PurePoolPro-top?t=month": {
-          "negative": 41,
-          "neutral": 302,
-          "positive": 99
+          "neutral": 288,
+          "positive": 138,
+          "negative": 16
         },
         "reddit-PurePoolPro-top?t=year": {
-          "neutral": 586,
-          "positive": 250,
-          "negative": 77
+          "neutral": 578,
+          "positive": 310,
+          "negative": 25
         },
         "reddit-PurePoolPro-top?t=all": {
-          "neutral": 781,
-          "negative": 115,
-          "positive": 307
+          "neutral": 779,
+          "positive": 389,
+          "negative": 35
         },
         "reddit-billiards-new": {
-          "neutral": 2701,
-          "positive": 551,
-          "negative": 98
+          "neutral": 2675,
+          "positive": 628,
+          "negative": 47
         },
         "reddit-snooker-new": {
-          "neutral": 3315,
-          "positive": 700,
-          "negative": 121
+          "neutral": 3319,
+          "positive": 746,
+          "negative": 71
         },
         "reddit-billiards-hot": {
-          "neutral": 2455,
-          "positive": 576,
-          "negative": 79
+          "neutral": 2427,
+          "positive": 647,
+          "negative": 36
         },
         "reddit-snooker-hot": {
           "neutral": 2908,
-          "positive": 604,
-          "negative": 97
+          "positive": 652,
+          "negative": 49
         },
         "reddit-billiards-top?t=month": {
-          "positive": 687,
-          "neutral": 3431,
-          "negative": 112
+          "positive": 761,
+          "neutral": 3432,
+          "negative": 37
         },
         "reddit-snooker-top?t=month": {
-          "positive": 582,
-          "neutral": 2878,
-          "negative": 120
+          "positive": 657,
+          "neutral": 2864,
+          "negative": 59
         },
         "reddit-billiards-top?t=year": {
-          "neutral": 3530,
-          "positive": 628,
-          "negative": 88
+          "neutral": 3534,
+          "positive": 671,
+          "negative": 41
         },
         "reddit-snooker-top?t=year": {
-          "neutral": 3451,
-          "positive": 589,
-          "negative": 99
+          "neutral": 3447,
+          "positive": 637,
+          "negative": 55
         }
       }
     }
@@ -534,325 +534,325 @@
   "topic_sentiment": {
     "shot": {
       "total": 4647,
-      "pos_pct": 28.8,
-      "neg_pct": 7.9,
-      "net_sentiment": 21.0
+      "pos_pct": 34.2,
+      "neg_pct": 3.6,
+      "net_sentiment": 30.6
     },
     "add": {
       "total": 2150,
-      "pos_pct": 25.9,
-      "neg_pct": 17.0,
-      "net_sentiment": 8.9
+      "pos_pct": 38.6,
+      "neg_pct": 2.1,
+      "net_sentiment": 36.5
     },
     "dev": {
       "total": 1530,
-      "pos_pct": 33.6,
-      "neg_pct": 13.5,
-      "net_sentiment": 20.1
+      "pos_pct": 45.0,
+      "neg_pct": 5.9,
+      "net_sentiment": 39.2
     },
     "tournament": {
       "total": 1326,
-      "pos_pct": 33.3,
-      "neg_pct": 2.4,
-      "net_sentiment": 30.8
+      "pos_pct": 37.4,
+      "neg_pct": 1.0,
+      "net_sentiment": 36.4
     },
     "issue": {
       "total": 1313,
-      "pos_pct": 16.0,
-      "neg_pct": 38.2,
-      "net_sentiment": -22.2
+      "pos_pct": 23.9,
+      "neg_pct": 21.3,
+      "net_sentiment": 2.6
     },
     "online": {
       "total": 1285,
-      "pos_pct": 27.0,
-      "neg_pct": 11.3,
-      "net_sentiment": 15.7
+      "pos_pct": 33.4,
+      "neg_pct": 5.0,
+      "net_sentiment": 28.4
     },
     "ps5": {
       "total": 1230,
-      "pos_pct": 20.4,
-      "neg_pct": 11.5,
-      "net_sentiment": 8.9
+      "pos_pct": 26.8,
+      "neg_pct": 4.1,
+      "net_sentiment": 22.7
     },
     "patch": {
       "total": 1025,
-      "pos_pct": 20.0,
-      "neg_pct": 34.0,
-      "net_sentiment": -14.0
+      "pos_pct": 35.1,
+      "neg_pct": 4.6,
+      "net_sentiment": 30.5
     },
     "fix": {
       "total": 991,
-      "pos_pct": 13.8,
-      "neg_pct": 39.1,
-      "net_sentiment": -25.2
+      "pos_pct": 28.8,
+      "neg_pct": 8.5,
+      "net_sentiment": 20.3
     },
     "update": {
       "total": 886,
-      "pos_pct": 21.0,
-      "neg_pct": 40.3,
-      "net_sentiment": -19.3
+      "pos_pct": 36.7,
+      "neg_pct": 6.5,
+      "net_sentiment": 30.1
     },
     "steam": {
       "total": 853,
-      "pos_pct": 19.8,
-      "neg_pct": 20.0,
-      "net_sentiment": -0.2
+      "pos_pct": 28.7,
+      "neg_pct": 4.2,
+      "net_sentiment": 24.5
     },
     "launch": {
       "total": 842,
-      "pos_pct": 28.4,
-      "neg_pct": 14.0,
-      "net_sentiment": 14.4
+      "pos_pct": 38.8,
+      "neg_pct": 2.9,
+      "net_sentiment": 36.0
     },
     "release": {
       "total": 828,
-      "pos_pct": 21.4,
-      "neg_pct": 8.6,
-      "net_sentiment": 12.8
+      "pos_pct": 28.7,
+      "neg_pct": 2.5,
+      "net_sentiment": 26.2
     },
     "problem": {
       "total": 816,
-      "pos_pct": 15.9,
-      "neg_pct": 33.6,
-      "net_sentiment": -17.6
+      "pos_pct": 20.3,
+      "neg_pct": 22.9,
+      "net_sentiment": -2.6
     },
     "bug": {
       "total": 772,
-      "pos_pct": 10.5,
-      "neg_pct": 36.4,
-      "net_sentiment": -25.9
+      "pos_pct": 21.2,
+      "neg_pct": 17.5,
+      "net_sentiment": 3.8
     },
     "wish": {
       "total": 681,
-      "pos_pct": 32.0,
-      "neg_pct": 9.4,
-      "net_sentiment": 22.6
+      "pos_pct": 44.5,
+      "neg_pct": 0.0,
+      "net_sentiment": 44.5
     },
     "buy": {
       "total": 631,
-      "pos_pct": 36.5,
-      "neg_pct": 12.8,
-      "net_sentiment": 23.6
+      "pos_pct": 41.5,
+      "neg_pct": 5.2,
+      "net_sentiment": 36.3
     },
     "suggestion": {
       "total": 609,
-      "pos_pct": 41.1,
-      "neg_pct": 5.6,
-      "net_sentiment": 35.5
+      "pos_pct": 84.1,
+      "neg_pct": 0.0,
+      "net_sentiment": 84.1
     },
     "xbox": {
       "total": 606,
-      "pos_pct": 20.5,
-      "neg_pct": 10.2,
-      "net_sentiment": 10.2
+      "pos_pct": 27.9,
+      "neg_pct": 1.0,
+      "net_sentiment": 26.9
     },
     "feature": {
       "total": 533,
-      "pos_pct": 25.1,
-      "neg_pct": 26.5,
-      "net_sentiment": -1.3
+      "pos_pct": 53.8,
+      "neg_pct": 2.3,
+      "net_sentiment": 51.6
     },
     "worth": {
       "total": 495,
-      "pos_pct": 34.5,
-      "neg_pct": 7.1,
-      "net_sentiment": 27.5
+      "pos_pct": 42.2,
+      "neg_pct": 2.8,
+      "net_sentiment": 39.4
     },
     "version": {
       "total": 486,
-      "pos_pct": 37.0,
-      "neg_pct": 11.3,
-      "net_sentiment": 25.7
+      "pos_pct": 45.7,
+      "neg_pct": 2.1,
+      "net_sentiment": 43.6
     },
     "price": {
       "total": 442,
-      "pos_pct": 33.9,
-      "neg_pct": 7.7,
-      "net_sentiment": 26.2
+      "pos_pct": 43.0,
+      "neg_pct": 2.7,
+      "net_sentiment": 40.3
     },
     "ranked": {
       "total": 436,
-      "pos_pct": 26.4,
-      "neg_pct": 16.3,
-      "net_sentiment": 10.1
+      "pos_pct": 34.9,
+      "neg_pct": 2.8,
+      "net_sentiment": 32.1
     },
     "playstation": {
       "total": 372,
-      "pos_pct": 18.0,
-      "neg_pct": 11.3,
-      "net_sentiment": 6.7
+      "pos_pct": 19.9,
+      "neg_pct": 1.6,
+      "net_sentiment": 18.3
     },
     "physics": {
       "total": 345,
-      "pos_pct": 64.3,
-      "neg_pct": 1.2,
-      "net_sentiment": 63.2
+      "pos_pct": 79.1,
+      "neg_pct": 0.0,
+      "net_sentiment": 79.1
     },
     "switch": {
       "total": 341,
-      "pos_pct": 30.2,
-      "neg_pct": 3.8,
-      "net_sentiment": 26.4
+      "pos_pct": 40.5,
+      "neg_pct": 2.3,
+      "net_sentiment": 38.1
     },
     "gameplay": {
       "total": 341,
-      "pos_pct": 37.0,
-      "neg_pct": 14.1,
-      "net_sentiment": 22.9
+      "pos_pct": 59.8,
+      "neg_pct": 1.8,
+      "net_sentiment": 58.1
     },
     "cost": {
       "total": 314,
-      "pos_pct": 34.4,
-      "neg_pct": 8.0,
-      "net_sentiment": 26.4
+      "pos_pct": 45.9,
+      "neg_pct": 0.0,
+      "net_sentiment": 45.9
     },
     "aiming": {
       "total": 313,
-      "pos_pct": 39.6,
-      "neg_pct": 7.3,
-      "net_sentiment": 32.3
+      "pos_pct": 50.2,
+      "neg_pct": 2.6,
+      "net_sentiment": 47.6
     }
   },
   "top_negative": [
     {
-      "channel": "reddit-PurePoolPro-new",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
+      "channel": "chat-pure-pool-pro",
+      "author": "queenie_lucy_ii",
+      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
+      "score": -7,
+      "timestamp": "2026-05-26"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "queenie_lucy_ii",
+      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
+      "score": -7,
+      "timestamp": "2026-05-26"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "queenie_lucy_ii",
+      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
+      "score": -7,
+      "timestamp": "2026-05-26"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "Qi-Phoenix",
+      "content": "There's only one or two more issues I noticed about the PS4 version and they're so minor that it's not really an that much of an issue. One of those issues also has to do with the way the ball travels",
+      "score": -6,
+      "timestamp": "2025-08-08"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "Qi-Phoenix",
+      "content": "There's only one or two more issues I noticed about the PS4 version and they're so minor that it's not really an that much of an issue. One of those issues also has to do with the way the ball travels",
+      "score": -6,
+      "timestamp": "2025-08-08"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "Qi-Phoenix",
+      "content": "There's only one or two more issues I noticed about the PS4 version and they're so minor that it's not really an that much of an issue. One of those issues also has to do with the way the ball travels",
+      "score": -6,
+      "timestamp": "2025-08-08"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "ripstone3072",
+      "content": "Hey Outlawkaze 👋 \n\nThought I'd message back before I try to get some sleep\n\nWe have your received your: \n\n- bug report, \n- your Steam review,\n-  we've responded here twice, \n- and we've responded in  ",
+      "score": -5,
+      "timestamp": "2026-02-13"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "jamboc_",
+      "content": "I’ve had this since patch 1 and 2, but it seems to be getting worse. It’s horrible. Unplayable. Not in the sense that you can’t play, but in the sense of it’s just terrible and makes you not really wa",
+      "score": -5,
+      "timestamp": "2026-03-24"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "eeriearcade",
+      "content": "That Ripstone message was written to everyone.\n\nSaying “I’m having problems finding matches” is different to “the game is dead” and “no one is playing”.\n\nSo I’d say you’re fine to raise your problem. ",
+      "score": -5,
+      "timestamp": "2026-04-15"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "Altivias",
+      "content": "Exactly so! It feels quite wired. When they do miss those basic shots, it almost feels like they are pitying on me, since they are capable to do those super fancy shots. In game modes that needs a lot",
+      "score": -5,
+      "timestamp": "2026-02-14"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "batesy2007",
+      "content": "Hey guys, I've just submitted a bug report on this as apparently my 'Offer Rematch' functionality is not working. Playing on PSN with base PS5. Initially I thought this was a server issue where 2 x of",
+      "score": -5,
+      "timestamp": "2026-04-05"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "ripstone3072",
+      "content": "Hey Outlawkaze 👋 \n\nThought I'd message back before I try to get some sleep\n\nWe have your received your: \n\n- bug report, \n- your Steam review,\n-  we've responded here twice, \n- and we've responded in  ",
+      "score": -5,
+      "timestamp": "2026-02-13"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "jamboc_",
+      "content": "I’ve had this since patch 1 and 2, but it seems to be getting worse. It’s horrible. Unplayable. Not in the sense that you can’t play, but in the sense of it’s just terrible and makes you not really wa",
+      "score": -5,
+      "timestamp": "2026-03-24"
+    },
+    {
+      "channel": "chat-pure-pool-pro",
+      "author": "eeriearcade",
+      "content": "That Ripstone message was written to everyone.\n\nSaying “I’m having problems finding matches” is different to “the game is dead” and “no one is playing”.\n\nSo I’d say you’re fine to raise your problem. ",
+      "score": -5,
+      "timestamp": "2026-04-15"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "Altivias",
+      "content": "Exactly so! It feels quite wired. When they do miss those basic shots, it almost feels like they are pitying on me, since they are capable to do those super fancy shots. In game modes that needs a lot",
+      "score": -5,
+      "timestamp": "2026-02-14"
+    },
+    {
+      "channel": "questions-and-suggestions-pure-pool-pro",
+      "author": "batesy2007",
+      "content": "Hey guys, I've just submitted a bug report on this as apparently my 'Offer Rematch' functionality is not working. Playing on PSN with base PS5. Initially I thought this was a server issue where 2 x of",
+      "score": -5,
+      "timestamp": "2026-04-05"
     },
     {
       "channel": "reddit-PurePoolPro-new",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-new",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-new",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
+      "author": "RudeButton6684",
+      "content": "This game is a waste of dead space I’m playing on beginner and the computer make horrible shots and doesn’t miss I bought it and I’m going to delete this I hope the creators read this",
+      "score": -5,
+      "timestamp": "2026-02-19"
     },
     {
       "channel": "reddit-PurePoolPro-hot",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-top?t=month",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
+      "author": "RudeButton6684",
+      "content": "This game is a waste of dead space I’m playing on beginner and the computer make horrible shots and doesn’t miss I bought it and I’m going to delete this I hope the creators read this",
+      "score": -5,
+      "timestamp": "2026-02-19"
     },
     {
       "channel": "reddit-PurePoolPro-top?t=year",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-top?t=all",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-new",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-hot",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-top?t=month",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
-    },
-    {
-      "channel": "reddit-PurePoolPro-top?t=all",
-      "author": "RipstoneGames",
-      "content": "Patch 3 is now live on PS5 &amp; Steam\n\nPatch 3 is rolling out now for Pure Pool Pro, bringing with it a host of changes...\n\n[FULL PATCH NOTES HERE](https://store.steampowered.com/news/app/3456930/vie",
-      "score": -13,
-      "timestamp": "2026-05-21"
+      "author": "RudeButton6684",
+      "content": "This game is a waste of dead space I’m playing on beginner and the computer make horrible shots and doesn’t miss I bought it and I’m going to delete this I hope the creators read this",
+      "score": -5,
+      "timestamp": "2026-02-19"
     },
     {
       "channel": "chat-pure-pool-pro",
-      "author": "queenie_lucy_ii",
-      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
-      "score": -9,
-      "timestamp": "2026-05-26"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
       "author": "ripstone3072",
-      "content": "Yeah, what OvercookedOctopusFeet said! \n\nHey @ImStrappedIn  - let’s reset this a bit.\n\nIt’s completely fair to be frustrated if something isn’t working the way you expected. That doesn’t make you wron",
-      "score": -9,
-      "timestamp": "2026-02-16"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "j03593",
-      "content": "Heyooooo. @JAMBO--C - I'm fully aware of the Halo effect, don't worry. Unfortunately, it won't be in the week 1 patch that solves the popping. \nI'm looking at getting this in as part of the larger mon",
-      "score": -9,
-      "timestamp": "2026-02-18"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "queenie_lucy_ii",
-      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
-      "score": -9,
-      "timestamp": "2026-05-26"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "ripstone3072",
-      "content": "Yeah, what OvercookedOctopusFeet said! \n\nHey @ImStrappedIn  - let’s reset this a bit.\n\nIt’s completely fair to be frustrated if something isn’t working the way you expected. That doesn’t make you wron",
-      "score": -9,
-      "timestamp": "2026-02-16"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "j03593",
-      "content": "Heyooooo. @JAMBO--C - I'm fully aware of the Halo effect, don't worry. Unfortunately, it won't be in the week 1 patch that solves the popping. \nI'm looking at getting this in as part of the larger mon",
-      "score": -9,
-      "timestamp": "2026-02-18"
-    },
-    {
-      "channel": "chat-pure-pool-pro",
-      "author": "queenie_lucy_ii",
-      "content": "And now my lag completes itself by automatically sending the ball into the cushion and causing the bug hell nah this game's broken asf. lmfao\nGoing into freeplay fixed the broken lag problem though. I",
-      "score": -9,
-      "timestamp": "2026-05-26"
-    },
-    {
-      "channel": "questions-and-suggestions-pure-pool-pro",
-      "author": "ripstone3072",
-      "content": "Yeah, what OvercookedOctopusFeet said! \n\nHey @ImStrappedIn  - let’s reset this a bit.\n\nIt’s completely fair to be frustrated if something isn’t working the way you expected. That doesn’t make you wron",
-      "score": -9,
-      "timestamp": "2026-02-16"
+      "content": "Hey Outlawkaze 👋 \n\nThought I'd message back before I try to get some sleep\n\nWe have your received your: \n\n- bug report, \n- your Steam review,\n-  we've responded here twice, \n- and we've responded in  ",
+      "score": -5,
+      "timestamp": "2026-02-13"
     }
   ],
   "top_positive": [
@@ -860,14 +860,14 @@
       "channel": "reddit-billiards-hot",
       "author": "CreeDorofl",
       "content": "[Guide] What cue should I get?\n\n###tl;dr###\n\nUpdated for 2025, old guide is [here.](https://www.reddit.com/r/billiards/comments/7x1iub/guide_buying_your_first_cue_need_help/) This one will be shorter!",
-      "score": 27,
+      "score": 46,
       "timestamp": "2025-02-06"
     },
     {
       "channel": "reddit-billiards-hot",
       "author": "CreeDorofl",
       "content": "[Guide] What cue should I get?\n\n###tl;dr###\n\nUpdated for 2025, old guide is [here.](https://www.reddit.com/r/billiards/comments/7x1iub/guide_buying_your_first_cue_need_help/) This one will be shorter!",
-      "score": 27,
+      "score": 46,
       "timestamp": "2025-02-06"
     },
     {
@@ -879,6 +879,13 @@
     },
     {
       "channel": "reddit-snooker-new",
+      "author": "GreenLion777",
+      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
+      "score": 20,
+      "timestamp": "2026-05-08"
+    },
+    {
+      "channel": "reddit-snooker-new",
       "author": "Aromatic_Tangelo4967",
       "content": "WORLD'S DECIDERS, 6 IN ALL, 4 IN THE CRUCIBLE ERA.\n\nHere's some decider action to watch in the snooker less northern summer.\n\n1. John Pulman (ENG) bt. Fred Davis (ENG)\n\n37–36, 1965. Decider frame scor",
       "score": 20,
@@ -890,6 +897,13 @@
       "content": "Staying on Tour By Winning One Match in Each Ranking Event\n\nDuring one of the 2025 Championship League summer broadcasts, a commentator wondered if a player could stay on the Tour if all they did was ",
       "score": 20,
       "timestamp": "2026-05-24"
+    },
+    {
+      "channel": "reddit-snooker-top?t=month",
+      "author": "GreenLion777",
+      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
+      "score": 20,
+      "timestamp": "2026-05-08"
     },
     {
       "channel": "reddit-snooker-top?t=month",
@@ -907,6 +921,13 @@
     },
     {
       "channel": "reddit-snooker-new",
+      "author": "GreenLion777",
+      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
+      "score": 20,
+      "timestamp": "2026-05-08"
+    },
+    {
+      "channel": "reddit-snooker-new",
       "author": "Aromatic_Tangelo4967",
       "content": "WORLD'S DECIDERS, 6 IN ALL, 4 IN THE CRUCIBLE ERA.\n\nHere's some decider action to watch in the snooker less northern summer.\n\n1. John Pulman (ENG) bt. Fred Davis (ENG)\n\n37–36, 1965. Decider frame scor",
       "score": 20,
@@ -921,6 +942,13 @@
     },
     {
       "channel": "reddit-snooker-hot",
+      "author": "GreenLion777",
+      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
+      "score": 20,
+      "timestamp": "2026-05-08"
+    },
+    {
+      "channel": "reddit-snooker-hot",
       "author": "Aromatic_Tangelo4967",
       "content": "WORLD'S DECIDERS, 6 IN ALL, 4 IN THE CRUCIBLE ERA.\n\nHere's some decider action to watch in the snooker less northern summer.\n\n1. John Pulman (ENG) bt. Fred Davis (ENG)\n\n37–36, 1965. Decider frame scor",
       "score": 20,
@@ -932,69 +960,41 @@
       "content": "Staying on Tour By Winning One Match in Each Ranking Event\n\nDuring one of the 2025 Championship League summer broadcasts, a commentator wondered if a player could stay on the Tour if all they did was ",
       "score": 20,
       "timestamp": "2026-05-24"
-    },
-    {
-      "channel": "reddit-snooker-new",
-      "author": "GreenLion777",
-      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
-      "score": 19,
-      "timestamp": "2026-05-08"
-    },
-    {
-      "channel": "reddit-snooker-top?t=month",
-      "author": "GreenLion777",
-      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
-      "score": 19,
-      "timestamp": "2026-05-08"
-    },
-    {
-      "channel": "reddit-snooker-new",
-      "author": "GreenLion777",
-      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
-      "score": 19,
-      "timestamp": "2026-05-08"
-    },
-    {
-      "channel": "reddit-snooker-hot",
-      "author": "GreenLion777",
-      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
-      "score": 19,
-      "timestamp": "2026-05-08"
-    },
-    {
-      "channel": "reddit-snooker-top?t=year",
-      "author": "GreenLion777",
-      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
-      "score": 19,
-      "timestamp": "2026-05-08"
     },
     {
       "channel": "reddit-snooker-top?t=year",
       "author": "ryandunndev",
       "content": "Scandalous is a stretch. There just isn't any 'should's here. You win or you don't and they haven't won, it's that simple. There have been only six multiple world championship winners in the crucible ",
-      "score": 17,
+      "score": 20,
       "timestamp": "2025-12-09"
     },
     {
-      "channel": "reddit-snooker-new",
-      "author": "Confident_Leg2370",
-      "content": "What seals the GOAT argument for you?\n\nHendry and O Sullivan are regarded as the greatest of all time, I feel most would say Ronnie was GOAT, but Hendry to a lot of others is still GOAT. So how do you",
-      "score": 16,
-      "timestamp": "2026-05-07"
+      "channel": "reddit-snooker-top?t=year",
+      "author": "GreenLion777",
+      "content": "Ronnie has not been the best for two decades lol. Most gifted, yes.\n    \n      He's an inconsistent winner, brilliant player, but inconsistent. Never dominated. Which is why its taken him this long ca",
+      "score": 20,
+      "timestamp": "2026-05-08"
     },
     {
-      "channel": "reddit-snooker-top?t=month",
-      "author": "Confident_Leg2370",
-      "content": "What seals the GOAT argument for you?\n\nHendry and O Sullivan are regarded as the greatest of all time, I feel most would say Ronnie was GOAT, but Hendry to a lot of others is still GOAT. So how do you",
-      "score": 16,
-      "timestamp": "2026-05-07"
+      "channel": "reddit-billiards-top?t=month",
+      "author": "wlscwoj",
+      "content": "As a former captain, and my current captain looks to me (SL7/9). I do not agree with this during the regular season. You want your players to have fun, learn and develop their game.\nBUT when it gets c",
+      "score": 18,
+      "timestamp": "2026-05-09"
+    },
+    {
+      "channel": "reddit-billiards-top?t=month",
+      "author": "wlscwoj",
+      "content": "As a former captain, and my current captain looks to me (SL7/9). I do not agree with this during the regular season. You want your players to have fun, learn and develop their game.\nBUT when it gets c",
+      "score": 18,
+      "timestamp": "2026-05-09"
     },
     {
       "channel": "reddit-snooker-new",
-      "author": "Confident_Leg2370",
-      "content": "What seals the GOAT argument for you?\n\nHendry and O Sullivan are regarded as the greatest of all time, I feel most would say Ronnie was GOAT, but Hendry to a lot of others is still GOAT. So how do you",
-      "score": 16,
-      "timestamp": "2026-05-07"
+      "author": "Plastic-Diet9648",
+      "content": "I thought it was one of the best I have enjoyed in years. I remember looking at the draw and even that was more interesting than usual - no easy games/routes, no predictable ronnie vs ali type matches",
+      "score": 18,
+      "timestamp": "2026-05-05"
     }
   ],
   "engagement": {
@@ -1085,103 +1085,103 @@
     {
       "week": "2026-W16",
       "total": 1112,
-      "pos_pct": 9.6,
-      "neg_pct": 3.9,
-      "neu_pct": 86.5,
+      "pos_pct": 10.9,
+      "neg_pct": 1.9,
+      "neu_pct": 87.2,
       "discord_total": 1060,
-      "discord_pos_pct": 9.4,
-      "discord_neg_pct": 3.9,
+      "discord_pos_pct": 10.7,
+      "discord_neg_pct": 2.0,
       "reddit_total": 52,
-      "reddit_pos_pct": 13.5,
-      "reddit_neg_pct": 3.8
+      "reddit_pos_pct": 15.4,
+      "reddit_neg_pct": 0.0
     },
     {
       "week": "2026-W17",
       "total": 1326,
-      "pos_pct": 11.0,
-      "neg_pct": 1.6,
-      "neu_pct": 87.4,
+      "pos_pct": 11.9,
+      "neg_pct": 1.1,
+      "neu_pct": 87.0,
       "discord_total": 1005,
-      "discord_pos_pct": 9.7,
-      "discord_neg_pct": 1.4,
+      "discord_pos_pct": 10.3,
+      "discord_neg_pct": 1.0,
       "reddit_total": 321,
-      "reddit_pos_pct": 15.3,
-      "reddit_neg_pct": 2.2
+      "reddit_pos_pct": 16.8,
+      "reddit_neg_pct": 1.2
     },
     {
       "week": "2026-W18",
       "total": 2486,
-      "pos_pct": 17.8,
-      "neg_pct": 2.9,
-      "neu_pct": 79.3,
+      "pos_pct": 18.8,
+      "neg_pct": 1.1,
+      "neu_pct": 80.1,
       "discord_total": 571,
-      "discord_pos_pct": 10.7,
-      "discord_neg_pct": 3.5,
+      "discord_pos_pct": 11.9,
+      "discord_neg_pct": 0.4,
       "reddit_total": 1915,
-      "reddit_pos_pct": 19.9,
-      "reddit_neg_pct": 2.7
+      "reddit_pos_pct": 20.8,
+      "reddit_neg_pct": 1.4
     },
     {
       "week": "2026-W19",
       "total": 2272,
-      "pos_pct": 13.1,
-      "neg_pct": 4.0,
-      "neu_pct": 82.9,
+      "pos_pct": 15.1,
+      "neg_pct": 1.7,
+      "neu_pct": 83.2,
       "discord_total": 780,
-      "discord_pos_pct": 9.5,
-      "discord_neg_pct": 6.0,
+      "discord_pos_pct": 11.0,
+      "discord_neg_pct": 2.3,
       "reddit_total": 1492,
-      "reddit_pos_pct": 14.9,
-      "reddit_neg_pct": 2.9
+      "reddit_pos_pct": 17.3,
+      "reddit_neg_pct": 1.3
     },
     {
       "week": "2026-W20",
       "total": 2098,
-      "pos_pct": 15.7,
-      "neg_pct": 3.8,
-      "neu_pct": 80.6,
+      "pos_pct": 18.0,
+      "neg_pct": 1.5,
+      "neu_pct": 80.5,
       "discord_total": 822,
-      "discord_pos_pct": 11.3,
-      "discord_neg_pct": 4.4,
+      "discord_pos_pct": 13.5,
+      "discord_neg_pct": 2.2,
       "reddit_total": 1276,
-      "reddit_pos_pct": 18.5,
-      "reddit_neg_pct": 3.4
+      "reddit_pos_pct": 20.8,
+      "reddit_neg_pct": 1.1
     },
     {
       "week": "2026-W21",
       "total": 2135,
-      "pos_pct": 12.7,
-      "neg_pct": 2.5,
-      "neu_pct": 84.7,
+      "pos_pct": 14.6,
+      "neg_pct": 1.3,
+      "neu_pct": 84.1,
       "discord_total": 740,
-      "discord_pos_pct": 13.1,
-      "discord_neg_pct": 3.0,
+      "discord_pos_pct": 14.5,
+      "discord_neg_pct": 2.0,
       "reddit_total": 1395,
-      "reddit_pos_pct": 12.5,
-      "reddit_neg_pct": 2.3
+      "reddit_pos_pct": 14.7,
+      "reddit_neg_pct": 0.9
     },
     {
       "week": "2026-W22",
       "total": 2582,
-      "pos_pct": 16.3,
-      "neg_pct": 5.0,
-      "neu_pct": 78.7,
+      "pos_pct": 19.2,
+      "neg_pct": 2.3,
+      "neu_pct": 78.5,
       "discord_total": 911,
-      "discord_pos_pct": 9.7,
-      "discord_neg_pct": 6.9,
+      "discord_pos_pct": 12.0,
+      "discord_neg_pct": 3.0,
       "reddit_total": 1671,
-      "reddit_pos_pct": 20.0,
-      "reddit_neg_pct": 3.9
+      "reddit_pos_pct": 23.2,
+      "reddit_neg_pct": 1.9
     },
     {
       "week": "2026-W23",
       "total": 485,
-      "pos_pct": 12.0,
-      "neg_pct": 4.3,
-      "neu_pct": 83.7,
+      "pos_pct": 14.2,
+      "neg_pct": 1.4,
+      "neu_pct": 84.3,
       "discord_total": 484,
-      "discord_pos_pct": 11.8,
-      "discord_neg_pct": 4.3,
+      "discord_pos_pct": 14.0,
+      "discord_neg_pct": 1.4,
       "reddit_total": 1,
       "reddit_pos_pct": 100.0,
       "reddit_neg_pct": 0.0
@@ -1192,8 +1192,8 @@
       "week": "2026-W23",
       "metric": "Reddit Pos Pct",
       "value": 100.0,
-      "expected": 16.4,
-      "z_score": 27.21,
+      "expected": 18.4,
+      "z_score": 25.58,
       "severity": "🔴 CRITICAL",
       "direction": "↑ spike",
       "platform": "Reddit"
@@ -1201,9 +1201,9 @@
     {
       "week": "2026-W18",
       "metric": "Overall Pos Pct",
-      "value": 17.8,
-      "expected": 10.3,
-      "z_score": 7.58,
+      "value": 18.8,
+      "expected": 11.4,
+      "z_score": 10.47,
       "severity": "🔴 CRITICAL",
       "direction": "↑ spike",
       "platform": "Overall"
@@ -1211,72 +1211,62 @@
     {
       "week": "2026-W18",
       "metric": "Discord Pos Pct",
-      "value": 10.7,
-      "expected": 9.6,
-      "z_score": 5.42,
+      "value": 11.9,
+      "expected": 10.5,
+      "z_score": 4.95,
       "severity": "🔴 CRITICAL",
       "direction": "↑ spike",
       "platform": "Discord"
-    },
-    {
-      "week": "2026-W23",
-      "metric": "Reddit Neg Pct",
-      "value": 0.0,
-      "expected": 3.0,
-      "z_score": 4.41,
-      "severity": "🔴 CRITICAL",
-      "direction": "↓ drop",
-      "platform": "Reddit"
     },
     {
       "week": "2026-W18",
       "metric": "Reddit Pos Pct",
-      "value": 19.9,
-      "expected": 14.4,
-      "z_score": 4.32,
+      "value": 20.8,
+      "expected": 16.1,
+      "z_score": 4.75,
       "severity": "🔴 CRITICAL",
       "direction": "↑ spike",
       "platform": "Reddit"
     },
     {
-      "week": "2026-W21",
+      "week": "2026-W20",
       "metric": "Discord Pos Pct",
-      "value": 13.1,
-      "expected": 10.1,
-      "z_score": 3.56,
+      "value": 13.5,
+      "expected": 11.0,
+      "z_score": 3.71,
       "severity": "🔴 CRITICAL",
       "direction": "↑ spike",
       "platform": "Discord"
     },
     {
-      "week": "2026-W20",
-      "metric": "Discord Pos Pct",
-      "value": 11.3,
-      "expected": 9.8,
-      "z_score": 2.47,
-      "severity": "🟡 MEDIUM",
+      "week": "2026-W22",
+      "metric": "Overall Neg Pct",
+      "value": 2.3,
+      "expected": 1.4,
+      "z_score": 2.65,
+      "severity": "🟠 HIGH",
       "direction": "↑ spike",
-      "platform": "Discord"
+      "platform": "Overall"
     },
     {
-      "week": "2026-W19",
-      "metric": "Discord Neg Pct",
-      "value": 6.0,
-      "expected": 2.9,
-      "z_score": 2.28,
+      "week": "2026-W21",
+      "metric": "Discord Pos Pct",
+      "value": 14.5,
+      "expected": 11.5,
+      "z_score": 2.37,
       "severity": "🟡 MEDIUM",
       "direction": "↑ spike",
       "platform": "Discord"
     },
     {
       "week": "2026-W22",
-      "metric": "Discord Neg Pct",
-      "value": 6.9,
-      "expected": 3.7,
-      "z_score": 2.1,
+      "metric": "Reddit Pos Pct",
+      "value": 23.2,
+      "expected": 17.6,
+      "z_score": 2.12,
       "severity": "🟡 MEDIUM",
       "direction": "↑ spike",
-      "platform": "Discord"
+      "platform": "Reddit"
     }
   ]
 }

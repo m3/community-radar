@@ -41,15 +41,5 @@ services:
       - DATABASE_URL=postgresql://community_radar:password123@db:5432/community_radar
     command: ["python", "src/queue_worker.py"]
 
-  frontend:
-    build:
-      context: .
-      dockerfile: src/frontend/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - backend
-    ports:
-      - "127.0.0.1:8082:80"
-
 volumes:
   pgdata:

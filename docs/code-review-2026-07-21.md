@@ -15,13 +15,31 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 
 ---
 
-> **Status update — findings #1, #2, #3a, #6, #7 are fixed on branch
-> `fix/review-2026-07-21`.** Fixing them surfaced four further defects that were
-> not visible from reading the code (#13–#17 below); #13, #14 and #15 are fixed,
-> #16 needs a decision, #17 is documented only.
-> Remaining open: #3b (auth), #4, #5, #8–#12, #16, #17.
+> **Status update — most findings fixed on branch `fix/review-2026-07-21`.**
+> Fixed: #1, #2, #3a, #5, #6, #7, #9, #11, #12, #13, #14, #15, #18, plus the
+> hygiene tail (machine paths, stale backup, utcnow, config cache) and full
+> test isolation. #10 partially done (segment filter extracted; blueprint split
+> deferred). 100 tests pass against an isolated database.
+>
+> **Open / needs a decision:**
+> - #3b — auth (parked at your request)
+> - #4 — the regex SQL rewriter; recommend a fail-loud guard now + a scoped
+>   migration later, not an in-place rewrite
+> - #8 — per-request full-table scans (perf)
+> - #10 — split the 1500-line app.py into blueprints
+> - #16 — delete dead `importer.py`
+> - dead `sentiment_direct.py` (found during the path cleanup)
+> - the 8 junk client rows in the live DB
 >
 > Live database is reconciled and `alembic check` reports no drift.
+
+### 18. engagement owned/external segments returned 500 — FIXED
+
+`api_engagement`'s active-users subquery used `HAVING cnt >= 5`, referencing the
+SELECT alias `cnt`. Postgres rejects a SELECT alias in `HAVING`, so both
+segmented variants raised `UndefinedColumn`. The `segment=all` path sidestepped
+it by reading the precomputed report. Found by a live smoke test of the
+segment-filter refactor; fixed with `HAVING COUNT(*) >= 5`.
 
 ## Critical
 

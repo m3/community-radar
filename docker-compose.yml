@@ -1,31 +1,51 @@
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment:
+    - DATABASE_URL=postgresql://community_radar:${POSTGRES_PASSWORD:-password123}@db:5432/community_radar
+    - DISCORD_TOKEN=${DISCORD_TOKEN:-}
+    - REDDIT_SESSION=${REDDIT_SESSION:-}
+    - REDDIT_PROXY=${REDDIT_PROXY:-}
+  volumes:
+    - ./data:/app/data
+
 services:
   db:
     image: postgres:15
     restart: always
     environment:
       POSTGRES_USER: community_radar
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password123}
       POSTGRES_DB: community_radar
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U community_radar -d community_radar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot schema upgrade. Runs to completion before backend/worker start,
+  # so the two long-running services never race to migrate.
+  migrate:
+    <<: *app
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "-m", "src.main", "migrate"]
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *app
     restart: unless-stopped
     depends_on:
-      - db
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:5001:5001"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - DATABASE_URL=postgresql://community_radar:password123@db:5432/community_radar
-      - DISCORD_TOKEN=${DISCORD_TOKEN:-}
-      - REDDIT_SESSION=${REDDIT_SESSION:-}
     # Served by gunicorn, not the Flask dev server. Timeout is generous
     # because several analysis endpoints still scan the full messages table.
     command:
@@ -38,18 +58,11 @@ services:
       - src.dashboard.app:app
 
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *app
     restart: unless-stopped
     depends_on:
-      - db
-    volumes:
-      - ./data:/app/data
-    environment:
-      - DATABASE_URL=postgresql://community_radar:password123@db:5432/community_radar
-      - DISCORD_TOKEN=${DISCORD_TOKEN:-}
-      - REDDIT_SESSION=${REDDIT_SESSION:-}
+      migrate:
+        condition: service_completed_successfully
     command: ["python", "src/queue_worker.py"]
 
 volumes:

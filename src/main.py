@@ -189,18 +189,15 @@ def dashboard(args):
 
 
 def migrate_dbs(args):
-    """Run database migrations for all clients or a specific client"""
-    from src.db.models import get_db
-    config = load_config()
-    
-    clients_to_migrate = [args.client] if args.client else get_available_clients(config)
-    
-    for client in clients_to_migrate:
-        print(f"\nMigrating database for {client}...")
-        # get_db automatically applies migrations
-        db = get_db(client)
-        db.close()
-        print(f"✅ {client} migration complete.")
+    """Upgrade the database schema to the latest alembic revision.
+
+    There is one shared Postgres database with a client_id column, not a
+    database per client, so this is not client-scoped.
+    """
+    from src.db.migrate import run_migrations
+    print("Running database migrations...")
+    run_migrations()
+    print("✅ Migrations up to date.")
 
 
 def import_data(args):
@@ -330,7 +327,7 @@ def cli():
     subparsers.add_parser("config", help="Show current configuration")
     subparsers.add_parser("report", help="Generate HTML report")
     subparsers.add_parser("dashboard", help="Launch web dashboard")
-    subparsers.add_parser("migrate", help="Run database migrations (can be scoped with --client)")
+    subparsers.add_parser("migrate", help="Upgrade the database schema to the latest revision")
 
     q_parser = subparsers.add_parser("queue", help="Manage execution queue")
     q_parser.add_argument("action", choices=["status", "list", "retry", "clear"])

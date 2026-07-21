@@ -1,40 +1,33 @@
-import sqlite3
+"""Database migrations.
+
+The schema is owned by alembic (`migrations_pg/`). `migrations_pg/env.py`
+resolves the connection from DATABASE_URL, so nothing here needs to know
+about credentials.
+"""
+
 from pathlib import Path
 
-MIGRATIONS_DIR = Path(__file__).parent / "migrations"
+from alembic import command
+from alembic.config import Config
 
-def apply_migrations(db: sqlite3.Connection):
-    """Apply all pending migrations to the provided database connection."""
-    # Ensure migrations table exists (catch-22 for fresh DBs, so we run a raw CREATE first)
-    db.execute('''
-        CREATE TABLE IF NOT EXISTS schema_migrations (
-            version TEXT PRIMARY KEY,
-            applied_at TEXT DEFAULT (datetime('now'))
-        )
-    ''')
-    
-    # Get applied migrations
-    applied = set(row[0] for row in db.execute("SELECT version FROM schema_migrations").fetchall())
-    
-    # Get available migrations
-    if not MIGRATIONS_DIR.exists():
-        return
-        
-    migration_files = sorted(f for f in MIGRATIONS_DIR.glob("*.sql"))
-    
-    for mf in migration_files:
-        version = mf.stem
-        if version not in applied:
-            print(f"    Applying migration {version}...")
-            with open(mf, "r") as f:
-                script = f.read()
-            
-            # Use transaction for atomicity
-            try:
-                db.executescript("BEGIN;\n" + script)
-                db.execute("INSERT INTO schema_migrations (version) VALUES (?)", (version,))
-                db.commit()
-            except Exception as e:
-                db.rollback()
-                print(f"    ✗ Failed to apply {version}: {e}")
-                raise
+ROOT = Path(__file__).parent.parent.parent
+ALEMBIC_INI = ROOT / "alembic.ini"
+
+
+def get_alembic_config() -> Config:
+    return Config(str(ALEMBIC_INI))
+
+
+def run_migrations() -> None:
+    """Upgrade the database to the latest revision."""
+    command.upgrade(get_alembic_config(), "head")
+
+
+def stamp_head() -> None:
+    """Mark the database as being at the latest revision without running it.
+
+    For a database whose schema was created outside alembic — the original
+    Postgres import was built by scripts/migrate_sqlite_to_pg.py, which left
+    `alembic_version` empty.
+    """
+    command.stamp(get_alembic_config(), "head")

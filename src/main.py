@@ -204,11 +204,6 @@ def migrate_dbs(args):
     print("✅ Migrations up to date.")
 
 
-def import_data(args):
-    """Import data from cuebot research JSON files"""
-    from src.collectors.importer import import_all
-    import_all()
-
 
 def show_config(args):
     """Show current configuration"""
@@ -293,7 +288,6 @@ commands = {
     "collect": collect,
     "export": export_discord,
     "reddit": export_reddit,
-    "import": import_data,
     "search": search,
     "topics": topics,
     "xref": xref,
@@ -319,7 +313,6 @@ def cli():
     subparsers.add_parser("collect", help="Run all collectors for a client")
     subparsers.add_parser("export", help="Run Discord export for a client")
     subparsers.add_parser("reddit", help="Export Reddit data for a client")
-    subparsers.add_parser("import", help="Import existing data from cuebot research files")
     
     search_parser = subparsers.add_parser("search", help="Search message content")
     search_parser.add_argument("term", help="Search term")

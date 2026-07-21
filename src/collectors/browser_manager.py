@@ -19,11 +19,17 @@ class PlaywrightManager:
             self.playwright = sync_playwright().start()
             self.browser = self.playwright.chromium.launch(headless=headless)
 
-    def get_context(self, proxy_cfg=None):
-        """Provides an isolated browser context."""
+    def get_context(self, proxy_cfg=None, cookies=None):
+        """Provides an isolated browser context.
+
+        Optionally injects cookies (list of dicts with name, value, domain, path).
+        """
         if not self.browser:
             self.start()
-        return self.browser.new_context(proxy=proxy_cfg)
+        context = self.browser.new_context(proxy=proxy_cfg)
+        if cookies:
+            context.add_cookies(cookies)
+        return context
 
     def stop(self):
         """Clean teardown."""

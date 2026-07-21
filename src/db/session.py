@@ -37,9 +37,6 @@ def tenant_session(client_id: int) -> Generator[Session, None, None]:
     """
     session = SessionLocal()
     try:
-        # In a more advanced implementation, we could set a global
-        # variable or use a filter here to ensure all queries
-        # automatically include 'client_id=client_id'
         yield session
     finally:
         session.close()

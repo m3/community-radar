@@ -592,7 +592,7 @@ def api_engagement(client_name):
             SELECT user_id, COUNT(*) as cnt
             {query_base}
             GROUP BY user_id
-            HAVING cnt >= 5
+            HAVING COUNT(*) >= 5
         ) AS sub
     """, params).fetchone()
     active_users_5plus = active_users_stats["c"] if active_users_stats else 0

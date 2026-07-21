@@ -175,6 +175,9 @@ class LegacySessionWrapper:
     def commit(self):
         self.session.commit()
 
+    def rollback(self):
+        self.session.rollback()
+
     def close(self):
         self.session.close()
 

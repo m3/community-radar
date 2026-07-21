@@ -87,7 +87,7 @@ def run_worker():
             db.commit()
             if cursor.rowcount > 0:
                 claimed = True
-        except (DBAPIError, Exception):
+        except Exception:
             db.rollback()
             
         if not claimed:

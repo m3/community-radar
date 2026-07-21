@@ -4,7 +4,7 @@
 
 set -e
 
-PROJECT_DIR="/Users/mathias/Development/Projects/community-radar"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # Ensure we connect to the community-radar Postgres (not m3-postgres)
@@ -13,7 +13,12 @@ export DATABASE_URL="postgresql://community_radar:password123@localhost:5432/com
 # Activate venv
 source .venv/bin/activate
 
-CLIENTS=("pure-pool-pro" "chess-infinity" "poker-club")
+# Clients come from config.yaml so this stays in step with the dashboard.
+# while-read rather than readarray/mapfile: macOS ships bash 3.2.
+CLIENTS=()
+while IFS= read -r client; do
+    [ -n "$client" ] && CLIENTS+=("$client")
+done < <(python3 -c "import yaml; print('\n'.join(yaml.safe_load(open('config.yaml')).get('clients', {})))")
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting CommunityRadar sentiment analysis..."
 

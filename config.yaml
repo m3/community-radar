@@ -6,7 +6,8 @@ export:
 reddit_global:
   backend: playwright
   headless: true
-  skills_dir: /Users/mathias/Development/Projects/community-radar/scripts
+  # skills_dir defaults to <repo>/scripts (src/collectors/utils.py); set it
+  # only to point at a scripts checkout outside the repo.
 discord_global:
   bws_secret_id: 70909217-9e02-452b-b933-b45f00c17fee
   dce_bin: /Users/mathias/.hermes/profiles/glenn/home/tools/discordchatexporter/cli/DiscordChatExporter.Cli

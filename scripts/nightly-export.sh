@@ -4,7 +4,7 @@
 
 set -e
 
-PROJECT_DIR="/Users/mathias/Development/Projects/community-radar"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # Ensure we connect to the community-radar Postgres (not m3-postgres)

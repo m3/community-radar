@@ -43,7 +43,7 @@ def test_enqueue_task_none_client(clean_db):
 
 
 def test_zombie_task_reset(clean_db):
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     session = SessionLocal()
     
     # Create a zombie task: running with heartbeat_at set to 6 minutes ago
@@ -51,16 +51,16 @@ def test_zombie_task_reset(clean_db):
         client_name="test_client",
         command="status",
         status="running",
-        started_at=datetime.utcnow() - timedelta(minutes=6),
-        heartbeat_at=datetime.utcnow() - timedelta(minutes=6)
+        started_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=6),
+        heartbeat_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=6)
     )
     # Create an active task: running with heartbeat_at set to 1 minute ago
     active = Task(
         client_name="test_client",
         command="status",
         status="running",
-        started_at=datetime.utcnow() - timedelta(minutes=1),
-        heartbeat_at=datetime.utcnow() - timedelta(minutes=1)
+        started_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=1),
+        heartbeat_at=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=1)
     )
     session.add(zombie)
     session.add(active)
@@ -74,7 +74,7 @@ def test_zombie_task_reset(clean_db):
     db = get_queue_db()
     s = db.session
     try:
-        threshold = datetime.utcnow() - timedelta(minutes=5)
+        threshold = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=5)
         zombies = s.query(Task).filter(
             Task.status == 'running',
             (Task.heartbeat_at < threshold) | (Task.heartbeat_at.is_(None))

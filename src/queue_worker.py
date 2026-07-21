@@ -3,7 +3,7 @@ import json
 import traceback
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import threading
 from sqlalchemy.exc import DBAPIError
 
@@ -14,6 +14,16 @@ sys.path.insert(0, str(ROOT))
 from src.db.queue import get_queue_db
 from src.main import commands as CLI_COMMANDS
 from src.db.orm import Task
+
+
+def _utcnow():
+    """Naive UTC now.
+
+    The tasks table is `timestamp without time zone`; a tz-aware value here
+    would shift silently against it. datetime.utcnow() gave the same result
+    but is deprecated.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class HeartbeatThread(threading.Thread):
     def __init__(self, task_id, interval=30):
@@ -28,7 +38,7 @@ class HeartbeatThread(threading.Thread):
             try:
                 db.execute(
                     "UPDATE tasks SET heartbeat_at = ? WHERE id = ?",
-                    (datetime.utcnow(), self.task_id)
+                    (_utcnow(), self.task_id)
                 )
                 db.commit()
             except Exception:
@@ -47,7 +57,7 @@ def run_worker():
         
         # 1. Reset zombie tasks (running for > 5 minutes without heartbeat)
         try:
-            threshold = datetime.utcnow() - timedelta(minutes=5)
+            threshold = _utcnow() - timedelta(minutes=5)
             zombies = session.query(Task).filter(
                 Task.status == 'running',
                 (Task.heartbeat_at < threshold) | (Task.heartbeat_at.is_(None))
@@ -82,7 +92,7 @@ def run_worker():
         try:
             cursor = db.execute(
                 "UPDATE tasks SET status='running', started_at=?, heartbeat_at=? WHERE id=? AND status='pending'", 
-                (datetime.utcnow(), datetime.utcnow(), task_id)
+                (_utcnow(), _utcnow(), task_id)
             )
             db.commit()
             if cursor.rowcount > 0:
@@ -120,7 +130,7 @@ def run_worker():
             # Mark completed
             db.execute(
                 "UPDATE tasks SET status='completed', finished_at=? WHERE id=?", 
-                (datetime.utcnow(), task_id)
+                (_utcnow(), task_id)
             )
             db.commit()
         except Exception as e:
@@ -129,7 +139,7 @@ def run_worker():
             try:
                 db.execute(
                     "UPDATE tasks SET status='failed', finished_at=?, error_log=? WHERE id=?", 
-                    (datetime.utcnow(), err, task_id)
+                    (_utcnow(), err, task_id)
                 )
                 db.commit()
             except Exception:

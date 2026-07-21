@@ -12,3 +12,6 @@ dist/
 *.egg-info/
 __pycache__/
 .pytest_cache/
+# Local config backup written by ConfigManager.save()
+config.yaml.bak
+*.tmp

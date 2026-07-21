@@ -17,6 +17,30 @@ def sanitize_client_name(name):
     return clean if clean else None
 
 
+class UnknownClientError(ValueError):
+    """Raised when a client name is not declared in config.yaml."""
+
+
+def known_client_names():
+    """The set of client names declared in config.yaml — the tenant authority.
+
+    Read fresh each call: the config is editable through the dashboard, and a
+    stale cache here would reject a client that was just added.
+    """
+    import yaml
+
+    config_path = os.environ.get(
+        "COMMUNITY_RADAR_CONFIG",
+        str(os.path.join(os.path.dirname(__file__), "..", "..", "config.yaml")),
+    )
+    try:
+        with open(config_path) as f:
+            config = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        return set()
+    return set(config.get("clients", {}).keys())
+
+
 class LegacySessionWrapper:
     """
     Wraps an SQLAlchemy Session to provide a sqlite3-like interface
@@ -210,9 +234,16 @@ def get_db(client_name=None):
     session = SessionLocal()
     
     if clean_name:
+        if clean_name not in known_client_names():
+            session.close()
+            raise UnknownClientError(
+                f"Unknown client '{clean_name}'. Declare it in config.yaml first."
+            )
         client = session.query(Client).filter_by(name=clean_name).first()
         if not client:
-            # For now, auto-create client if it doesn't exist (to support easy onboarding)
+            # First use of a client that is declared in config.yaml — create
+            # its row. A name absent from config was rejected above, so this
+            # can no longer be reached by a typo.
             client = Client(name=clean_name)
             session.add(client)
             session.commit()
@@ -220,7 +251,7 @@ def get_db(client_name=None):
         client_id = client.id
     else:
         # Default/system client
-        client_id = 0 
+        client_id = 0
 
     return LegacySessionWrapper(session, client_id)
 

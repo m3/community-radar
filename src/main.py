@@ -352,6 +352,15 @@ def cli():
         print(f"Available clients: {', '.join(available)}")
         sys.exit(1)
 
+    # Reject an unknown --client with a clean message rather than letting
+    # get_db raise UnknownClientError as a traceback deep in the command.
+    if args.command in client_required_cmds and args.client:
+        available = get_available_clients(load_config())
+        if args.client not in available:
+            print(f"Error: unknown client '{args.client}'")
+            print(f"Available clients: {', '.join(available)}")
+            sys.exit(1)
+
     if args.command in commands:
         if getattr(args, "async_mode", False):
             from src.db.queue import enqueue_task

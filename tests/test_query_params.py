@@ -12,12 +12,15 @@ from src.dashboard.app import app, config_mgr
 
 
 @pytest.fixture
-def client(tmp_path):
+def client(tmp_path, monkeypatch):
     app.config["TESTING"] = True
     temp_config = tmp_path / "config.yaml"
     with open(temp_config, "w") as f:
         yaml.dump({"clients": {"test-client": {"name": "Test Client"}}}, f)
 
+    # Point both the app's config manager and the model layer's tenant
+    # authority at the temp config so get_db recognises test-client.
+    monkeypatch.setenv("COMMUNITY_RADAR_CONFIG", str(temp_config))
     old_path = config_mgr.config_path
     config_mgr.config_path = temp_config
     config_mgr.clear_cache()

@@ -11,6 +11,7 @@ from sqlalchemy import (
     Index,
     func,
     ForeignKeyConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -124,6 +125,10 @@ class Message(Base):
         ),
         ForeignKeyConstraint(["user_id", "client_id"], ["users.id", "users.client_id"]),
         Index("idx_messages_client_timestamp", "client_id", "timestamp"),
+        # De-duplication is per tenant. A global UNIQUE(message_id) means two
+        # clients tracking the same subreddit cannot both store the same post —
+        # the second one silently loses it to ON CONFLICT DO NOTHING.
+        UniqueConstraint("client_id", "message_id", name="uq_messages_client_message"),
     )
 
 

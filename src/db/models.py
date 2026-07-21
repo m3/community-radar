@@ -103,10 +103,6 @@ class LegacySessionWrapper:
         upper = sql.upper().strip()
         if not upper.startswith("INSERT "):
             return sql, params
-        if "client_id" in sql.lower():
-            return sql, params  # already has client_id
-        if "tasks" in sql.lower():
-            return sql, params  # tasks table is global and has no client_id
 
         # Match: INSERT INTO table (col1, col2, ...) VALUES (val1, val2, ...)
         pattern = r'(INSERT\s+(?:INTO|OR\s+IGNORE\s+INTO)\s+\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)'
@@ -117,6 +113,12 @@ class LegacySessionWrapper:
         prefix = match.group(1)  # INSERT INTO table
         cols = match.group(2)    # col1, col2, ...
         vals = match.group(3)    # val1, val2, ...
+
+        # Only the column list decides this. Testing the whole statement would
+        # also match a client_id in a trailing ON CONFLICT target, which
+        # _fix_insert_or_ignore may have just added.
+        if not self._is_client_scoped_insert(sql, cols):
+            return sql, params
 
         new_cols = "client_id, " + cols
         new_vals = ":client_id, " + vals
@@ -133,6 +135,20 @@ class LegacySessionWrapper:
 
         return sql, params
 
+    def _is_client_scoped_insert(self, sql, cols):
+        """Whether client_id gets injected into this INSERT's column list.
+
+        The ON CONFLICT target must name the same columns as the unique
+        constraint the row is checked against, so this single predicate decides
+        both the target and the injection. `cols` is the column list only —
+        `sql` is used just to spot the global `tasks` table.
+        """
+        if "client_id" in cols.lower():
+            return False  # caller already supplied it
+        if "tasks" in sql.lower():
+            return False  # tasks is global and has no client_id
+        return True
+
     def _fix_insert_or_ignore(self, sql):
         """Convert SQLite INSERT OR IGNORE to PostgreSQL INSERT ... ON CONFLICT DO NOTHING."""
         import re
@@ -142,10 +158,16 @@ class LegacySessionWrapper:
         if match:
             table = match.group(1)
             cols = match.group(2).strip()
-            # Build ON CONFLICT clause — use the first column as the conflict target
+            # Build ON CONFLICT clause — use the first column as the conflict
+            # target, prefixed with client_id when the row is tenant-scoped so
+            # it matches UNIQUE(client_id, ...) rather than a global unique.
             first_col = cols.split(",")[0].strip()
+            if self._is_client_scoped_insert(sql, cols):
+                target = f"client_id, {first_col}"
+            else:
+                target = first_col
             sql = re.sub(pattern,
-                         f'INSERT INTO {table} ({cols}) VALUES ({match.group(3)}) ON CONFLICT ({first_col}) DO NOTHING',
+                         f'INSERT INTO {table} ({cols}) VALUES ({match.group(3)}) ON CONFLICT ({target}) DO NOTHING',
                          sql, flags=re.IGNORECASE)
         return sql
 

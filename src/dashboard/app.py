@@ -100,6 +100,25 @@ def is_channel_owned(ch_name, owned_subreddits):
     return False
 
 
+def segment_filter(segment, owned_ids, external_ids, connector="AND", column="m.channel_id"):
+    """SQL fragment + params restricting rows to a client's owned/external channels.
+
+    Returns ("", []) for the 'all' segment (or any unrecognised value). An empty
+    id list becomes '<connector> 1=0' so the segment deliberately matches no rows
+    rather than silently matching everything.
+    """
+    if segment == "owned":
+        ids = owned_ids
+    elif segment == "external":
+        ids = external_ids
+    else:
+        return "", []
+    if not ids:
+        return f" {connector} 1=0", []
+    placeholders = ", ".join("?" for _ in ids)
+    return f" {connector} {column} IN ({placeholders})", list(ids)
+
+
 def get_channel_segmentation(client_name):
     """
     Returns (owned_channel_ids, external_channel_ids) for the client.
@@ -225,21 +244,11 @@ def api_overview(client_name):
 
     owned_ids, external_ids = get_channel_segmentation(client_name)
 
-    # Determine message filter
-    msg_filter = ""
-    msg_params = []
-    if segment == "owned":
-        if owned_ids:
-            msg_filter = " WHERE channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            msg_params.extend(owned_ids)
-        else:
-            msg_filter = " WHERE 1=0"
-    elif segment == "external":
-        if external_ids:
-            msg_filter = " WHERE channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            msg_params.extend(external_ids)
-        else:
-            msg_filter = " WHERE 1=0"
+    # Determine message filter. This query has no table alias, so the column
+    # is unqualified and the fragment leads with WHERE.
+    msg_filter, msg_params = segment_filter(
+        segment, owned_ids, external_ids, connector="WHERE", column="channel_id"
+    )
 
     # Total messages by platform
     if msg_filter:
@@ -333,18 +342,9 @@ def api_sentiment_timeseries(client_name):
         WHERE m.client_id = :client_id AND m.timestamp IS NOT NULL AND m.content IS NOT NULL AND m.content != ''
     """
     params = []
-    if segment == "owned":
-        if owned_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            params.extend(owned_ids)
-        else:
-            query += " AND 1=0"
-    elif segment == "external":
-        if external_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            params.extend(external_ids)
-        else:
-            query += " AND 1=0"
+    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+    query += seg_frag
+    params.extend(seg_params)
 
     query += " ORDER BY m.timestamp ASC"
     rows = db.execute(query, params).fetchall()
@@ -486,18 +486,9 @@ def api_topics(client_name):
         WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
     """
     params = []
-    if segment == "owned":
-        if owned_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            params.extend(owned_ids)
-        else:
-            query += " AND 1=0"
-    elif segment == "external":
-        if external_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            params.extend(external_ids)
-        else:
-            query += " AND 1=0"
+    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+    query += seg_frag
+    params.extend(seg_params)
 
     rows = db.execute(query, params).fetchall()
     topic_rows = db.execute("SELECT name, category FROM topics").fetchall()
@@ -545,18 +536,9 @@ def api_power_words(client_name):
         WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
     """
     params = []
-    if segment == "owned":
-        if owned_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            params.extend(owned_ids)
-        else:
-            query += " AND 1=0"
-    elif segment == "external":
-        if external_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            params.extend(external_ids)
-        else:
-            query += " AND 1=0"
+    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+    query += seg_frag
+    params.extend(seg_params)
 
     rows = db.execute(query, params).fetchall()
     db.close()
@@ -589,18 +571,9 @@ def api_engagement(client_name):
         WHERE m.client_id = :client_id
     """
     params = []
-    if segment == "owned":
-        if owned_ids:
-            query_base += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            params.extend(owned_ids)
-        else:
-            query_base += " AND 1=0"
-    elif segment == "external":
-        if external_ids:
-            query_base += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            params.extend(external_ids)
-        else:
-            query_base += " AND 1=0"
+    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+    query_base += seg_frag
+    params.extend(seg_params)
 
     # Total & Avg reactions
     stats = db.execute(f"SELECT COUNT(*) as cnt, COALESCE(SUM(reactions), 0) as total_react {query_base}", params).fetchone()
@@ -654,18 +627,9 @@ def api_contributors(client_name):
         WHERE m.client_id = :client_id
     """
     params = []
-    if segment == "owned":
-        if owned_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            params.extend(owned_ids)
-        else:
-            query += " AND 1=0"
-    elif segment == "external":
-        if external_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            params.extend(external_ids)
-        else:
-            query += " AND 1=0"
+    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+    query += seg_frag
+    params.extend(seg_params)
 
     query += " GROUP BY u.id, u.display_name ORDER BY messages DESC LIMIT 15"
     rows = db.execute(query, params).fetchall()
@@ -739,18 +703,9 @@ def api_purpose(client_name):
         WHERE m.client_id = :client_id AND m.content IS NOT NULL AND m.content != ''
     """
     params = []
-    if segment == "owned":
-        if owned_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            params.extend(owned_ids)
-        else:
-            query += " AND 1=0"
-    elif segment == "external":
-        if external_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            params.extend(external_ids)
-        else:
-            query += " AND 1=0"
+    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+    query += seg_frag
+    params.extend(seg_params)
 
     rows = db.execute(query, params).fetchall()
     db.close()
@@ -947,18 +902,9 @@ def api_raw_messages(client_name):
     """
     params = []
 
-    if segment == "owned":
-        if owned_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in owned_ids) + ")"
-            params.extend(owned_ids)
-        else:
-            query += " AND 1=0"
-    elif segment == "external":
-        if external_ids:
-            query += " AND m.channel_id IN (" + ", ".join("?" for _ in external_ids) + ")"
-            params.extend(external_ids)
-        else:
-            query += " AND 1=0"
+    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+    query += seg_frag
+    params.extend(seg_params)
 
     if platform:
         query += " AND m.platform = ?"

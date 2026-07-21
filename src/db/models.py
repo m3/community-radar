@@ -21,6 +21,39 @@ class UnknownClientError(ValueError):
     """Raised when a client name is not declared in config.yaml."""
 
 
+class TenantIsolationError(RuntimeError):
+    """Raised when a tenant-scoped query would run without a client_id filter."""
+
+
+# Tables without a client_id column — exempt from the tenant-predicate guard.
+_NON_TENANT_TABLES = {"tasks", "clients", "alembic_version", "schema_migrations"}
+
+# Tables whose rows belong to a specific client and must always be filtered.
+_TENANT_TABLES = {
+    "messages", "users", "channels", "servers", "exports", "topics",
+    "cross_references",
+}
+
+
+def tenant_guard_mode():
+    """How to react to a tenant-scoped query with no client_id predicate.
+
+    'enforce' (default) raises, 'log' warns and continues, 'off' disables the
+    check. Overridable with COMMUNITY_RADAR_TENANT_GUARD for a staged rollout.
+    """
+    return os.environ.get("COMMUNITY_RADAR_TENANT_GUARD", "enforce").lower()
+
+
+def _references_tenant_table(sql):
+    lowered = sql.lower()
+    return any(re.search(rf'\b{t}\b', lowered) for t in _TENANT_TABLES)
+
+
+def _has_client_id_predicate(sql):
+    # A predicate, not a mention: client_id compared or matched against something.
+    return re.search(r'client_id\s*(=|<>|!=|\bin\b)', sql, re.IGNORECASE) is not None
+
+
 def known_client_names():
     """The set of client names declared in config.yaml — the tenant authority.
 
@@ -115,6 +148,8 @@ class LegacySessionWrapper:
 
         # Inject client_id into INSERT statements that don't include it
         sql, params = self._inject_client_id_insert(sql, params)
+
+        self._guard_tenant_isolation(sql)
 
         result = self.session.execute(text(sql), params)
         if sql.strip().upper().startswith(("SELECT", "WITH")):
@@ -217,6 +252,34 @@ class LegacySessionWrapper:
             sql_converted = self._fix_insert_or_ignore(sql_converted)
             sql_converted, params = self._inject_client_id_insert(sql_converted, params)
             self.session.execute(text(sql_converted), params)
+
+    def _guard_tenant_isolation(self, sql):
+        """Refuse a tenant-scoped read/write that carries no client_id predicate.
+
+        Runs on the fully rewritten SQL. INSERTs are exempt: client_id is added
+        to their column list, not a WHERE clause, by _inject_client_id_insert.
+        """
+        mode = tenant_guard_mode()
+        if mode == "off":
+            return
+
+        verb = sql.lstrip().upper()
+        if not verb.startswith(("SELECT", "WITH", "UPDATE", "DELETE")):
+            return
+        if not _references_tenant_table(sql):
+            return
+        if _has_client_id_predicate(sql):
+            return
+
+        message = (
+            "Tenant-scoped query has no client_id predicate after rewriting; "
+            f"refusing to run it for client {self.client_id}: {' '.join(sql.split())[:200]}"
+        )
+        if mode == "log":
+            import logging
+            logging.getLogger(__name__).warning("tenant-guard: %s", message)
+            return
+        raise TenantIsolationError(message)
 
     def commit(self):
         self.session.commit()

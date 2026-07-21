@@ -173,6 +173,19 @@ class CrossReference(Base):
 
     __table_args__ = (
         ForeignKeyConstraint(["user_id", "client_id"], ["users.id", "users.client_id"]),
+        # Leading client_id: without it, one client's match tuple blocks every
+        # other client's identical tuple, and identity sync has no per-row
+        # error handling so a single collision loses all of that client's
+        # matches.
+        UniqueConstraint(
+            "client_id",
+            "user_id",
+            "platform1",
+            "username1",
+            "platform2",
+            "username2",
+            name="uq_cross_refs_client",
+        ),
     )
 
 

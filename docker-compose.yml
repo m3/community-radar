@@ -26,7 +26,16 @@ services:
       - DATABASE_URL=postgresql://community_radar:password123@db:5432/community_radar
       - DISCORD_TOKEN=${DISCORD_TOKEN:-}
       - REDDIT_SESSION=${REDDIT_SESSION:-}
-    command: ["python", "-m", "src.main", "dashboard"]
+    # Served by gunicorn, not the Flask dev server. Timeout is generous
+    # because several analysis endpoints still scan the full messages table.
+    command:
+      - gunicorn
+      - --bind=0.0.0.0:5001
+      - --workers=2
+      - --threads=4
+      - --timeout=120
+      - --access-logfile=-
+      - src.dashboard.app:app
 
   worker:
     build:

@@ -1473,7 +1473,16 @@ def api_queue_retry(task_id):
 
 
 def run_dashboard(client_name=None):
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    """Launch the Flask development server.
+
+    Debug mode is off unless FLASK_DEBUG is set — it leaks tracebacks with
+    source and local variables to the caller. Deployments serve the `app`
+    object under gunicorn instead (see docker-compose.yml).
+    """
+    debug = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes", "on")
+    host = os.environ.get("DASHBOARD_HOST", "127.0.0.1")
+    port = int(os.environ.get("DASHBOARD_PORT", 5001))
+    app.run(host=host, port=port, debug=debug)
 
 if __name__ == "__main__":
     run_dashboard()

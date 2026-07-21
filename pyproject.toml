@@ -13,6 +13,7 @@ dependencies = [
     "ijson>=3.2",
     "playwright>=1.40.0",
     "requests>=2.32",
+    "gunicorn>=23.0",
 ]
 
 [project.scripts]

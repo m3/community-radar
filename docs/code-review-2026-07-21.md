@@ -15,10 +15,13 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 
 ---
 
-> **Status update — findings #1, #2, #3 (partly), #6, #7 are fixed on branch
-> `fix/review-2026-07-21`.** Fixing them surfaced two further defects that were
-> not visible from reading the code; both are recorded as #13 and #14 below and
-> are also fixed. Remaining open: #3b (auth), #4, #5, #8–#12, #15.
+> **Status update — findings #1, #2, #3a, #6, #7 are fixed on branch
+> `fix/review-2026-07-21`.** Fixing them surfaced four further defects that were
+> not visible from reading the code (#13–#17 below); #13, #14 and #15 are fixed,
+> #16 needs a decision, #17 is documented only.
+> Remaining open: #3b (auth), #4, #5, #8–#12, #16, #17.
+>
+> Live database is reconciled and `alembic check` reports no drift.
 
 ## Critical
 
@@ -274,7 +277,58 @@ Only the live database worked, because its constraint came from the SQLite
 import rather than from a migration. Fixing #1 made fresh deploys build a
 schema; this is what made that schema usable. Same fix as #13.
 
-### 15. Finding #4 is no longer latent — demonstrated
+### 15. Cross-references had the same cross-tenant constraint — FIXED
+
+`cross_references` carried `UNIQUE (user_id, platform1, username1, platform2,
+username2)` — again no `client_id`. Matching is on *usernames*, which collide
+across clients readily.
+
+This one fails **loudly** rather than silently: `identity.py:102` inserts with
+no `ON CONFLICT`, and `run_identity_sync` has no per-row error handling, so a
+single collision aborts the transaction and costs that client every match in the
+run. Reproduced on a scratch database:
+
+```
+psycopg2.errors.UniqueViolation: duplicate key value violates unique
+constraint "uq_cross_refs"
+```
+
+It has not fired in production only because just one client (`pure-pool-pro`,
+11 rows) has cross-references so far. Fixed by
+`UNIQUE (client_id, user_id, ...)` (migration `509a4c74dfbf`). Live
+`alembic check` now reports no drift at all.
+
+### 16. `src/collectors/importer.py` is dead code — needs a decision
+
+The module's cross-reference insert is broken independently of the above: it
+emits `INSERT OR IGNORE`, and the wrapper's `first_col` heuristic can only ever
+name one column, so it cannot match a multi-column constraint. Confirmed on both
+the old and the new schema:
+
+```
+psycopg2.errors.InvalidColumnReference: there is no unique or exclusion
+constraint matching the ON CONFLICT specification
+```
+
+This predates the dedup fixes — `ON CONFLICT (user_id)` did not match the
+5-column constraint either.
+
+It is unreachable, so nothing is currently failing: all 352 lines hang off one
+hardcoded path from the predecessor project —
+
+```python
+CUEBOT_RESEARCH = Path("/Users/mathias/Development/DiscordBot/cuebot/docs/research")
+```
+
+— which does not exist. `main.py import` therefore cannot do anything. It looks
+like a one-off migration tool that was never removed. **Recommend deleting the
+module and the `import` command**, but that is a judgement call about whether
+the cuebot data may ever be re-imported.
+
+The underlying wrapper limitation (`first_col` cannot express a composite
+conflict target) is part of #4 and is not fixable without replacing the rewriter.
+
+### 17. Finding #4 is no longer latent — demonstrated
 
 While testing #13 I ran, through the wrapper:
 

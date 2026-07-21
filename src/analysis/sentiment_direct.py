@@ -12,6 +12,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 # Import the analysis functions from the real script
+from src.timeutils import to_day, to_month
 from src.analysis.sentiment import (
     run_analysis as original_run_analysis,
     classify_sentiment,
@@ -346,13 +347,7 @@ def run_analysis_direct(db, output_dir):
         sentiment_dist[label] += 1
         sentiment_by_channel[msg["channel_name"]][label] += 1
         ts = msg["timestamp"]
-        if ts:
-            if isinstance(ts, str):
-                month = ts[:7]
-            else:
-                month = ts.strftime("%Y-%m")
-        else:
-            month = "unknown"
+        month = to_month(ts)
         sentiment_by_month[month][label] += 1
         if label == "negative" and score <= -2:
             negative_messages.append({
@@ -360,7 +355,7 @@ def run_analysis_direct(db, output_dir):
                 "author": msg["display_name"] or "unknown",
                 "content": msg["content"][:200],
                 "score": score,
-                "timestamp": ts[:10] if ts else "unknown",
+                "timestamp": to_day(ts),
             })
         elif label == "positive" and score >= 2:
             positive_messages.append({
@@ -368,7 +363,7 @@ def run_analysis_direct(db, output_dir):
                 "author": msg["display_name"] or "unknown",
                 "content": msg["content"][:200],
                 "score": score,
-                "timestamp": ts[:10] if ts else "unknown",
+                "timestamp": to_day(ts),
             })
         pw = extract_power_words_local(msg["content"])
         for w in pw:
@@ -438,11 +433,7 @@ def run_analysis_direct(db, output_dir):
     date_range = date_range_row[0] if date_range_row else {"min_ts": None, "max_ts": None}
 
     def fmt_ts(ts):
-        if not ts:
-            return "N/A"
-        if isinstance(ts, str):
-            return ts[:10]
-        return ts.strftime("%Y-%m-%d")
+        return to_day(ts, default="N/A")
 
     total = len(messages)
     deduped_total = len(deduped_messages)

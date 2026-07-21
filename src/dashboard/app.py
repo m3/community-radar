@@ -61,6 +61,28 @@ def get_db(client_name):
     return _get_db(client_name)
 
 
+def int_arg(name, default, maximum=None, minimum=0):
+    """Read a non-negative integer query parameter.
+
+    Bare int() on request.args raises ValueError on anything non-numeric,
+    which surfaces as an unhandled 500. Anything the caller controls should
+    fail as a 400 instead.
+    """
+    raw = request.args.get(name)
+    if raw is None or raw == "":
+        value = default
+    else:
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            abort(400, f"{name} must be an integer")
+    if value < minimum:
+        abort(400, f"{name} must be >= {minimum}")
+    if maximum is not None:
+        value = min(value, maximum)
+    return value
+
+
 def is_channel_owned(ch_name, owned_subreddits):
     ch_name_lower = ch_name.lower()
     if ch_name_lower.startswith("reddit-"):
@@ -907,8 +929,8 @@ def api_raw_messages(client_name):
 
     platform = request.args.get("platform")
     channel = request.args.get("channel")
-    limit = min(int(request.args.get("limit", 100)), 500)
-    offset = int(request.args.get("offset", 0))
+    limit = int_arg("limit", 100, maximum=500)
+    offset = int_arg("offset", 0)
     segment = request.args.get("segment", "all")
 
     owned_ids, external_ids = get_channel_segmentation(client_name)
@@ -1249,7 +1271,7 @@ def api_market_intel(client_name):
 def api_cuebot_leaderboard(client_name):
     """Get top N users by engagement score with optimized aggregation."""
     validate_client(client_name)
-    limit = min(int(request.args.get("limit", 50)), 200)
+    limit = int_arg("limit", 50, maximum=200)
     platform = request.args.get("platform")
 
     db = get_db(client_name)

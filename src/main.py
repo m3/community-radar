@@ -11,6 +11,8 @@ ROOT = Path(__file__).parent.parent
 # Ensure we can import from src
 sys.path.insert(0, str(ROOT))
 
+from src.timeutils import to_day, to_seconds
+
 def load_config():
     CONFIG_PATH = ROOT / "config.yaml"
     with open(CONFIG_PATH) as f:
@@ -72,7 +74,9 @@ def topics(args):
         return
     print(f"Top {len(rows)} topics:\n")
     for r in rows:
-        print(f"  {r['name']:20s} ({r['category']:15s}) {r['mention_count']:4d} mentions  [{r['first_seen'][:10] if r['first_seen'] else '?'} → {r['last_seen'][:10] if r['last_seen'] else '?'}]")
+        first = to_day(r['first_seen'], default='?')
+        last = to_day(r['last_seen'], default='?')
+        print(f"  {r['name']:20s} ({r['category']:15s}) {r['mention_count']:4d} mentions  [{first} → {last}]")
     db.close()
 
 
@@ -170,7 +174,7 @@ def search(args):
     """, (f"%{term}%",)).fetchall()
     print(f"Found {len(rows)} messages containing '{term}':\n")
     for r in rows:
-        print(f"  [{r['timestamp'][:19]}] {r['display_name'] or '?'} in #{r['channel']}")
+        print(f"  [{to_seconds(r['timestamp'], default='?')}] {r['display_name'] or '?'} in #{r['channel']}")
         print(f"  {r['content'][:200]}")
         print()
     db.close()

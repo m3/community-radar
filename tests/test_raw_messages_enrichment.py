@@ -70,7 +70,7 @@ def test_api_raw_messages_flags_external_mention(client):
 
     # The route calls get_db directly and via get_channel_segmentation, which
     # now lives in the helpers module — patch both bindings of the same object.
-    with patch('src.dashboard.app.get_db', return_value=mock_db), \
+    with patch('src.dashboard.api_analytics.get_db', return_value=mock_db), \
          patch('src.dashboard.helpers.get_db', return_value=mock_db):
         response = client.get('/api/test-client/raw_messages')
         assert response.status_code == 200
@@ -103,7 +103,7 @@ def test_api_raw_messages_no_keywords_no_flag(client):
 
     mock_db.execute.return_value.fetchall.return_value = [MockRow(mock_row)]
 
-    with patch('src.dashboard.app.get_db', return_value=mock_db), \
+    with patch('src.dashboard.api_analytics.get_db', return_value=mock_db), \
          patch('src.dashboard.helpers.get_db', return_value=mock_db):
         response = client.get('/api/test-client/raw_messages')
         assert response.status_code == 200

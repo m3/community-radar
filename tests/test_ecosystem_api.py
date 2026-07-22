@@ -51,7 +51,7 @@ def test_api_ecosystem_summary_balanced(client):
         }
     }
     
-    with patch("src.dashboard.app.load_report", return_value=mock_report):
+    with patch("src.dashboard.api_analytics.load_report", return_value=mock_report):
         response = client.get('/api/test_client/ecosystem')
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -88,7 +88,7 @@ def test_api_ecosystem_summary_external_volume_dwarfs(client):
         }
     }
     
-    with patch("src.dashboard.app.load_report", return_value=mock_report):
+    with patch("src.dashboard.api_analytics.load_report", return_value=mock_report):
         response = client.get('/api/test_client/ecosystem')
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -105,7 +105,7 @@ def test_api_ecosystem_summary_owned_ratio_high(client):
         }
     }
     
-    with patch("src.dashboard.app.load_report", return_value=mock_report):
+    with patch("src.dashboard.api_analytics.load_report", return_value=mock_report):
         response = client.get('/api/test_client/ecosystem')
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -122,7 +122,7 @@ def test_api_ecosystem_summary_external_ratio_high(client):
         }
     }
     
-    with patch("src.dashboard.app.load_report", return_value=mock_report):
+    with patch("src.dashboard.api_analytics.load_report", return_value=mock_report):
         response = client.get('/api/test_client/ecosystem')
         assert response.status_code == 200
         data = json.loads(response.data)

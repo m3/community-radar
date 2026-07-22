@@ -67,15 +67,18 @@ def test_api_raw_messages_flags_external_mention(client):
         pass
 
     mock_db.execute.return_value.fetchall.return_value = [MockRow(mock_row_external), MockRow(mock_row_normal)]
-    
-    with patch('src.dashboard.app.get_db', return_value=mock_db):
+
+    # The route calls get_db directly and via get_channel_segmentation, which
+    # now lives in the helpers module — patch both bindings of the same object.
+    with patch('src.dashboard.app.get_db', return_value=mock_db), \
+         patch('src.dashboard.helpers.get_db', return_value=mock_db):
         response = client.get('/api/test-client/raw_messages')
         assert response.status_code == 200
         data = json.loads(response.data)
-        
+
         assert data[0]["message_id"] == "1"
         assert data[0]["is_external_mention"] is True
-        
+
         assert data[1]["message_id"] == "2"
         assert data[1]["is_external_mention"] is False
 
@@ -99,8 +102,9 @@ def test_api_raw_messages_no_keywords_no_flag(client):
         pass
 
     mock_db.execute.return_value.fetchall.return_value = [MockRow(mock_row)]
-    
-    with patch('src.dashboard.app.get_db', return_value=mock_db):
+
+    with patch('src.dashboard.app.get_db', return_value=mock_db), \
+         patch('src.dashboard.helpers.get_db', return_value=mock_db):
         response = client.get('/api/test-client/raw_messages')
         assert response.status_code == 200
         data = json.loads(response.data)

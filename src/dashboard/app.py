@@ -84,49 +84,6 @@ def set_csrf_cookie(response):
     return response
 
 
-@app.route("/")
-def hub():
-    """Client selection hub."""
-    return render_template("hub.html")
-
-
-@app.route("/clients")
-def clients_hub():
-    """Client management overview."""
-    return render_template("clients.html")
-
-
-@app.route("/clients/<client_name>/edit")
-def client_edit(client_name):
-    """Form-based configuration editor for a specific client."""
-    validate_client(client_name)
-    config = load_config()
-    client_config = config["clients"][client_name]
-    return render_template("client_edit.html", client_name=client_name, config=client_config)
-
-
-@app.route("/<client_name>/dashboard")
-def index(client_name):
-    """Main dashboard page."""
-    validate_client(client_name)
-    report = load_report(client_name)
-    return render_template("index.html", client_name=client_name, report=report)
-
-
-@app.route("/<client_name>/leaderboard")
-def leaderboard(client_name):
-    """Engagement leaderboard page."""
-    validate_client(client_name)
-    return render_template("leaderboard.html", client_name=client_name)
-
-
-@app.route("/<client_name>/user/<user_id>")
-def user_profile(client_name, user_id):
-    """User profile page."""
-    validate_client(client_name)
-    return render_template("user_profile.html", client_name=client_name, user_id=user_id)
-
-
 @app.route("/api/<client_name>/overview")
 def api_overview(client_name):
     """High-level stats for dashboard cards."""
@@ -632,87 +589,6 @@ def api_help_data(client_name):
         "db_status": "Connected (Postgres)"
     })
 
-@app.route("/<client_name>/help")
-def help_guide(client_name):
-    """Serve the Mission Control Guide with client-specific context."""
-    validate_client(client_name)
-    return render_template("help.html", client_name=client_name)
-
-
-@app.route("/api/clients")
-def api_get_clients():
-    """Return all clients."""
-    config = config_mgr.load()
-    return jsonify({"clients": config.get("clients", {})})
-
-
-@app.route("/api/clients", methods=["POST"])
-def api_create_client():
-    """Create a new client."""
-    data = request.json
-    client_id = data.get("client_id")
-    name = data.get("name")
-
-    if not client_id or not all(c.isalnum() or c in "-_" for c in client_id):
-        return jsonify({"success": False, "error": "Invalid client_id"}), 400
-
-    config = config_mgr.load()
-    if client_id in config.get("clients", {}):
-        return jsonify({"success": False, "error": "Client already exists"}), 400
-
-    config.setdefault("clients", {})[client_id] = {
-        "name": name,
-        "reddit": {"subreddits": {}},
-        "discord": {"servers": {}}
-    }
-    config_mgr.save(config)
-    return jsonify({"success": True})
-
-
-@app.route("/api/clients/<client_name>/update", methods=["POST"])
-def api_update_client_config(client_name):
-    """Update an existing client's configuration with basic validation."""
-    validate_client(client_name)
-    data = request.json
-    
-    if not isinstance(data, dict):
-        return jsonify({"success": False, "error": "Invalid payload format"}), 400
-        
-    from pydantic import ValidationError
-    from src.dashboard.validation import ClientConfigSchema
-    
-    # 1. Load old config to preserve existing 'owned' flags
-    old_config = config_mgr.load()
-    old_client_config = old_config.get("clients", {}).get(client_name, {})
-    old_subreddits = old_client_config.get("reddit", {}).get("subreddits", {})
-    
-    # 2. Inject existing 'owned' flags into the new data before validating
-    if "reddit" in data and isinstance(data["reddit"], dict) and "subreddits" in data["reddit"] and isinstance(data["reddit"]["subreddits"], dict):
-        for sub_name, sub_conf in data["reddit"]["subreddits"].items():
-            if isinstance(sub_conf, dict) and sub_name in old_subreddits:
-                sub_conf["owned"] = old_subreddits[sub_name].get("owned", False)
-                
-    try:
-        # 3. Perform Pydantic validation
-        validated_data = ClientConfigSchema.model_validate(data)
-    except ValidationError as e:
-        details = []
-        for err in e.errors():
-            details.append({
-                "field": get_friendly_field_name(err["loc"]),
-                "message": err["msg"]
-            })
-        return jsonify({
-            "success": False,
-            "error": "Validation failed",
-            "details": details
-        }), 400
-
-    config = config_mgr.load()
-    config["clients"][client_name] = validated_data.model_dump()
-    config_mgr.save(config)
-    return jsonify({"success": True})
-
 
 @app.route("/api/<client_name>/reddit/comparison")
 def api_reddit_comparison(client_name):
@@ -902,10 +778,14 @@ def api_market_awareness(client_name):
 
 
 # ─── Blueprints ─────────────────────────────────────────────────────────
+from src.dashboard.views import bp as views_bp
+from src.dashboard.api_clients import bp as clients_api_bp
 from src.dashboard.api_queue import bp as queue_bp
 from src.dashboard.api_intel import bp as intel_bp
 from src.dashboard.api_engagement import bp as engagement_bp
 
+app.register_blueprint(views_bp)
+app.register_blueprint(clients_api_bp)
 app.register_blueprint(queue_bp)
 app.register_blueprint(intel_bp)
 app.register_blueprint(engagement_bp)

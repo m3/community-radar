@@ -26,17 +26,20 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 > from the live DB (only the 3 real clients remain), and #10's helper extraction
 > (`src/dashboard/helpers.py`; app.py 1450 → 1250 lines).
 >
+> **#10 done:** app.py carved into blueprints — 1478 → 118 lines. Routes now
+> live in `views.py`, `api_analytics.py`, `api_clients.py`, `api_engagement.py`,
+> `api_intel.py`, `api_queue.py` over `helpers.py`; app.py is just the core
+> (app, JSON provider, CSRF hooks, context processor, registration). The test
+> files that patched `src.dashboard.app.*` by name were retargeted to the
+> blueprint modules. 109 tests pass; 67 live route+segment checks and gunicorn
+> boot verified.
+>
 > **Open:**
 > - #3b — auth (parked at your request)
 > - #4 — the guard makes leaks loud; the real fix (replace the regex rewriter
 >   with ORM `select()`/RLS) is still a scoped future effort
 > - #8 — per-request full-table scans (perf); recommended fix is extending the
 >   nightly precompute to the owned/external segments
-> - #10 — the per-blueprint route carve. Deferred deliberately: five test files
->   patch `src.dashboard.app` functions by name, so moving routes into blueprint
->   modules breaks those patch targets (each needs retargeting). It is a
->   mechanical but coupling-heavy change that wants its own focused session, not
->   the tail of a long one.
 >
 > Live database is reconciled and `alembic check` reports no drift.
 

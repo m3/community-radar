@@ -100,7 +100,7 @@ def test_api_market_intel(client, tmp_path):
         {"channel_name": "domain:ripstone.com", "post_count": 3, "last_post": "2026-06-20 12:00:00"}
     ]
     
-    with patch('src.dashboard.app.get_db', return_value=mock_db):
+    with patch('src.dashboard.api_intel.get_db', return_value=mock_db):
         response = client.get(f'/api/{client_id}/intel/market')
         assert response.status_code == 200
         data = json.loads(response.data)

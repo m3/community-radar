@@ -21,15 +21,22 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 > test isolation. #10 partially done (segment filter extracted; blueprint split
 > deferred). 100 tests pass against an isolated database.
 >
-> **Open / needs a decision:**
+> **Also done since:** #4 fail-loud tenant guard (enforce by default, audited
+> live), #16 + `sentiment_direct.py` deleted, the 8 junk client rows removed
+> from the live DB (only the 3 real clients remain), and #10's helper extraction
+> (`src/dashboard/helpers.py`; app.py 1450 → 1250 lines).
+>
+> **Open:**
 > - #3b — auth (parked at your request)
-> - #4 — the regex SQL rewriter; recommend a fail-loud guard now + a scoped
->   migration later, not an in-place rewrite
-> - #8 — per-request full-table scans (perf)
-> - #10 — split the 1500-line app.py into blueprints
-> - #16 — delete dead `importer.py`
-> - dead `sentiment_direct.py` (found during the path cleanup)
-> - the 8 junk client rows in the live DB
+> - #4 — the guard makes leaks loud; the real fix (replace the regex rewriter
+>   with ORM `select()`/RLS) is still a scoped future effort
+> - #8 — per-request full-table scans (perf); recommended fix is extending the
+>   nightly precompute to the owned/external segments
+> - #10 — the per-blueprint route carve. Deferred deliberately: five test files
+>   patch `src.dashboard.app` functions by name, so moving routes into blueprint
+>   modules breaks those patch targets (each needs retargeting). It is a
+>   mechanical but coupling-heavy change that wants its own focused session, not
+>   the tail of a long one.
 >
 > Live database is reconciled and `alembic check` reports no drift.
 

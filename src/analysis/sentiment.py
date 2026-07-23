@@ -181,6 +181,78 @@ def extract_power_words(text):
     return found
 
 
+def compute_segment_stats(messages, topic_keywords, owned_subreddits):
+    """Precompute per-segment (owned/external) stats the dashboard re-derived per request.
+
+    Single pass over `messages`, mirroring the shapes the topics/power_words/
+    purpose/timeseries/overview routes return for segment=all, so those routes
+    can read this instead of scanning and re-classifying on every request.
+    """
+    from src.segments import is_channel_owned
+
+    def _blank():
+        return {
+            "sentiment": Counter(),
+            "topics": defaultdict(lambda: {"pos": 0, "neg": 0, "neu": 0, "total": 0}),
+            "power_words": Counter(),
+            "purpose": Counter(),
+            "series": defaultdict(lambda: defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0, "total": 0})),
+        }
+
+    acc = {"owned": _blank(), "external": _blank()}
+
+    for msg in messages:
+        seg = "owned" if is_channel_owned(msg["channel_name"] or "", owned_subreddits) else "external"
+        a = acc[seg]
+        content = msg["content"]
+
+        score, label = classify_sentiment(content)
+        a["sentiment"][label] += 1
+
+        ts = msg.get("timestamp")
+        if ts:
+            day = ts[:10] if isinstance(ts, str) else ts.strftime("%Y-%m-%d")
+            a["series"][msg.get("platform") or "unknown"][day][label] += 1
+            a["series"][msg.get("platform") or "unknown"][day]["total"] += 1
+
+        text_lower = content.lower()
+        for topic in topic_keywords:
+            if topic.lower() in text_lower:
+                a["topics"][topic]["total"] += 1
+                a["topics"][topic][label[:3]] += 1
+
+        for w in extract_power_words(content):
+            a["power_words"][w] += 1
+
+        a["purpose"][classify_purpose(content)] += 1
+
+    def _finalize(a):
+        total = sum(a["purpose"].values())
+        return {
+            "sentiment_ratio": round(a["sentiment"]["positive"] / max(a["sentiment"]["negative"], 1), 2),
+            "topic_sentiment": {
+                topic: {
+                    "total": d["total"],
+                    "pos_pct": round(d["pos"] / max(d["total"], 1) * 100, 1),
+                    "neg_pct": round(d["neg"] / max(d["total"], 1) * 100, 1),
+                    "net_sentiment": round((d["pos"] - d["neg"]) / max(d["total"], 1) * 100, 1),
+                }
+                for topic, d in sorted(a["topics"].items(), key=lambda x: -x[1]["total"])[:30]
+            },
+            "power_words": dict(a["power_words"].most_common(40)),
+            "purpose": {
+                "distribution": {
+                    k: {"count": v, "pct": round(v / total * 100, 1)}
+                    for k, v in a["purpose"].most_common()
+                } if total else {},
+                "by_channel": {},
+            },
+            "series": {p: {d: dict(labels) for d, labels in days.items()} for p, days in a["series"].items()},
+        }
+
+    return {seg: _finalize(a) for seg, a in acc.items()}
+
+
 def content_hash(text):
     """Generate hash for deduplication"""
     return hashlib.sha256(text.lower().strip().encode()).hexdigest()[:16]
@@ -333,11 +405,12 @@ def detect_anomalies(trends, threshold=ANOMALY_THRESHOLD):
     return anomalies
 
 
-def run_analysis(db, output_dir):
+def run_analysis(db, output_dir, owned_subreddits=None):
+    owned_subreddits = owned_subreddits or set()
     print("Loading messages...")
     messages = db.execute("""
         SELECT m.user_id, m.message_id, m.content, m.timestamp, m.reactions, m.channel_id,
-               c.name as channel_name, u.display_name, u.role
+               m.platform, c.name as channel_name, u.display_name, u.role
         FROM messages m
         JOIN channels c ON m.channel_id = c.id
         LEFT JOIN users u ON (m.user_id = u.id AND m.client_id = u.client_id)
@@ -588,6 +661,10 @@ def run_analysis(db, output_dir):
         ],
         "weekly_trends": weekly_trends,
         "anomalies": anomalies,
+        # Per-segment (owned/external) stats so the dashboard reads precomputed
+        # data instead of re-scanning and re-classifying every message on each
+        # request. See src/dashboard/api_analytics.py.
+        "segments": compute_segment_stats(messages, topic_keywords, owned_subreddits),
     }
 
     # Save JSON
@@ -756,17 +833,26 @@ def main():
     args = parser.parse_args()
 
     db = get_db(args.client)
-    
+
+    # Derive the client's owned subreddits so segment stats can be precomputed.
+    owned_subreddits = set()
+    if args.client:
+        import yaml
+        from src.segments import owned_subreddits_for
+        with open(ROOT / "config.yaml") as f:
+            cfg = yaml.safe_load(f) or {}
+        owned_subreddits = owned_subreddits_for(cfg.get("clients", {}).get(args.client, {}))
+
     # Set output directory based on client
     if args.client:
         output_dir = ROOT / "data" / "clients" / args.client / "reports"
     else:
         output_dir = ROOT / "docs"
-        
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Running analysis for client: {args.client or 'default'}")
-    report = run_analysis(db, output_dir)
+    report = run_analysis(db, output_dir, owned_subreddits=owned_subreddits)
     
     db.close()
     if report:

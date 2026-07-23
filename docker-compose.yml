@@ -1,4 +1,19 @@
-version: '3.8'
+# Two database roles:
+#   - community_radar (owner/superuser): schema migrations only.
+#   - radar_app (non-superuser): backend + worker runtime, subject to RLS.
+# Isolation is enforced by Postgres row-level security; the runtime role must
+# NOT be a superuser, or RLS is bypassed (RADAR_REQUIRE_RLS makes that fatal).
+x-secrets: &secrets
+  DISCORD_TOKEN: ${DISCORD_TOKEN:-}
+  REDDIT_SESSION: ${REDDIT_SESSION:-}
+  REDDIT_PROXY: ${REDDIT_PROXY:-}
+
+x-build: &build
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ./data:/app/data
 
 services:
   db:
@@ -6,39 +21,66 @@ services:
     restart: always
     environment:
       POSTGRES_USER: community_radar
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password123}
       POSTGRES_DB: community_radar
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U community_radar -d community_radar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot schema upgrade, run as the owner. Also sets radar_app's password
+  # from the environment. Backend/worker wait for it to complete.
+  migrate:
+    <<: *build
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      <<: *secrets
+      DATABASE_URL: postgresql://community_radar:${POSTGRES_PASSWORD:-password123}@db:5432/community_radar
+      RADAR_APP_PASSWORD: ${RADAR_APP_PASSWORD:-radar_app_dev}
+    command: ["python", "-m", "src.main", "migrate"]
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *build
     restart: unless-stopped
     depends_on:
-      - db
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *secrets
+      # Non-superuser role — RLS enforces tenant isolation.
+      DATABASE_URL: postgresql://radar_app:${RADAR_APP_PASSWORD:-radar_app_dev}@db:5432/community_radar
+      RADAR_REQUIRE_RLS: "1"
     ports:
       - "127.0.0.1:5001:5001"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - DATABASE_URL=postgresql://community_radar:password123@db:5432/community_radar
-    command: ["python", "-m", "src.main", "dashboard"]
+    # Served by gunicorn, not the Flask dev server. Timeout is generous
+    # because several analysis endpoints still scan the full messages table.
+    command:
+      - gunicorn
+      - --bind=0.0.0.0:5001
+      - --workers=2
+      - --threads=4
+      - --timeout=120
+      - --access-logfile=-
+      - src.dashboard.app:app
 
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *build
     restart: unless-stopped
     depends_on:
-      - db
-    volumes:
-      - ./data:/app/data
+      migrate:
+        condition: service_completed_successfully
     environment:
-      - DATABASE_URL=postgresql://community_radar:password123@db:5432/community_radar
+      <<: *secrets
+      DATABASE_URL: postgresql://radar_app:${RADAR_APP_PASSWORD:-radar_app_dev}@db:5432/community_radar
+      RADAR_REQUIRE_RLS: "1"
     command: ["python", "src/queue_worker.py"]
 
 volumes:

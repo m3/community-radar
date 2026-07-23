@@ -6,14 +6,18 @@ export:
 reddit_global:
   backend: playwright
   headless: true
-  proxy_secret_id: 7890-global-proxy-uuid
-  skills_dir: /Users/mathias/Development/Projects/community-radar/scripts
+  # skills_dir defaults to <repo>/scripts (src/collectors/utils.py); set it
+  # only to point at a scripts checkout outside the repo.
 discord_global:
   bws_secret_id: 70909217-9e02-452b-b933-b45f00c17fee
   dce_bin: /Users/mathias/.hermes/profiles/glenn/home/tools/discordchatexporter/cli/DiscordChatExporter.Cli
 clients:
   pure-pool-pro:
     name: Pure Pool Pro
+    brand_keywords:
+    - pure pool
+    - purepoolpro
+    - ripstone
     reddit:
       subreddits:
         PurePoolPro:
@@ -75,3 +79,85 @@ clients:
             '1504754355985846363': play-of-the-month-submissions
             '1362333634622787584': pool-and-snooker-talk
             '1336304493629014047': announcements-ripstone
+
+  chess-infinity:
+    name: Chess Infinity
+    brand_keywords:
+    - chess infinity
+    - ripstone
+    reddit:
+      subreddits:
+        # Note: r/ChessInfinity exists but is empty. Chess Infinity has no active owned Reddit presence.
+        chess:
+          sorts:
+          - new
+          - hot
+          - top?t=month
+          - top?t=year
+          track_keywords:
+          - chess infinity
+          - ripstone
+        pcgaming:
+          sorts:
+          - new
+          - hot
+          track_keywords:
+          - chess infinity
+          - ripstone
+      domain_monitoring:
+        enabled: true
+        domains:
+        - https://ripstone.com/chess-infinity/
+        - ripstone.com
+        max_pages: 3
+        sort: relevance
+    discord:
+      servers:
+        '203428322082816001':
+          name: Ripstone - Chess Infinity
+          channels:
+            '1336322787794747487': chess-infinity-general
+            '1336322853041340458': chess-infinity-chat
+            '1357298524622028911': chess-infinity-lfg
+
+  poker-club:
+    name: Poker Club
+    brand_keywords:
+    - poker club
+    - ripstone
+    reddit:
+      subreddits:
+        # Note: r/PokerClub does not exist. Poker Club has no owned Reddit presence.
+        poker:
+          sorts:
+          - new
+          - hot
+          - top?t=month
+          - top?t=year
+          track_keywords:
+          - poker club
+          - ripstone
+        pcgaming:
+          sorts:
+          - new
+          - hot
+          track_keywords:
+          - poker club
+          - ripstone
+      domain_monitoring:
+        enabled: true
+        domains:
+        - https://ripstone.com/poker-club/
+        - ripstone.com
+        max_pages: 3
+        sort: relevance
+    discord:
+      servers:
+        '203428322082816001':
+          name: Ripstone - Poker Club
+          channels:
+            '1336322536278986823': poker-club-chat
+            '1336312630314270772': poker-club-tournaments
+            '1336312054528606268': poker-club-strategy
+            '1336312022635118663': poker-club-lfg
+            '1336312570054836245': poker-club-general

@@ -25,5 +25,6 @@ class DiscordConfigSchema(BaseModel):
 
 class ClientConfigSchema(BaseModel):
     name: str = Field(min_length=1)
+    brand_keywords: List[str] = Field(default_factory=list)
     reddit: Optional[RedditConfigSchema] = None
     discord: Optional[DiscordConfigSchema] = None

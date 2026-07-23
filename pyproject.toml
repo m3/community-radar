@@ -12,6 +12,8 @@ dependencies = [
     "pydantic>=2.0",
     "ijson>=3.2",
     "playwright>=1.40.0",
+    "requests>=2.32",
+    "gunicorn>=23.0",
 ]
 
 [project.scripts]
@@ -21,3 +23,7 @@ community-radar = "src.main:cli"
 dev-dependencies = [
     "pytest>=9.0.3",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -45,7 +45,7 @@ def test_api_sentiment_by_channel_segmentation(client):
         }
     }
     
-    with patch("src.dashboard.app.load_report", return_value=mock_report):
+    with patch("src.dashboard.api_analytics.load_report", return_value=mock_report):
         # segment = owned: should only return reddit-owned_sub-hot and discord-general
         response = client.get('/api/test-client/sentiment/by_channel?segment=owned')
         assert response.status_code == 200
@@ -63,13 +63,13 @@ def test_api_sentiment_by_channel_segmentation(client):
         assert "discord-general" not in data
 
 def test_api_overview_segmentation(client):
-    with patch("src.dashboard.app.get_channel_segmentation", return_value=(["owned_id"], ["external_id"])):
+    with patch("src.dashboard.api_analytics.get_channel_segmentation", return_value=(["owned_id"], ["external_id"])):
         mock_db = MagicMock()
         mock_db.execute.return_value.fetchall.return_value = [{"platform": "discord", "count": 5}]
         # mock returns for MIN/MAX ts, channels, users
         mock_db.execute.return_value.fetchone.return_value = {"min_ts": "2026-06-20", "max_ts": "2026-06-22", "c": 1}
         
-        with patch("src.dashboard.app.get_db", return_value=mock_db):
+        with patch("src.dashboard.api_analytics.get_db", return_value=mock_db):
             response = client.get('/api/test-client/overview?segment=owned')
             assert response.status_code == 200
             data = json.loads(response.data)

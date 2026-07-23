@@ -121,7 +121,7 @@
             if (!res.ok) throw new Error('API error');
             const data = await res.json();
 
-            renderLeads(data.competitors.pure_pool_mentions || []);
+            renderLeads(data.competitors.brand_mentions || []);
             renderCompetitors(data.competitors.competitor_mentions || {});
             renderDomains(data.domains || []);
             renderAdvice(data.competitors.meta || {});
@@ -216,10 +216,11 @@
         if (!meta.total_messages_scanned) return;
 
         let advice = [];
-        if (meta.pure_pool_mentions < 5) {
+        const brandMentions = meta.brand_mentions || 0;
+        if (brandMentions < 5) {
             advice.push(`<div class="flex space-x-3">
                 <i class="fas fa-exclamation-triangle text-amber-500 mt-1"></i>
-                <p>Brand awareness is critically low in external communities. Consider an outreach campaign on r/snooker or r/billiards.</p>
+                <p>Brand awareness is critically low in external communities. Consider targeted outreach in relevant subreddits.</p>
             </div>`);
         } else {
             advice.push(`<div class="flex space-x-3">
@@ -228,7 +229,7 @@
             </div>`);
         }
 
-        if (meta.competitor_mentions > meta.pure_pool_mentions * 2) {
+        if (meta.competitor_mentions > brandMentions * 2) {
             advice.push(`<div class="flex space-x-3">
                 <i class="fas fa-info-circle text-sky-500 mt-1"></i>
                 <p>Competitor game volume is dominant. Audit feature requests in those threads to identify missing gaps in your product.</p>

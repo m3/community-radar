@@ -3,6 +3,8 @@ WORKDIR /app
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir -e .
 COPY src/ ./src/
-COPY config.yaml ./
+COPY migrations_pg/ ./migrations_pg/
+COPY alembic.ini config.yaml ./
 EXPOSE 5001
-CMD ["python", "-m", "src.main", "dashboard"]
+CMD ["gunicorn", "--bind=0.0.0.0:5001", "--workers=2", "--threads=4", \
+     "--timeout=120", "--access-logfile=-", "src.dashboard.app:app"]

@@ -13,6 +13,41 @@ DATABASE_URL = os.getenv(
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# The engine get_db() uses for tenant-scoped work. In production DATABASE_URL is
+# the non-superuser radar_app role, so this is the same engine and RLS applies.
+# `engine`/`SessionLocal` stay on whatever DATABASE_URL names (the superuser owner
+# under migrations and the test suite) for schema changes and cross-tenant seeding.
+# The test suite rebinds app_engine to radar_app so the exercised query paths run
+# under RLS — a green suite then means the database is enforcing isolation.
+app_engine = engine
+
+
+def warn_if_superuser():
+    """Warn when the runtime connects as a superuser — RLS is bypassed then.
+
+    Migrations and local/test runs legitimately use the superuser owner, so
+    this only hard-fails when RADAR_REQUIRE_RLS is set (production), where a
+    superuser connection would silently disable tenant isolation.
+    """
+    import logging
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            is_super = conn.execute(text("SHOW is_superuser")).scalar()
+    except Exception:
+        return  # DB unreachable at import time — nothing to check yet.
+
+    if str(is_super).lower() in ("on", "true", "t", "yes"):
+        msg = (
+            "Database role is a SUPERUSER; row-level security is bypassed and "
+            "tenant isolation is NOT enforced by the database. Connect as the "
+            "non-superuser radar_app role in production."
+        )
+        if os.getenv("RADAR_REQUIRE_RLS"):
+            raise RuntimeError(msg)
+        logging.getLogger(__name__).warning("tenant-isolation: %s", msg)
+
 
 def init_db():
     """Create all tables in the database."""
@@ -37,9 +72,6 @@ def tenant_session(client_id: int) -> Generator[Session, None, None]:
     """
     session = SessionLocal()
     try:
-        # In a more advanced implementation, we could set a global
-        # variable or use a filter here to ensure all queries
-        # automatically include 'client_id=client_id'
         yield session
     finally:
         session.close()

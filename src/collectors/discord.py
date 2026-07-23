@@ -1,5 +1,6 @@
 """Discord collector — uses DiscordChatExporter for unlimited message exports"""
 
+import os
 import subprocess
 import json
 import time
@@ -11,15 +12,31 @@ from src.collectors.utils import get_config_value, CONFIG
 
 DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
 
+def _bws_cmd(action, secret_id, client_cfg=None):
+    """Build a BWS CLI command with optional profile."""
+    cmd = ["bws"]
+    profile = get_config_value(client_cfg, "discord", "bws_profile")
+    if profile:
+        cmd += ["--profile", profile]
+    cmd += ["secret", action, secret_id, "--output", "json"]
+    return cmd
+
+
 def get_token(client_cfg=None):
-    """Get Discord token from BWS"""
+    """Get Discord token from env var or BWS."""
+    # 1. Prefer injected env var (Docker / bws run pattern)
+    env_token = os.environ.get("DISCORD_TOKEN")
+    if env_token:
+        return env_token
+
+    # 2. Fall back to BWS secret lookup (local dev)
     bws_secret_id = get_config_value(client_cfg, "discord", "bws_secret_id")
     if not bws_secret_id:
-        raise ValueError("discord.bws_secret_id not found in config")
+        raise ValueError("DISCORD_TOKEN not set and discord.bws_secret_id not found in config")
 
     try:
         result = subprocess.run(
-            ["bws", "secret", "get", bws_secret_id, "--output", "json"],
+            _bws_cmd("get", bws_secret_id, client_cfg=client_cfg),
             capture_output=True, text=True
         )
         if result.returncode != 0:

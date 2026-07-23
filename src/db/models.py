@@ -17,14 +17,41 @@ def sanitize_client_name(name):
     return clean if clean else None
 
 
+class UnknownClientError(ValueError):
+    """Raised when a client name is not declared in config.yaml."""
+
+
+def known_client_names():
+    """The set of client names declared in config.yaml — the tenant authority.
+
+    Read fresh each call: the config is editable through the dashboard, and a
+    stale cache here would reject a client that was just added.
+    """
+    import yaml
+
+    config_path = os.environ.get(
+        "COMMUNITY_RADAR_CONFIG",
+        str(os.path.join(os.path.dirname(__file__), "..", "..", "config.yaml")),
+    )
+    try:
+        with open(config_path) as f:
+            config = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        return set()
+    return set(config.get("clients", {}).keys())
+
+
 class LegacySessionWrapper:
     """
     Wraps an SQLAlchemy Session to provide a sqlite3-like interface
     for legacy code using .execute() and .commit().
     """
-    def __init__(self, session, client_id):
+    def __init__(self, session, client_id, conn=None):
         self.session = session
         self.client_id = client_id
+        # The dedicated connection the session is bound to (holds the tenant
+        # GUC for RLS). Closed alongside the session.
+        self._conn = conn
 
     def execute(self, sql, params=None):
         from sqlalchemy import text
@@ -45,42 +72,14 @@ class LegacySessionWrapper:
         if not params:
             params = {}
             
-        # Inject client_id if not present (skip for tasks table which is global)
-        is_tasks = isinstance(sql, str) and re.search(r'\b(FROM|UPDATE|INSERT\s+INTO|JOIN)\s+tasks\b', sql, re.IGNORECASE) is not None
-        
-        if is_tasks:
-            pass
-        elif ":client_id" in sql or "client_id" in sql.lower():
-            if "client_id" not in params:
-                params["client_id"] = self.client_id
-        else:
-            # Detect table aliases for qualified client_id injection
-            # Find first table alias: "FROM table_name alias" or "FROM table_name AS alias"
-            alias_match = re.search(r'\bFROM\s+\w+\s+(?:AS\s+)?(\w+)', sql, re.IGNORECASE)
-            first_alias = alias_match.group(1) if alias_match else None
-
-            # Check if there's a JOIN — if so, we need qualified column reference
-            has_join = " JOIN " in sql.upper()
-
-            if has_join and first_alias:
-                qual = f"{first_alias}.client_id"
-            else:
-                qual = "client_id"
-
-            client_id_sql = f"{qual} = {self.client_id}"
-
-            if " WHERE " in sql.upper():
-                sql = sql.replace(" WHERE ", f" WHERE {client_id_sql} AND ", 1)
-            elif " GROUP BY " in sql.upper():
-                sql = sql.replace(" GROUP BY ", f" WHERE {client_id_sql} GROUP BY ", 1)
-            elif " ORDER BY " in sql.upper():
-                sql = sql.replace(" ORDER BY ", f" WHERE {client_id_sql} ORDER BY ", 1)
-            elif "SELECT " in sql.upper() and " FROM " in sql.upper():
-                sql = sql.strip()
-                if sql.endswith(";"):
-                    sql = sql[:-1] + f" WHERE {client_id_sql};"
-                else:
-                    sql += f" WHERE {client_id_sql}"
+        # Tenant isolation is enforced by Postgres row-level security: get_db sets
+        # the per-connection app.current_client_id GUC and the RLS policies scope
+        # every read and write to it (and reject cross-tenant writes via WITH
+        # CHECK). No client_id predicate is rewritten into the SQL here — that used
+        # to be a fragile regex pass. Only supply a value when the caller wrote an
+        # explicit :client_id placeholder.
+        if ":client_id" in sql and "client_id" not in params:
+            params["client_id"] = self.client_id
 
         # Fix SQLite-specific functions
         sql = sql.replace("datetime('now')", "NOW()")
@@ -89,7 +88,8 @@ class LegacySessionWrapper:
         # Fix SQLite INSERT OR IGNORE → PostgreSQL INSERT ... ON CONFLICT DO NOTHING
         sql = self._fix_insert_or_ignore(sql)
 
-        # Inject client_id into INSERT statements that don't include it
+        # Populate client_id in INSERT column lists. RLS validates it via WITH
+        # CHECK but does not supply it, so collector inserts still need it added.
         sql, params = self._inject_client_id_insert(sql, params)
 
         result = self.session.execute(text(sql), params)
@@ -103,10 +103,6 @@ class LegacySessionWrapper:
         upper = sql.upper().strip()
         if not upper.startswith("INSERT "):
             return sql, params
-        if "client_id" in sql.lower():
-            return sql, params  # already has client_id
-        if "tasks" in sql.lower():
-            return sql, params  # tasks table is global and has no client_id
 
         # Match: INSERT INTO table (col1, col2, ...) VALUES (val1, val2, ...)
         pattern = r'(INSERT\s+(?:INTO|OR\s+IGNORE\s+INTO)\s+\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)'
@@ -117,6 +113,12 @@ class LegacySessionWrapper:
         prefix = match.group(1)  # INSERT INTO table
         cols = match.group(2)    # col1, col2, ...
         vals = match.group(3)    # val1, val2, ...
+
+        # Only the column list decides this. Testing the whole statement would
+        # also match a client_id in a trailing ON CONFLICT target, which
+        # _fix_insert_or_ignore may have just added.
+        if not self._is_client_scoped_insert(sql, cols):
+            return sql, params
 
         new_cols = "client_id, " + cols
         new_vals = ":client_id, " + vals
@@ -133,6 +135,20 @@ class LegacySessionWrapper:
 
         return sql, params
 
+    def _is_client_scoped_insert(self, sql, cols):
+        """Whether client_id gets injected into this INSERT's column list.
+
+        The ON CONFLICT target must name the same columns as the unique
+        constraint the row is checked against, so this single predicate decides
+        both the target and the injection. `cols` is the column list only —
+        `sql` is used just to spot the global `tasks` table.
+        """
+        if "client_id" in cols.lower():
+            return False  # caller already supplied it
+        if "tasks" in sql.lower():
+            return False  # tasks is global and has no client_id
+        return True
+
     def _fix_insert_or_ignore(self, sql):
         """Convert SQLite INSERT OR IGNORE to PostgreSQL INSERT ... ON CONFLICT DO NOTHING."""
         import re
@@ -142,10 +158,16 @@ class LegacySessionWrapper:
         if match:
             table = match.group(1)
             cols = match.group(2).strip()
-            # Build ON CONFLICT clause — use the first column as the conflict target
+            # Build ON CONFLICT clause — use the first column as the conflict
+            # target, prefixed with client_id when the row is tenant-scoped so
+            # it matches UNIQUE(client_id, ...) rather than a global unique.
             first_col = cols.split(",")[0].strip()
+            if self._is_client_scoped_insert(sql, cols):
+                target = f"client_id, {first_col}"
+            else:
+                target = first_col
             sql = re.sub(pattern,
-                         f'INSERT INTO {table} ({cols}) VALUES ({match.group(3)}) ON CONFLICT ({first_col}) DO NOTHING',
+                         f'INSERT INTO {table} ({cols}) VALUES ({match.group(3)}) ON CONFLICT ({target}) DO NOTHING',
                          sql, flags=re.IGNORECASE)
         return sql
 
@@ -175,29 +197,69 @@ class LegacySessionWrapper:
     def commit(self):
         self.session.commit()
 
+    def rollback(self):
+        self.session.rollback()
+
     def close(self):
         self.session.close()
+        if self._conn is not None:
+            self._conn.close()
 
 
 def get_db(client_name=None):
-    """Get database session, resolving client_id"""
-    clean_name = sanitize_client_name(client_name)
-    session = SessionLocal()
-    
-    if clean_name:
-        client = session.query(Client).filter_by(name=clean_name).first()
-        if not client:
-            # For now, auto-create client if it doesn't exist (to support easy onboarding)
-            client = Client(name=clean_name)
-            session.add(client)
-            session.commit()
-            session.refresh(client)
-        client_id = client.id
-    else:
-        # Default/system client
-        client_id = 0 
+    """Get database session scoped to a client, resolving client_id.
 
-    return LegacySessionWrapper(session, client_id)
+    The session is bound to one explicit connection so the tenant GUC
+    (app.current_client_id) it sets stays put across commits — the row-level
+    security policies read it per connection. A pooled Session that returned
+    its connection on commit would otherwise leave later statements unscoped
+    (RLS fails closed → zero rows). See tests/test_rls.py.
+    """
+    from sqlalchemy import text
+    from sqlalchemy.orm import Session
+    from . import session as _session
+
+    clean_name = sanitize_client_name(client_name)
+    # app_engine is the radar_app (non-superuser) runtime engine — RLS applies.
+    conn = _session.app_engine.connect()
+    session = Session(bind=conn)
+
+    try:
+        if clean_name:
+            if clean_name not in known_client_names():
+                raise UnknownClientError(
+                    f"Unknown client '{clean_name}'. Declare it in config.yaml first."
+                )
+            client = session.query(Client).filter_by(name=clean_name).first()
+            if not client:
+                # First use of a client that is declared in config.yaml — create
+                # its row. A name absent from config was rejected above, so this
+                # can no longer be reached by a typo.
+                client = Client(name=clean_name)
+                session.add(client)
+                session.commit()
+                session.refresh(client)
+            client_id = client.id
+        else:
+            # Default/system client
+            client_id = 0
+
+        # Scope this connection for RLS. Runtime connects as the non-superuser
+        # radar_app role, for which the policies apply; the superuser owner used
+        # by migrations and local/test runs bypasses RLS (SQL-level client_id
+        # injection still enforces isolation there). Run through the session so
+        # it shares the session's transaction on the bound connection; the GUC
+        # is connection-level (not transaction-local) so it survives commits.
+        session.execute(
+            text("SELECT set_config('app.current_client_id', :cid, false)"),
+            {"cid": str(client_id)},
+        )
+    except Exception:
+        session.close()
+        conn.close()
+        raise
+
+    return LegacySessionWrapper(session, client_id, conn)
 
 
 def upsert_server(db, server_id, name, **kwargs):

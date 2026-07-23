@@ -7,14 +7,28 @@ from src.db.models import get_db, upsert_server, upsert_channel, upsert_user, lo
 from src.collectors.utils import get_config_value, run_cli
 
 
-def get_proxy_from_bws(secret_id: str) -> str | None:
+def get_proxy(secret_id: str, client_cfg=None) -> str | None:
+    """Get Reddit proxy from env var or BWS."""
     import subprocess
     import json
+    import os
     if not secret_id:
         return None
+
+    # 1. Prefer injected env var (Docker / bws run pattern)
+    env_proxy = os.environ.get("REDDIT_PROXY")
+    if env_proxy:
+        return env_proxy
+
+    # 2. Fall back to BWS secret lookup (local dev)
     try:
+        cmd = ["bws"]
+        profile = get_config_value(client_cfg, "reddit", "bws_profile")
+        if profile:
+            cmd += ["--profile", profile]
+        cmd += ["secret", "get", secret_id, "--output", "json"]
         result = subprocess.run(
-            ["bws", "secret", "get", secret_id, "--output", "json"],
+            cmd,
             capture_output=True, text=True, check=True
         )
         data = json.loads(result.stdout)
@@ -25,11 +39,116 @@ def get_proxy_from_bws(secret_id: str) -> str | None:
         return None
 
 
+def _extract_search_domain(domain: str) -> str:
+    """Extract a clean domain/host from a URL or bare domain string."""
+    from urllib.parse import urlparse
+    domain = domain.strip()
+    if domain.startswith(("http://", "https://")):
+        parsed = urlparse(domain)
+        host = parsed.netloc
+    else:
+        host = domain.split("/")[0]
+    # Remove www. prefix for broader search matching
+    if host.startswith("www."):
+        host = host[4:]
+    return host
+
+
 def build_domain_json_url(domain: str, sort: str = "new", limit: int = 100, after: str = None) -> str:
-    url = f"https://www.reddit.com/domain/{domain}/{sort}.json?limit={limit}"
+    """Build a Reddit search.json URL for posts linking to a given domain.
+
+    Reddit's legacy /domain/ endpoint returns 404, so we use the search API
+    with the site: operator instead.
+    """
+    search_domain = _extract_search_domain(domain)
+
+    # Parse combined sort strings like "top?t=month" into sort + time
+    if "?" in sort:
+        sort_part, query = sort.split("?", 1)
+        time_param = query.split("=")[1] if "=" in query else "all"
+    else:
+        sort_part = sort
+        time_param = None
+
+    # Reddit search accepts: relevance, hot, new, top, comments
+    url = f"https://www.reddit.com/search.json?q=site:{search_domain}&sort={sort_part}&limit={limit}"
+    if time_param and sort_part == "top":
+        url += f"&t={time_param}"
     if after:
         url += f"&after={after}"
     return url
+
+
+def _parse_domain_children(children):
+    """Convert Reddit domain API children to normalized post dicts."""
+    posts = []
+    for c in children:
+        d = c.get("data", {})
+        posts.append({
+            "id": d.get("id", ""),
+            "title": d.get("title", ""),
+            "subreddit": d.get("subreddit", ""),
+            "author": {"name": d.get("author", "[deleted]")},
+            "permalink": d.get("permalink", ""),
+            "postType": "text" if d.get("is_self") else "link",
+            "selftext": d.get("selftext", ""),
+            "createdUtc": d.get("created_utc", 0),
+            "stats": {
+                "score": d.get("score", 0),
+                "numComments": d.get("num_comments", 0),
+                "upvoteRatio": d.get("upvote_ratio", 0),
+            },
+            "flair": d.get("link_flair_text", ""),
+            "domain": d.get("domain", ""),
+            "url": d.get("url", ""),
+        })
+    return posts
+
+
+def fetch_domain_posts_via_requests(domain, sort="new", limit=100, max_pages=3, proxy=None):
+    """Fetch posts for a domain using Reddit's .json API via requests."""
+    import requests
+    import os
+    all_posts = []
+    after = ""
+
+    reddit_session = os.environ.get("REDDIT_SESSION")
+    cookies = {}
+    if reddit_session:
+        cookies["reddit_session"] = reddit_session
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    }
+    proxies = {"http": proxy, "https": proxy} if proxy else None
+
+    for page_num in range(max_pages):
+        url = build_domain_json_url(domain, sort, limit, after if after else None)
+        print(f"    [requests] GET {url}...")
+        try:
+            resp = requests.get(url, headers=headers, cookies=cookies, proxies=proxies, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            print(f"    ⚠ Request failed: {e}")
+            break
+
+        children = data.get("data", {}).get("children", [])
+        if not children:
+            print(f"    ⚠ No children in response")
+            break
+
+        posts = _parse_domain_children(children)
+        all_posts.extend(posts)
+        after = data.get("data", {}).get("after")
+        print(f"  Page {page_num + 1}: {len(posts)} posts (total: {len(all_posts)})")
+        if not after:
+            break
+
+        time.sleep(1)
+
+    return all_posts
 
 
 def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3, client_cfg=None):
@@ -54,28 +173,7 @@ def fetch_domain_posts_via_json(domain, sort="new", limit=100, max_pages=3, clie
             print(f"  No more posts at page {page_num + 1}")
             break
 
-        posts = []
-        for c in children:
-            d = c.get("data", {})
-            post = {
-                "id": d.get("id", ""),
-                "title": d.get("title", ""),
-                "subreddit": d.get("subreddit", ""),
-                "author": {"name": d.get("author", "[deleted]")},
-                "permalink": d.get("permalink", ""),
-                "postType": "text" if d.get("is_self") else "link",
-                "selftext": d.get("selftext", ""),
-                "createdUtc": d.get("created_utc", 0),
-                "stats": {
-                    "score": d.get("score", 0),
-                    "numComments": d.get("num_comments", 0),
-                    "upvoteRatio": d.get("upvote_ratio", 0),
-                },
-                "flair": d.get("link_flair_text", ""),
-                "domain": d.get("domain", ""),
-                "url": d.get("url", ""),
-            }
-            posts.append(post)
+        posts = _parse_domain_children(children)
 
         all_posts.extend(posts)
         after = data.get("data", {}).get("after")
@@ -157,10 +255,22 @@ def fetch_domain_posts_via_json_in_process(page, domain, sort="new", limit=100, 
 
 def export_domain(domain, sort="new", max_pages=3, client_cfg=None, page=None):
     """Fetch and store domain posts in DB."""
+    import os
     print(f"  📥 domain/{domain} ({sort})...")
-    
+
+    # Try lightweight requests-based fetch first if cookie is available
+    requests_succeeded = False
+    if os.environ.get("REDDIT_SESSION"):
+        try:
+            print("  [requests] Fetching domain posts via JSON API...")
+            posts = fetch_domain_posts_via_requests(domain, sort, limit=100, max_pages=max_pages)
+            requests_succeeded = True
+        except Exception as e:
+            print(f"  ⚠ requests domain fetch failed: {e}")
+            posts = []
+
     used_in_process = False
-    if page:
+    if not requests_succeeded and page:
         print("  [In-Process] Fetching domain posts via Playwright...")
         try:
             posts = fetch_domain_posts_via_json_in_process(
@@ -171,10 +281,10 @@ def export_domain(domain, sort="new", max_pages=3, client_cfg=None, page=None):
             print(f"  ⚠ In-process domain fetching failed: {e}. Falling back to CLI...")
             posts = []
 
-    if not used_in_process:
+    if not requests_succeeded and not used_in_process:
         # Fallback to CLI subprocess
         posts = fetch_domain_posts_via_json(domain, sort, limit=100, max_pages=max_pages, client_cfg=client_cfg)
-    
+
     if not posts:
         print(f"  ✗ No posts fetched")
         return 0
@@ -225,18 +335,37 @@ def export_domain(domain, sort="new", max_pages=3, client_cfg=None, page=None):
 
 
 def export_all_domains(client_cfg=None):
+    import os
     domain_cfg = get_config_value(client_cfg, "reddit", "domain_monitoring", {})
     if not domain_cfg.get("enabled", False):
         print("  ⚠ Domain monitoring is disabled for this client")
         return
 
-    domains = domain_cfg.get("domains", [])
+    raw_domains = domain_cfg.get("domains", [])
     sort = domain_cfg.get("sort", "new")
     max_pages = domain_cfg.get("max_pages", 3)
-    
+
+    # Deduplicate domains after normalising to the search host
+    seen_hosts = set()
+    domains = []
+    for d in raw_domains:
+        host = _extract_search_domain(d)
+        if host and host not in seen_hosts:
+            seen_hosts.add(host)
+            domains.append(d)
+
     total_msgs = 0
+
+    # If REDDIT_SESSION is set, use lightweight requests for all domains
+    if os.environ.get("REDDIT_SESSION"):
+        print("  Using REDDIT_SESSION cookie (requests mode)")
+        for domain in domains:
+            total_msgs += export_domain(domain, sort=sort, max_pages=max_pages, client_cfg=client_cfg)
+        print(f"\n✅ Total Domain Messages: {total_msgs}")
+        return
+
     backend = get_config_value(client_cfg, "reddit", "backend", "playwright")
-    
+
     if backend == "playwright":
         try:
             import sys
@@ -251,7 +380,7 @@ def export_all_domains(client_cfg=None):
 
             headless = get_config_value(client_cfg, "reddit", "headless", True)
             proxy_secret_id = get_config_value(client_cfg, "reddit", "proxy_secret_id")
-            proxy = get_proxy_from_bws(proxy_secret_id) if proxy_secret_id else None
+            proxy = get_proxy(proxy_secret_id, client_cfg=client_cfg) if proxy_secret_id else None
             proxy_cfg = {"server": proxy} if proxy else None
 
             # Get manager and start
@@ -286,7 +415,7 @@ def export_all_domains(client_cfg=None):
     else:
         for domain in domains:
             total_msgs += export_domain(domain, sort=sort, max_pages=max_pages, client_cfg=client_cfg)
-            
+
     print(f"\n✅ Total Domain Messages: {total_msgs}")
 
 

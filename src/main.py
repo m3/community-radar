@@ -11,6 +11,8 @@ ROOT = Path(__file__).parent.parent
 # Ensure we can import from src
 sys.path.insert(0, str(ROOT))
 
+from src.timeutils import to_day, to_seconds
+
 def load_config():
     CONFIG_PATH = ROOT / "config.yaml"
     with open(CONFIG_PATH) as f:
@@ -72,7 +74,9 @@ def topics(args):
         return
     print(f"Top {len(rows)} topics:\n")
     for r in rows:
-        print(f"  {r['name']:20s} ({r['category']:15s}) {r['mention_count']:4d} mentions  [{r['first_seen'][:10] if r['first_seen'] else '?'} → {r['last_seen'][:10] if r['last_seen'] else '?'}]")
+        first = to_day(r['first_seen'], default='?')
+        last = to_day(r['last_seen'], default='?')
+        print(f"  {r['name']:20s} ({r['category']:15s}) {r['mention_count']:4d} mentions  [{first} → {last}]")
     db.close()
 
 
@@ -170,7 +174,7 @@ def search(args):
     """, (f"%{term}%",)).fetchall()
     print(f"Found {len(rows)} messages containing '{term}':\n")
     for r in rows:
-        print(f"  [{r['timestamp'][:19]}] {r['display_name'] or '?'} in #{r['channel']}")
+        print(f"  [{to_seconds(r['timestamp'], default='?')}] {r['display_name'] or '?'} in #{r['channel']}")
         print(f"  {r['content'][:200]}")
         print()
     db.close()
@@ -189,24 +193,28 @@ def dashboard(args):
 
 
 def migrate_dbs(args):
-    """Run database migrations for all clients or a specific client"""
-    from src.db.models import get_db
-    config = load_config()
-    
-    clients_to_migrate = [args.client] if args.client else get_available_clients(config)
-    
-    for client in clients_to_migrate:
-        print(f"\nMigrating database for {client}...")
-        # get_db automatically applies migrations
-        db = get_db(client)
-        db.close()
-        print(f"✅ {client} migration complete.")
+    """Upgrade the database schema to the latest alembic revision.
 
+    There is one shared Postgres database with a client_id column, not a
+    database per client, so this is not client-scoped.
+    """
+    import os
+    from src.db.migrate import run_migrations
+    print("Running database migrations...")
+    run_migrations()
+    print("✅ Migrations up to date.")
 
-def import_data(args):
-    """Import data from cuebot research JSON files"""
-    from src.collectors.importer import import_all
-    import_all()
+    # The RLS migration creates the non-superuser radar_app role without a
+    # password; set it here (as the migration owner) from the environment so
+    # the backend/worker can connect as it. No-op if unset.
+    app_pw = os.getenv("RADAR_APP_PASSWORD")
+    if app_pw:
+        from sqlalchemy import text
+        from src.db.session import engine
+        with engine.begin() as conn:
+            conn.execute(text(f"ALTER ROLE radar_app PASSWORD '{app_pw}'"))
+        print("✅ radar_app password set.")
+
 
 
 def show_config(args):
@@ -292,7 +300,6 @@ commands = {
     "collect": collect,
     "export": export_discord,
     "reddit": export_reddit,
-    "import": import_data,
     "search": search,
     "topics": topics,
     "xref": xref,
@@ -318,7 +325,6 @@ def cli():
     subparsers.add_parser("collect", help="Run all collectors for a client")
     subparsers.add_parser("export", help="Run Discord export for a client")
     subparsers.add_parser("reddit", help="Export Reddit data for a client")
-    subparsers.add_parser("import", help="Import existing data from cuebot research files")
     
     search_parser = subparsers.add_parser("search", help="Search message content")
     search_parser.add_argument("term", help="Search term")
@@ -330,7 +336,7 @@ def cli():
     subparsers.add_parser("config", help="Show current configuration")
     subparsers.add_parser("report", help="Generate HTML report")
     subparsers.add_parser("dashboard", help="Launch web dashboard")
-    subparsers.add_parser("migrate", help="Run database migrations (can be scoped with --client)")
+    subparsers.add_parser("migrate", help="Upgrade the database schema to the latest revision")
 
     q_parser = subparsers.add_parser("queue", help="Manage execution queue")
     q_parser.add_argument("action", choices=["status", "list", "retry", "clear"])
@@ -350,6 +356,15 @@ def cli():
         print(f"Error: --client is required for '{args.command}'")
         print(f"Available clients: {', '.join(available)}")
         sys.exit(1)
+
+    # Reject an unknown --client with a clean message rather than letting
+    # get_db raise UnknownClientError as a traceback deep in the command.
+    if args.command in client_required_cmds and args.client:
+        available = get_available_clients(load_config())
+        if args.client not in available:
+            print(f"Error: unknown client '{args.client}'")
+            print(f"Available clients: {', '.join(available)}")
+            sys.exit(1)
 
     if args.command in commands:
         if getattr(args, "async_mode", False):

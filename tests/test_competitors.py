@@ -7,6 +7,8 @@ from src.analysis.competitors import (
     run_analysis
 )
 
+BRAND_KEYWORDS = ["pure pool", "purepoolpro", "ripstone"]
+
 def test_search_keywords():
     keywords = ["pure pool", "snooker 19"]
     # Case insensitivity
@@ -17,18 +19,18 @@ def test_search_keywords():
     assert search_keywords("I play pure pool and snooker 19", keywords) == ["pure pool", "snooker 19"]
 
 def test_classify_message():
-    # Pure Pool mention
-    cls, hits = classify_message("I am playing pure pool")
-    assert cls == "pure_pool_mention"
+    # Brand mention
+    cls, hits = classify_message("I am playing pure pool", BRAND_KEYWORDS)
+    assert cls == "brand_mention"
     assert "pure pool" in hits
 
     # Competitor mention
-    cls, hits = classify_message("I like snooker 19")
+    cls, hits = classify_message("I like snooker 19", BRAND_KEYWORDS)
     assert cls == "competitor_mention"
     assert "snooker 19" in hits
 
     # Neutral
-    cls, hits = classify_message("Just general discussion")
+    cls, hits = classify_message("Just general discussion", BRAND_KEYWORDS)
     assert cls is None
     assert hits == []
 
@@ -51,6 +53,8 @@ def test_run_analysis(mock_load_config, mock_get_db, tmp_path):
         "data_dir": str(tmp_path),
         "clients": {
             "test-client": {
+                "name": "Test Client",
+                "brand_keywords": ["pure pool"],
                 "reddit": {
                     "subreddits": {
                         "billiards": {
@@ -96,7 +100,7 @@ def test_run_analysis(mock_load_config, mock_get_db, tmp_path):
         
         assert report is not None
         assert report["meta"]["total_messages_scanned"] == 2
-        assert report["meta"]["pure_pool_mentions"] == 1
+        assert report["meta"]["brand_mentions"] == 1
         assert report["meta"]["competitor_mentions"] == 1
         
         # Verify JSON report structure

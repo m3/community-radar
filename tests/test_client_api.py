@@ -83,13 +83,13 @@ def test_api_market_intel(client, tmp_path):
     reports_dir.mkdir(parents=True, exist_ok=True)
     mock_intel_data = {
         "meta": {
-            "pure_pool_mentions": 10,
+            "brand_mentions": 10,
             "competitor_mentions": 20,
             "unique_competitors": 2,
             "feature_requests": 5,
             "pain_points_flagged": 2
         },
-        "pure_pool_mentions": []
+        "brand_mentions": []
     }
     with open(reports_dir / "competitor_intel.json", "w") as f:
         json.dump(mock_intel_data, f)
@@ -100,11 +100,11 @@ def test_api_market_intel(client, tmp_path):
         {"channel_name": "domain:ripstone.com", "post_count": 3, "last_post": "2026-06-20 12:00:00"}
     ]
     
-    with patch('src.dashboard.app.get_db', return_value=mock_db):
+    with patch('src.dashboard.api_intel.get_db', return_value=mock_db):
         response = client.get(f'/api/{client_id}/intel/market')
         assert response.status_code == 200
         data = json.loads(response.data)
-        assert data["competitors"]["meta"]["pure_pool_mentions"] == 10
+        assert data["competitors"]["meta"]["brand_mentions"] == 10
         assert data["domains"][0]["post_count"] == 3
 
 

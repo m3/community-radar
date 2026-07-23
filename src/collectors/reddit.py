@@ -5,6 +5,7 @@ Supports in-process Playwright session sharing via PlaywrightManager.
 """
 
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,14 +16,29 @@ from src.collectors.utils import get_config_value, run_cli, CONFIG
 DATA_DIR = Path(__file__).parent.parent.parent / CONFIG.get("data_dir", "data")
 
 
-def get_proxy_from_bws(secret_id: str) -> str | None:
+def get_proxy(secret_id: str, client_cfg=None) -> str | None:
+    """Get Reddit proxy from env var or BWS."""
     import subprocess
     import json
+    import os
+    from src.collectors.utils import get_config_value
+
+    # 1. Prefer injected env var (Docker / bws run pattern)
+    env_proxy = os.environ.get("REDDIT_PROXY")
+    if env_proxy:
+        return env_proxy
+
+    # 2. Fall back to BWS secret lookup (local dev)
     if not secret_id:
         return None
     try:
+        cmd = ["bws"]
+        profile = get_config_value(client_cfg, "reddit", "bws_profile")
+        if profile:
+            cmd += ["--profile", profile]
+        cmd += ["secret", "get", secret_id, "--output", "json"]
         result = subprocess.run(
-            ["bws", "secret", "get", secret_id, "--output", "json"],
+            cmd,
             capture_output=True, text=True, check=True
         )
         data = json.loads(result.stdout)
@@ -82,6 +98,85 @@ def fetch_comments_for_post(permalink, client_cfg=None):
     return []
 
 
+def _parse_reddit_children(children):
+    """Convert Reddit API children list to normalized post dicts."""
+    posts = []
+    for c in children:
+        d = c.get("data", {})
+        posts.append({
+            "id": d.get("id", ""),
+            "title": d.get("title", ""),
+            "subreddit": d.get("subreddit", ""),
+            "author": {"name": d.get("author", "[deleted]")},
+            "permalink": d.get("permalink", ""),
+            "postType": "text" if d.get("is_self") else "link",
+            "selftext": d.get("selftext", ""),
+            "createdUtc": d.get("created_utc", 0),
+            "stats": {
+                "score": d.get("score", 0),
+                "numComments": d.get("num_comments", 0),
+                "upvoteRatio": d.get("upvote_ratio", 0),
+            },
+            "flair": d.get("link_flair_text", ""),
+            "domain": d.get("domain", ""),
+            "url": d.get("url", ""),
+        })
+    return posts
+
+
+def fetch_posts_via_requests(subreddit, sort="new", limit=100, max_pages=5, proxy=None):
+    """Fetch posts using Reddit's .json API via requests with session cookie."""
+    import requests
+    all_posts = []
+    after = ""
+
+    reddit_session = os.environ.get("REDDIT_SESSION")
+    cookies = {}
+    if reddit_session:
+        cookies["reddit_session"] = reddit_session
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    }
+
+    proxies = {"http": proxy, "https": proxy} if proxy else None
+
+    for page_num in range(max_pages):
+        base_sort = sort.split("?")[0]
+        url = f"https://www.reddit.com/r/{subreddit}/{base_sort}.json?limit={limit}"
+        if "?" in sort:
+            url += "&" + sort.split("?", 1)[1]
+        if after:
+            url += f"&after={after}"
+
+        print(f"    [requests] GET {url}...")
+        try:
+            resp = requests.get(url, headers=headers, cookies=cookies, proxies=proxies, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            print(f"    ⚠ Request failed: {e}")
+            break
+
+        children = data.get("data", {}).get("children", [])
+        if not children:
+            print(f"    ⚠ No children in response (top-level keys: {list(data.keys())}, data keys: {list(data.get('data', {}).keys())})")
+            print(f"    Response preview: {json.dumps(data)[:400]}")
+            break
+
+        page_posts = _parse_reddit_children(children)
+        all_posts.extend(page_posts)
+        after = data.get("data", {}).get("after")
+        print(f"    Page {page_num + 1}: {len(page_posts)} posts (total: {len(all_posts)})")
+        if not after:
+            break
+
+        time.sleep(1.5)
+
+    return all_posts
+
+
 def fetch_posts_via_json_in_process(page, subreddit, sort="new", limit=100, max_pages=5):
     """Fetch posts using Reddit's .json API in-process via PlaywrightPage."""
     all_posts = []
@@ -102,6 +197,7 @@ def fetch_posts_via_json_in_process(page, subreddit, sort="new", limit=100, max_
 
         text = page.evaluate("document.body.innerText")
         if not text:
+            print(f"    ⚠ Empty body text")
             break
 
         try:
@@ -112,37 +208,18 @@ def fetch_posts_via_json_in_process(page, subreddit, sort="new", limit=100, max_
                 if pre_text:
                     data = json.loads(pre_text.strip())
                 else:
+                    print(f"    ⚠ Non-JSON response: {text[:300]}")
                     break
-            except Exception:
+            except Exception as e:
+                print(f"    ⚠ Failed to parse response: {e} | text: {text[:300]}")
                 break
 
         children = data.get("data", {}).get("children", [])
         if not children:
+            print(f"    ⚠ No children in response (keys: {list(data.keys())[:10]})")
             break
 
-        page_posts = []
-        for c in children:
-            d = c.get("data", {})
-            post = {
-                "id": d.get("id", ""),
-                "title": d.get("title", ""),
-                "subreddit": d.get("subreddit", ""),
-                "author": {"name": d.get("author", "[deleted]")},
-                "permalink": d.get("permalink", ""),
-                "postType": "text" if d.get("is_self") else "link",
-                "selftext": d.get("selftext", ""),
-                "createdUtc": d.get("created_utc", 0),
-                "stats": {
-                    "score": d.get("score", 0),
-                    "numComments": d.get("num_comments", 0),
-                    "upvoteRatio": d.get("upvote_ratio", 0),
-                },
-                "flair": d.get("link_flair_text", ""),
-                "domain": d.get("domain", ""),
-                "url": d.get("url", ""),
-            }
-            page_posts.append(post)
-
+        page_posts = _parse_reddit_children(children)
         all_posts.extend(page_posts)
         after = data.get("data", {}).get("after")
         print(f"    Page {page_num + 1}: {len(page_posts)} posts (total: {len(all_posts)}, after={after[:20] if after else None}...)")
@@ -176,10 +253,27 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
     posts = []
     used_in_process = False
     total_comments = 0
+    requests_attempted = False
+    requests_succeeded = False
 
-    # Try in-process Playwright browser session first
+    # 0. Try lightweight requests-based fetch first (works with REDDIT_SESSION cookie)
+    proxy_secret_id = get_config_value(client_cfg, "reddit", "proxy_secret_id")
+    proxy = get_proxy(proxy_secret_id, client_cfg=client_cfg) if proxy_secret_id else None
+    if os.environ.get("REDDIT_SESSION"):
+        requests_attempted = True
+        try:
+            print("  [requests] Trying lightweight JSON fetch...")
+            posts = fetch_posts_via_requests(subreddit, sort, limit=100, max_pages=max_post_pages, proxy=proxy)
+            requests_succeeded = True
+            if posts:
+                print(f"  Got {len(posts)} posts via requests")
+        except Exception as e:
+            print(f"  ⚠ requests fetch failed: {e}")
+            posts = []
+
+    # Try in-process Playwright browser session only if requests failed or no cookie
     backend = get_config_value(client_cfg, "reddit", "backend", "playwright")
-    if backend == "playwright":
+    if not posts and backend == "playwright" and not requests_succeeded:
         try:
             # Set up import path for scripts/reddit
             import sys
@@ -193,14 +287,24 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
             from reddit.playwright_backend import PlaywrightPage
 
             headless = get_config_value(client_cfg, "reddit", "headless", True)
-            proxy_secret_id = get_config_value(client_cfg, "reddit", "proxy_secret_id")
-            proxy = get_proxy_from_bws(proxy_secret_id) if proxy_secret_id else None
             proxy_cfg = {"server": proxy} if proxy else None
+
+            # Inject Reddit session cookie if available
+            reddit_session = os.environ.get("REDDIT_SESSION")
+            cookies = None
+            if reddit_session:
+                cookies = [{
+                    "name": "reddit_session",
+                    "value": reddit_session,
+                    "domain": "www.reddit.com",
+                    "path": "/",
+                }]
+                print("  Using REDDIT_SESSION cookie")
 
             # Get manager and start
             manager = PlaywrightManager.get_instance()
             manager.start(headless=headless)
-            context = manager.get_context(proxy_cfg=proxy_cfg)
+            context = manager.get_context(proxy_cfg=proxy_cfg, cookies=cookies)
             page = PlaywrightPage(headless=headless, proxy=proxy, context=context)
 
             try:
@@ -238,8 +342,9 @@ def export_subreddit(subreddit, sort="new", with_comments=True, comment_limit=20
             print(f"  ⚠ In-process crawling failed: {e}. Falling back to CLI subprocess...")
             posts = []
 
-    # Fallback to CLI subprocess if in-process failed
-    if not used_in_process:
+    # Fallback to CLI subprocess if requests failed and Playwright failed/returned nothing
+    if not requests_succeeded and (not used_in_process or not posts):
+        print("  Falling back to CLI subprocess...")
         posts = fetch_posts_via_json(subreddit, sort, limit=100, max_pages=max_post_pages, client_cfg=client_cfg)
         if not posts:
             print(f"  ✗ No posts fetched")

@@ -77,9 +77,11 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 > tenant-correct data per client — RLS is scoping, not leaking or failing
 > closed. Tenant isolation in production is now enforced solely by the database.
 >
-> **Open:**
-> - #3b — auth (parked at your request)
+> **Deferred:**
+> - #3b — auth. Explicitly deferred (2026-07-23); the dashboard stays bound to
+>   `127.0.0.1` as the interim mitigation. Not a blocker for merging this branch.
 >
+> All other findings are resolved. Branch merged to `main` on 2026-07-23.
 > Live database is reconciled and `alembic check` reports no drift.
 
 ### 18. engagement owned/external segments returned 500 — FIXED

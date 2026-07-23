@@ -34,12 +34,26 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 > blueprint modules. 109 tests pass; 67 live route+segment checks and gunicorn
 > boot verified.
 >
+> **#8 done:** the topics/power_words/purpose/timeseries/overview routes no
+> longer re-scan and re-classify every message per request for owned/external.
+> `sentiment.py` precomputes per-segment stats (`compute_segment_stats`) into
+> `report["segments"]`; the routes read them and fall back to a live scan for
+> older reports. Precomputed output is byte-identical to the live scan.
+>
+> **#4 backstop done (rewriter removal pending):** Postgres row-level security
+> now enforces tenant isolation in the database. A non-superuser `radar_app`
+> role (backend/worker connect as it; migrations use the owner) is scoped per
+> connection by a GUC `app.current_client_id` that `get_db` sets; RLS policies
+> on all seven tenant tables restrict rows to it, fail closed when unset, and
+> block cross-tenant inserts (WITH CHECK). Proven in `tests/test_rls.py` and on
+> the live database. The regex SQL-injection rewriter is kept as
+> belt-and-suspenders; **removing it (and reworking the cross-tenant tests that
+> then break under RLS-active testing) is the one remaining #4 task.**
+>
 > **Open:**
 > - #3b — auth (parked at your request)
-> - #4 — the guard makes leaks loud; the real fix (replace the regex rewriter
->   with ORM `select()`/RLS) is still a scoped future effort
-> - #8 — per-request full-table scans (perf); recommended fix is extending the
->   nightly precompute to the owned/external segments
+> - #4 (final) — delete the regex injection + fail-loud guard, switch the test
+>   engine to `radar_app`, and restructure the cross-tenant assertions.
 >
 > Live database is reconciled and `alembic check` reports no drift.
 

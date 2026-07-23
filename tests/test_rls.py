@@ -1,5 +1,11 @@
 """Row-level security enforces tenant isolation at the database.
 
+This file and test_tenant_isolation.py are the two tests that carry the
+isolation guarantee — the only ones that seed *two* tenants and assert a query
+sees just one. The rest of the suite runs single-tenant, so it proves queries
+still return correct data but would not catch a cross-tenant leak. Do not weaken
+these two without replacing the guarantee elsewhere.
+
 These connect as the non-superuser radar_app role (the runtime role) and
 verify the policies actually isolate clients — the superuser owner used by the
 rest of the suite bypasses RLS, so isolation must be proven here. Also pins the

@@ -12,6 +12,10 @@ policies scope the query at the database.
 This is the same assertion the guard's tests made — isolation holds — proven
 through the real get_db path against the mechanism that now enforces it. The
 query that used to leak is run verbatim and must return only the caller's rows.
+
+This file and test_rls.py are the two tests that carry the isolation guarantee
+(the only ones seeding two tenants and asserting single-tenant results). Do not
+weaken them without replacing the guarantee elsewhere.
 """
 
 import uuid

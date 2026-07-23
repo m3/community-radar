@@ -81,22 +81,27 @@ def api_overview(client_name):
     report_meta = report.get("meta", {})
     if report.get("sentiment", {}).get("overall"):
         if segment != "all":
-            # Compute dynamic sentiment ratio
-            from src.analysis.sentiment import classify_sentiment
-            db = get_db(client_name)
-            msg_query = f"SELECT content FROM messages {msg_filter} AND content IS NOT NULL AND content != ''"
-            msgs = db.execute(msg_query, msg_params).fetchall()
-            db.close()
-
-            pos, neg = 0, 0
-            for m in msgs:
-                _, label = classify_sentiment(m["content"])
-                if label == "positive":
-                    pos += 1
-                elif label == "negative":
-                    neg += 1
             report_meta = {**report_meta}
-            report_meta["sentiment_ratio"] = round(pos / max(neg, 1), 2)
+            seg = report.get("segments", {}).get(segment)
+            if seg is not None:
+                # Nightly-precomputed ratio instead of a per-request scan.
+                report_meta["sentiment_ratio"] = seg.get("sentiment_ratio", 0)
+            else:
+                # Fallback for reports without precomputed segments.
+                from src.analysis.sentiment import classify_sentiment
+                db = get_db(client_name)
+                msg_query = f"SELECT content FROM messages {msg_filter} AND content IS NOT NULL AND content != ''"
+                msgs = db.execute(msg_query, msg_params).fetchall()
+                db.close()
+
+                pos, neg = 0, 0
+                for m in msgs:
+                    _, label = classify_sentiment(m["content"])
+                    if label == "positive":
+                        pos += 1
+                    elif label == "negative":
+                        neg += 1
+                report_meta["sentiment_ratio"] = round(pos / max(neg, 1), 2)
         else:
             report_meta["sentiment_ratio"] = report["sentiment"]["overall"].get("sentiment_ratio", 0)
         report_meta["generated_at"] = report["meta"].get("generated_at")
@@ -116,43 +121,49 @@ def api_sentiment_timeseries(client_name):
     """Time-series sentiment data for charts using actual lexicon model."""
     validate_client(client_name)
     segment = request.args.get("segment", "all")
-    db = get_db(client_name)
 
-    owned_ids, external_ids = get_channel_segmentation(client_name)
+    # Prefer nightly-precomputed segment series over a per-request scan.
+    precomputed = load_report(client_name).get("segments", {}).get(segment) if segment != "all" else None
+    if precomputed is not None:
+        series = precomputed.get("series", {})
+    else:
+        db = get_db(client_name)
 
-    query = """
-        SELECT m.timestamp, m.platform, m.content
-        FROM messages m
-        WHERE m.client_id = :client_id AND m.timestamp IS NOT NULL AND m.content IS NOT NULL AND m.content != ''
-    """
-    params = []
-    seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
-    query += seg_frag
-    params.extend(seg_params)
+        owned_ids, external_ids = get_channel_segmentation(client_name)
 
-    query += " ORDER BY m.timestamp ASC"
-    rows = db.execute(query, params).fetchall()
-    db.close()
+        query = """
+            SELECT m.timestamp, m.platform, m.content
+            FROM messages m
+            WHERE m.client_id = :client_id AND m.timestamp IS NOT NULL AND m.content IS NOT NULL AND m.content != ''
+        """
+        params = []
+        seg_frag, seg_params = segment_filter(segment, owned_ids, external_ids)
+        query += seg_frag
+        params.extend(seg_params)
 
-    from src.analysis.sentiment import classify_sentiment
+        query += " ORDER BY m.timestamp ASC"
+        rows = db.execute(query, params).fetchall()
+        db.close()
 
-    # Build time series by platform
-    series = defaultdict(lambda: defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0, "total": 0}))
+        from src.analysis.sentiment import classify_sentiment
 
-    for r in rows:
-        ts = r["timestamp"]
-        if isinstance(ts, str):
-            day = ts[:10]
-        else:
-            day = ts.strftime("%Y-%m-%d")
+        # Build time series by platform
+        series = defaultdict(lambda: defaultdict(lambda: {"positive": 0, "negative": 0, "neutral": 0, "total": 0}))
 
-        platform = r["platform"]
-        content = r["content"]
+        for r in rows:
+            ts = r["timestamp"]
+            if isinstance(ts, str):
+                day = ts[:10]
+            else:
+                day = ts.strftime("%Y-%m-%d")
 
-        _, label = classify_sentiment(content)
+            platform = r["platform"]
+            content = r["content"]
 
-        series[platform][day][label] += 1
-        series[platform][day]["total"] += 1
+            _, label = classify_sentiment(content)
+
+            series[platform][day][label] += 1
+            series[platform][day]["total"] += 1
 
     report = load_report(client_name)
     report_sentiment = report.get("sentiment", {})
@@ -261,6 +272,11 @@ def api_topics(client_name):
         report = load_report(client_name)
         return jsonify(report.get("topic_sentiment", {}))
 
+    # Prefer nightly-precomputed segment stats over a per-request scan.
+    seg = load_report(client_name).get("segments", {}).get(segment)
+    if seg is not None:
+        return jsonify(seg.get("topic_sentiment", {}))
+
     db = get_db(client_name)
     owned_ids, external_ids = get_channel_segmentation(client_name)
 
@@ -310,6 +326,11 @@ def api_power_words(client_name):
     if segment == "all":
         report = load_report(client_name)
         return jsonify(report.get("power_words", {}))
+
+    # Prefer nightly-precomputed segment stats over a per-request scan.
+    seg = load_report(client_name).get("segments", {}).get(segment)
+    if seg is not None:
+        return jsonify(seg.get("power_words", {}))
 
     db = get_db(client_name)
     owned_ids, external_ids = get_channel_segmentation(client_name)
@@ -477,6 +498,11 @@ def api_purpose(client_name):
     if segment == "all":
         report = load_report(client_name)
         return jsonify(report.get("purpose", {}))
+
+    # Prefer nightly-precomputed segment stats over a per-request scan.
+    seg = load_report(client_name).get("segments", {}).get(segment)
+    if seg is not None:
+        return jsonify(seg.get("purpose", {}))
 
     db = get_db(client_name)
     owned_ids, external_ids = get_channel_segmentation(client_name)

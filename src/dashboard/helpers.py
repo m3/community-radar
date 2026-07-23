@@ -13,6 +13,7 @@ from flask import request, abort
 
 from src.db.models import get_db as _get_db
 from src.dashboard.config_manager import ConfigManager
+from src.segments import is_channel_owned  # noqa: F401  (re-exported)
 
 ROOT = Path(__file__).parent.parent.parent
 
@@ -61,23 +62,6 @@ def int_arg(name, default, maximum=None, minimum=0):
     if maximum is not None:
         value = min(value, maximum)
     return value
-
-
-def is_channel_owned(ch_name, owned_subreddits):
-    ch_name_lower = ch_name.lower()
-    if ch_name_lower.startswith("reddit-"):
-        parts = ch_name_lower.split("-")
-        if len(parts) > 1 and parts[1].lower() in owned_subreddits:
-            return True
-        return False
-    elif ch_name_lower.startswith("reddit_"):
-        parts = ch_name_lower.split("_")
-        if len(parts) > 1 and parts[1].lower() in owned_subreddits:
-            return True
-        return False
-    elif not ch_name_lower.startswith("reddit"):
-        return True
-    return False
 
 
 def segment_filter(segment, owned_ids, external_ids, connector="AND", column="m.channel_id"):

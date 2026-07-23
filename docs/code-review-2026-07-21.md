@@ -64,10 +64,18 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 > **Write-path validated** (2026-07-23) as `radar_app` against the live DB in a
 > rolled-back transaction: own-tenant INSERT/UPDATE succeed, cross-tenant
 > INSERT and UPDATE are rejected by WITH CHECK, cross-tenant SELECT returns zero
-> rows. The running container still connects as the superuser owner on the *old*
-> (rewriter-present) code — safe until redeploy. Redeploy switches backend/worker
-> to `radar_app` with `RADAR_REQUIRE_RLS=1`, which hard-fails a superuser
-> connection so the rewriter's removal can never mean "no isolation" in prod.
+> rows.
+>
+> **Deployed and verified live** (2026-07-23). `docker compose up -d --build`
+> rebuilt the stack on the rewriter-free code: `migrate` ran as the owner (exit
+> 0, schema already at head, radar_app password set), then backend and worker
+> started as `radar_app` with `RADAR_REQUIRE_RLS=1` — the superuser guard did
+> not trip. `pg_stat_activity` shows the runtime holding only non-superuser
+> `radar_app` connections (the owner appears only during migration). A full
+> read-path smoke test passed 9/9 (overview/engagement/contributors × the three
+> real clients, over IPv4 to avoid the ::1 flake) and returned distinct,
+> tenant-correct data per client — RLS is scoping, not leaking or failing
+> closed. Tenant isolation in production is now enforced solely by the database.
 >
 > **Open:**
 > - #3b — auth (parked at your request)

@@ -21,39 +21,6 @@ class UnknownClientError(ValueError):
     """Raised when a client name is not declared in config.yaml."""
 
 
-class TenantIsolationError(RuntimeError):
-    """Raised when a tenant-scoped query would run without a client_id filter."""
-
-
-# Tables without a client_id column — exempt from the tenant-predicate guard.
-_NON_TENANT_TABLES = {"tasks", "clients", "alembic_version", "schema_migrations"}
-
-# Tables whose rows belong to a specific client and must always be filtered.
-_TENANT_TABLES = {
-    "messages", "users", "channels", "servers", "exports", "topics",
-    "cross_references",
-}
-
-
-def tenant_guard_mode():
-    """How to react to a tenant-scoped query with no client_id predicate.
-
-    'enforce' (default) raises, 'log' warns and continues, 'off' disables the
-    check. Overridable with COMMUNITY_RADAR_TENANT_GUARD for a staged rollout.
-    """
-    return os.environ.get("COMMUNITY_RADAR_TENANT_GUARD", "enforce").lower()
-
-
-def _references_tenant_table(sql):
-    lowered = sql.lower()
-    return any(re.search(rf'\b{t}\b', lowered) for t in _TENANT_TABLES)
-
-
-def _has_client_id_predicate(sql):
-    # A predicate, not a mention: client_id compared or matched against something.
-    return re.search(r'client_id\s*(=|<>|!=|\bin\b)', sql, re.IGNORECASE) is not None
-
-
 def known_client_names():
     """The set of client names declared in config.yaml — the tenant authority.
 
@@ -105,42 +72,14 @@ class LegacySessionWrapper:
         if not params:
             params = {}
             
-        # Inject client_id if not present (skip for tasks table which is global)
-        is_tasks = isinstance(sql, str) and re.search(r'\b(FROM|UPDATE|INSERT\s+INTO|JOIN)\s+tasks\b', sql, re.IGNORECASE) is not None
-        
-        if is_tasks:
-            pass
-        elif ":client_id" in sql or "client_id" in sql.lower():
-            if "client_id" not in params:
-                params["client_id"] = self.client_id
-        else:
-            # Detect table aliases for qualified client_id injection
-            # Find first table alias: "FROM table_name alias" or "FROM table_name AS alias"
-            alias_match = re.search(r'\bFROM\s+\w+\s+(?:AS\s+)?(\w+)', sql, re.IGNORECASE)
-            first_alias = alias_match.group(1) if alias_match else None
-
-            # Check if there's a JOIN — if so, we need qualified column reference
-            has_join = " JOIN " in sql.upper()
-
-            if has_join and first_alias:
-                qual = f"{first_alias}.client_id"
-            else:
-                qual = "client_id"
-
-            client_id_sql = f"{qual} = {self.client_id}"
-
-            if " WHERE " in sql.upper():
-                sql = sql.replace(" WHERE ", f" WHERE {client_id_sql} AND ", 1)
-            elif " GROUP BY " in sql.upper():
-                sql = sql.replace(" GROUP BY ", f" WHERE {client_id_sql} GROUP BY ", 1)
-            elif " ORDER BY " in sql.upper():
-                sql = sql.replace(" ORDER BY ", f" WHERE {client_id_sql} ORDER BY ", 1)
-            elif "SELECT " in sql.upper() and " FROM " in sql.upper():
-                sql = sql.strip()
-                if sql.endswith(";"):
-                    sql = sql[:-1] + f" WHERE {client_id_sql};"
-                else:
-                    sql += f" WHERE {client_id_sql}"
+        # Tenant isolation is enforced by Postgres row-level security: get_db sets
+        # the per-connection app.current_client_id GUC and the RLS policies scope
+        # every read and write to it (and reject cross-tenant writes via WITH
+        # CHECK). No client_id predicate is rewritten into the SQL here — that used
+        # to be a fragile regex pass. Only supply a value when the caller wrote an
+        # explicit :client_id placeholder.
+        if ":client_id" in sql and "client_id" not in params:
+            params["client_id"] = self.client_id
 
         # Fix SQLite-specific functions
         sql = sql.replace("datetime('now')", "NOW()")
@@ -149,10 +88,9 @@ class LegacySessionWrapper:
         # Fix SQLite INSERT OR IGNORE → PostgreSQL INSERT ... ON CONFLICT DO NOTHING
         sql = self._fix_insert_or_ignore(sql)
 
-        # Inject client_id into INSERT statements that don't include it
+        # Populate client_id in INSERT column lists. RLS validates it via WITH
+        # CHECK but does not supply it, so collector inserts still need it added.
         sql, params = self._inject_client_id_insert(sql, params)
-
-        self._guard_tenant_isolation(sql)
 
         result = self.session.execute(text(sql), params)
         if sql.strip().upper().startswith(("SELECT", "WITH")):
@@ -256,34 +194,6 @@ class LegacySessionWrapper:
             sql_converted, params = self._inject_client_id_insert(sql_converted, params)
             self.session.execute(text(sql_converted), params)
 
-    def _guard_tenant_isolation(self, sql):
-        """Refuse a tenant-scoped read/write that carries no client_id predicate.
-
-        Runs on the fully rewritten SQL. INSERTs are exempt: client_id is added
-        to their column list, not a WHERE clause, by _inject_client_id_insert.
-        """
-        mode = tenant_guard_mode()
-        if mode == "off":
-            return
-
-        verb = sql.lstrip().upper()
-        if not verb.startswith(("SELECT", "WITH", "UPDATE", "DELETE")):
-            return
-        if not _references_tenant_table(sql):
-            return
-        if _has_client_id_predicate(sql):
-            return
-
-        message = (
-            "Tenant-scoped query has no client_id predicate after rewriting; "
-            f"refusing to run it for client {self.client_id}: {' '.join(sql.split())[:200]}"
-        )
-        if mode == "log":
-            import logging
-            logging.getLogger(__name__).warning("tenant-guard: %s", message)
-            return
-        raise TenantIsolationError(message)
-
     def commit(self):
         self.session.commit()
 
@@ -307,10 +217,11 @@ def get_db(client_name=None):
     """
     from sqlalchemy import text
     from sqlalchemy.orm import Session
-    from .session import engine
+    from . import session as _session
 
     clean_name = sanitize_client_name(client_name)
-    conn = engine.connect()
+    # app_engine is the radar_app (non-superuser) runtime engine — RLS applies.
+    conn = _session.app_engine.connect()
     session = Session(bind=conn)
 
     try:

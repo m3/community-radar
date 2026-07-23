@@ -32,7 +32,9 @@ def test_the_underscore_typo_that_created_a_tenant_in_production(known):
 
 def test_unknown_client_does_not_leave_a_session_open(known):
     """The guard must close its session, not leak a connection per attempt."""
-    engine = models.SessionLocal.kw["bind"]
+    import src.db.session as db_session
+
+    engine = db_session.app_engine  # the engine get_db() checks connections out of
     before = engine.pool.checkedout()
     for _ in range(5):
         with pytest.raises(UnknownClientError):

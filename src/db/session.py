@@ -13,6 +13,14 @@ DATABASE_URL = os.getenv(
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# The engine get_db() uses for tenant-scoped work. In production DATABASE_URL is
+# the non-superuser radar_app role, so this is the same engine and RLS applies.
+# `engine`/`SessionLocal` stay on whatever DATABASE_URL names (the superuser owner
+# under migrations and the test suite) for schema changes and cross-tenant seeding.
+# The test suite rebinds app_engine to radar_app so the exercised query paths run
+# under RLS — a green suite then means the database is enforcing isolation.
+app_engine = engine
+
 
 def warn_if_superuser():
     """Warn when the runtime connects as a superuser — RLS is bypassed then.

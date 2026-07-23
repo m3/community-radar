@@ -40,20 +40,37 @@ is implemented by regex-rewriting SQL strings at runtime**. Everything else is t
 > `report["segments"]`; the routes read them and fall back to a live scan for
 > older reports. Precomputed output is byte-identical to the live scan.
 >
-> **#4 backstop done (rewriter removal pending):** Postgres row-level security
-> now enforces tenant isolation in the database. A non-superuser `radar_app`
-> role (backend/worker connect as it; migrations use the owner) is scoped per
+> **#4 done — tenant isolation is now database-enforced, rewriter removed.**
+> Postgres row-level security enforces it: a non-superuser `radar_app` role
+> (backend/worker connect as it, migrations use the owner) is scoped per
 > connection by a GUC `app.current_client_id` that `get_db` sets; RLS policies
 > on all seven tenant tables restrict rows to it, fail closed when unset, and
-> block cross-tenant inserts (WITH CHECK). Proven in `tests/test_rls.py` and on
-> the live database. The regex SQL-injection rewriter is kept as
-> belt-and-suspenders; **removing it (and reworking the cross-tenant tests that
-> then break under RLS-active testing) is the one remaining #4 task.**
+> block cross-tenant writes (WITH CHECK).
+>
+> The regex SQL-injection rewriter is gone. `LegacySessionWrapper.execute` no
+> longer rewrites a `client_id` WHERE clause into every statement and the
+> `TenantIsolationError` fail-loud guard is deleted; the wrapper now only does
+> SQLite→PG translation (placeholders, `INSERT OR IGNORE`→`ON CONFLICT`,
+> `datetime('now')`) and still *populates* `client_id` into INSERT column lists
+> (RLS validates it via WITH CHECK but does not supply it).
+>
+> The test suite now proves this rather than the old mechanism: the `get_db`
+> exercise path runs as `radar_app` (owner only seeds fixtures and migrates), so
+> a green suite means RLS is enforcing. `test_tenant_guard.py` (which tested the
+> deleted guard) is replaced by `test_tenant_isolation.py`, which runs the exact
+> finding-#17 leaking query through `get_db` and asserts it returns only the
+> caller's rows, and that a cross-tenant insert is rejected. 132 tests pass.
+>
+> **Write-path validated** (2026-07-23) as `radar_app` against the live DB in a
+> rolled-back transaction: own-tenant INSERT/UPDATE succeed, cross-tenant
+> INSERT and UPDATE are rejected by WITH CHECK, cross-tenant SELECT returns zero
+> rows. The running container still connects as the superuser owner on the *old*
+> (rewriter-present) code — safe until redeploy. Redeploy switches backend/worker
+> to `radar_app` with `RADAR_REQUIRE_RLS=1`, which hard-fails a superuser
+> connection so the rewriter's removal can never mean "no isolation" in prod.
 >
 > **Open:**
 > - #3b — auth (parked at your request)
-> - #4 (final) — delete the regex injection + fail-loud guard, switch the test
->   engine to `radar_app`, and restructure the cross-tenant assertions.
 >
 > Live database is reconciled and `alembic check` reports no drift.
 

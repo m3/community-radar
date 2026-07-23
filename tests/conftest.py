@@ -87,7 +87,18 @@ def _test_database():
     finally:
         engine.dispose()
 
-    yield
+    # Point the get_db() exercise path at the non-superuser radar_app role, so the
+    # query paths under test run under RLS (the owner bypasses it). `engine`/
+    # `SessionLocal` stay on the owner for migrations and cross-tenant seeding.
+    import src.db.session as db_session
+
+    _owner_app_engine = db_session.app_engine
+    db_session.app_engine = create_engine(radar_app_url())
+    try:
+        yield
+    finally:
+        db_session.app_engine.dispose()
+        db_session.app_engine = _owner_app_engine
 
 
 RADAR_APP_TEST_PASSWORD = "radar_app_test"

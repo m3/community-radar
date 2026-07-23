@@ -1,12 +1,17 @@
-x-app: &app
+# Two database roles:
+#   - community_radar (owner/superuser): schema migrations only.
+#   - radar_app (non-superuser): backend + worker runtime, subject to RLS.
+# Isolation is enforced by Postgres row-level security; the runtime role must
+# NOT be a superuser, or RLS is bypassed (RADAR_REQUIRE_RLS makes that fatal).
+x-secrets: &secrets
+  DISCORD_TOKEN: ${DISCORD_TOKEN:-}
+  REDDIT_SESSION: ${REDDIT_SESSION:-}
+  REDDIT_PROXY: ${REDDIT_PROXY:-}
+
+x-build: &build
   build:
     context: .
     dockerfile: Dockerfile
-  environment:
-    - DATABASE_URL=postgresql://community_radar:${POSTGRES_PASSWORD:-password123}@db:5432/community_radar
-    - DISCORD_TOKEN=${DISCORD_TOKEN:-}
-    - REDDIT_SESSION=${REDDIT_SESSION:-}
-    - REDDIT_PROXY=${REDDIT_PROXY:-}
   volumes:
     - ./data:/app/data
 
@@ -28,22 +33,31 @@ services:
       timeout: 5s
       retries: 10
 
-  # One-shot schema upgrade. Runs to completion before backend/worker start,
-  # so the two long-running services never race to migrate.
+  # One-shot schema upgrade, run as the owner. Also sets radar_app's password
+  # from the environment. Backend/worker wait for it to complete.
   migrate:
-    <<: *app
+    <<: *build
     restart: "no"
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      <<: *secrets
+      DATABASE_URL: postgresql://community_radar:${POSTGRES_PASSWORD:-password123}@db:5432/community_radar
+      RADAR_APP_PASSWORD: ${RADAR_APP_PASSWORD:-radar_app_dev}
     command: ["python", "-m", "src.main", "migrate"]
 
   backend:
-    <<: *app
+    <<: *build
     restart: unless-stopped
     depends_on:
       migrate:
         condition: service_completed_successfully
+    environment:
+      <<: *secrets
+      # Non-superuser role — RLS enforces tenant isolation.
+      DATABASE_URL: postgresql://radar_app:${RADAR_APP_PASSWORD:-radar_app_dev}@db:5432/community_radar
+      RADAR_REQUIRE_RLS: "1"
     ports:
       - "127.0.0.1:5001:5001"
     # Served by gunicorn, not the Flask dev server. Timeout is generous
@@ -58,11 +72,15 @@ services:
       - src.dashboard.app:app
 
   worker:
-    <<: *app
+    <<: *build
     restart: unless-stopped
     depends_on:
       migrate:
         condition: service_completed_successfully
+    environment:
+      <<: *secrets
+      DATABASE_URL: postgresql://radar_app:${RADAR_APP_PASSWORD:-radar_app_dev}@db:5432/community_radar
+      RADAR_REQUIRE_RLS: "1"
     command: ["python", "src/queue_worker.py"]
 
 volumes:

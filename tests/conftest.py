@@ -76,4 +76,25 @@ def _test_database():
     from src.db.migrate import run_migrations
 
     run_migrations()
+
+    # The RLS migration creates radar_app passwordless; give it a known test
+    # password so the RLS integration test can connect as the non-superuser
+    # runtime role.
+    engine = create_engine(TEST_DATABASE_URL, isolation_level="AUTOCOMMIT")
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(f"ALTER ROLE radar_app PASSWORD '{RADAR_APP_TEST_PASSWORD}'"))
+    finally:
+        engine.dispose()
+
     yield
+
+
+RADAR_APP_TEST_PASSWORD = "radar_app_test"
+
+
+def radar_app_url():
+    """Test-database URL for the non-superuser runtime role."""
+    return make_url(TEST_DATABASE_URL).set(
+        username="radar_app", password=RADAR_APP_TEST_PASSWORD
+    ).render_as_string(hide_password=False)

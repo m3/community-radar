@@ -14,6 +14,33 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def warn_if_superuser():
+    """Warn when the runtime connects as a superuser — RLS is bypassed then.
+
+    Migrations and local/test runs legitimately use the superuser owner, so
+    this only hard-fails when RADAR_REQUIRE_RLS is set (production), where a
+    superuser connection would silently disable tenant isolation.
+    """
+    import logging
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            is_super = conn.execute(text("SHOW is_superuser")).scalar()
+    except Exception:
+        return  # DB unreachable at import time — nothing to check yet.
+
+    if str(is_super).lower() in ("on", "true", "t", "yes"):
+        msg = (
+            "Database role is a SUPERUSER; row-level security is bypassed and "
+            "tenant isolation is NOT enforced by the database. Connect as the "
+            "non-superuser radar_app role in production."
+        )
+        if os.getenv("RADAR_REQUIRE_RLS"):
+            raise RuntimeError(msg)
+        logging.getLogger(__name__).warning("tenant-isolation: %s", msg)
+
+
 def init_db():
     """Create all tables in the database."""
     Base.metadata.create_all(bind=engine)

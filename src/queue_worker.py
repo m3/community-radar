@@ -50,6 +50,8 @@ class HeartbeatThread(threading.Thread):
         self.stop_event.set()
 
 def run_worker():
+    from src.db.session import warn_if_superuser
+    warn_if_superuser()
     print("🚀 CommunityRadar Queue Worker started (Concurrent Mode)")
     while True:
         db = get_queue_db()

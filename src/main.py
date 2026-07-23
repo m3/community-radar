@@ -198,10 +198,22 @@ def migrate_dbs(args):
     There is one shared Postgres database with a client_id column, not a
     database per client, so this is not client-scoped.
     """
+    import os
     from src.db.migrate import run_migrations
     print("Running database migrations...")
     run_migrations()
     print("✅ Migrations up to date.")
+
+    # The RLS migration creates the non-superuser radar_app role without a
+    # password; set it here (as the migration owner) from the environment so
+    # the backend/worker can connect as it. No-op if unset.
+    app_pw = os.getenv("RADAR_APP_PASSWORD")
+    if app_pw:
+        from sqlalchemy import text
+        from src.db.session import engine
+        with engine.begin() as conn:
+            conn.execute(text(f"ALTER ROLE radar_app PASSWORD '{app_pw}'"))
+        print("✅ radar_app password set.")
 
 
 

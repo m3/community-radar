@@ -49,29 +49,24 @@ def test_no_client_name_is_still_allowed(known):
         db.close()
 
 
-def test_known_client_is_accepted(known, monkeypatch):
-    """A name present in config.yaml must still resolve."""
-    created = {}
-
-    class _Client:
-        id = 42
-
-    class _Query:
-        def filter_by(self, **kw):
-            created.update(kw)
-            return self
-
-        def first(self):
-            return _Client()
-
-    class _Session:
-        def query(self, *a):
-            return _Query()
-
-        def close(self):
-            pass
-
-    monkeypatch.setattr(models, "SessionLocal", lambda: _Session())
-    db = get_db("real-client")
-    assert db.client_id == 42
-    assert created["name"] == "real-client"
+def test_known_client_is_accepted(monkeypatch):
+    """A name present in config.yaml resolves to (and creates) its client row."""
+    name = "rls-known-client"
+    monkeypatch.setattr(models, "known_client_names", lambda: {name})
+    db = get_db(name)
+    try:
+        assert isinstance(db.client_id, int)
+        # A second lookup returns the same id (row now exists).
+        db2 = get_db(name)
+        try:
+            assert db2.client_id == db.client_id
+        finally:
+            db2.close()
+    finally:
+        db.close()
+        from src.db.session import SessionLocal
+        from src.db.orm import Client
+        s = SessionLocal()
+        s.query(Client).filter_by(name=name).delete()
+        s.commit()
+        s.close()

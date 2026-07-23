@@ -100,6 +100,12 @@ app.register_blueprint(queue_bp)
 app.register_blueprint(intel_bp)
 app.register_blueprint(engagement_bp)
 
+# Under gunicorn run_dashboard() is never called, so enforce the non-superuser
+# requirement at import when running in production (RADAR_REQUIRE_RLS set).
+if os.getenv("RADAR_REQUIRE_RLS"):
+    from src.db.session import warn_if_superuser
+    warn_if_superuser()
+
 
 def run_dashboard(client_name=None):
     """Launch the Flask development server.
@@ -108,6 +114,8 @@ def run_dashboard(client_name=None):
     source and local variables to the caller. Deployments serve the `app`
     object under gunicorn instead (see docker-compose.yml).
     """
+    from src.db.session import warn_if_superuser
+    warn_if_superuser()
     debug = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes", "on")
     host = os.environ.get("DASHBOARD_HOST", "127.0.0.1")
     port = int(os.environ.get("DASHBOARD_PORT", 5001))

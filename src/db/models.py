@@ -79,9 +79,12 @@ class LegacySessionWrapper:
     Wraps an SQLAlchemy Session to provide a sqlite3-like interface
     for legacy code using .execute() and .commit().
     """
-    def __init__(self, session, client_id):
+    def __init__(self, session, client_id, conn=None):
         self.session = session
         self.client_id = client_id
+        # The dedicated connection the session is bound to (holds the tenant
+        # GUC for RLS). Closed alongside the session.
+        self._conn = conn
 
     def execute(self, sql, params=None):
         from sqlalchemy import text
@@ -289,34 +292,63 @@ class LegacySessionWrapper:
 
     def close(self):
         self.session.close()
+        if self._conn is not None:
+            self._conn.close()
 
 
 def get_db(client_name=None):
-    """Get database session, resolving client_id"""
-    clean_name = sanitize_client_name(client_name)
-    session = SessionLocal()
-    
-    if clean_name:
-        if clean_name not in known_client_names():
-            session.close()
-            raise UnknownClientError(
-                f"Unknown client '{clean_name}'. Declare it in config.yaml first."
-            )
-        client = session.query(Client).filter_by(name=clean_name).first()
-        if not client:
-            # First use of a client that is declared in config.yaml — create
-            # its row. A name absent from config was rejected above, so this
-            # can no longer be reached by a typo.
-            client = Client(name=clean_name)
-            session.add(client)
-            session.commit()
-            session.refresh(client)
-        client_id = client.id
-    else:
-        # Default/system client
-        client_id = 0
+    """Get database session scoped to a client, resolving client_id.
 
-    return LegacySessionWrapper(session, client_id)
+    The session is bound to one explicit connection so the tenant GUC
+    (app.current_client_id) it sets stays put across commits — the row-level
+    security policies read it per connection. A pooled Session that returned
+    its connection on commit would otherwise leave later statements unscoped
+    (RLS fails closed → zero rows). See tests/test_rls.py.
+    """
+    from sqlalchemy import text
+    from sqlalchemy.orm import Session
+    from .session import engine
+
+    clean_name = sanitize_client_name(client_name)
+    conn = engine.connect()
+    session = Session(bind=conn)
+
+    try:
+        if clean_name:
+            if clean_name not in known_client_names():
+                raise UnknownClientError(
+                    f"Unknown client '{clean_name}'. Declare it in config.yaml first."
+                )
+            client = session.query(Client).filter_by(name=clean_name).first()
+            if not client:
+                # First use of a client that is declared in config.yaml — create
+                # its row. A name absent from config was rejected above, so this
+                # can no longer be reached by a typo.
+                client = Client(name=clean_name)
+                session.add(client)
+                session.commit()
+                session.refresh(client)
+            client_id = client.id
+        else:
+            # Default/system client
+            client_id = 0
+
+        # Scope this connection for RLS. Runtime connects as the non-superuser
+        # radar_app role, for which the policies apply; the superuser owner used
+        # by migrations and local/test runs bypasses RLS (SQL-level client_id
+        # injection still enforces isolation there). Run through the session so
+        # it shares the session's transaction on the bound connection; the GUC
+        # is connection-level (not transaction-local) so it survives commits.
+        session.execute(
+            text("SELECT set_config('app.current_client_id', :cid, false)"),
+            {"cid": str(client_id)},
+        )
+    except Exception:
+        session.close()
+        conn.close()
+        raise
+
+    return LegacySessionWrapper(session, client_id, conn)
 
 
 def upsert_server(db, server_id, name, **kwargs):
